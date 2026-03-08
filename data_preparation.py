@@ -102,8 +102,17 @@ def load_wals_cldf(
             col_map[c] = "macroarea"
     lang_meta = lang_meta.rename(columns=col_map)
 
+    # Preserve ISO 639-3 codes for language matching
+    iso_col = None
+    for c in lang_meta.columns:
+        if c.lower() in ("iso639p3code", "iso_codes", "iso639-3"):
+            iso_col = c
+            break
+    if iso_col:
+        lang_meta = lang_meta.rename(columns={iso_col: "iso639p3code"})
+
     keep_cols = ["wals_code", "name"]
-    for col in ["genus", "family", "macroarea"]:
+    for col in ["genus", "family", "macroarea", "iso639p3code"]:
         if col in lang_meta.columns:
             keep_cols.append(col)
     lang_meta = lang_meta[keep_cols].drop_duplicates(subset="wals_code")
@@ -157,6 +166,25 @@ def is_latin_cyrillic_greek(text: str, threshold: float = 0.8) -> bool:
     return (target_count / len(alpha_chars)) >= threshold
 
 
+def _extract_iso_from_filename(filename: str) -> str:
+    """
+    Extract an ISO 639-3-like language code from a Bible text filename.
+
+    ParaBible / cysouw corpus filenames can be:
+      - Simple ISO code: "eng.txt", "fra.txt"
+      - With variant suffix: "eng-web.txt", "spa-rvr.txt"
+      - Numbered: "1234.txt" (corpus internal ID)
+
+    Returns the best guess at an ISO 639-3 code.
+    """
+    stem = os.path.splitext(os.path.basename(filename))[0]
+    # Try to extract a 3-letter code from the start
+    match = re.match(r"^([a-z]{3})", stem.lower())
+    if match:
+        return match.group(1)
+    return stem.lower()
+
+
 def load_parabible_texts(
     parabible_dir: str,
     script_filter: bool = True,
@@ -166,19 +194,20 @@ def load_parabible_texts(
     Load Bible translations from the ParaBible export directory.
 
     The ParaBible project (LingConLab/parabible) stores Bible texts from
-    the cysouw Parallel Bible Corpus. After running their export, each
-    translation is a file with TAB-separated lines: <verse_id>\\t<text>.
+    the cysouw Parallel Bible Corpus. After running their export or
+    after extracting the corpus zip, each translation is a text file.
 
-    Alternatively, if you export via their `api_export_csv.py` or
-    `db_export_csv.py`, you get CSV files.
+    Accepted input formats:
+      - .txt files with lines: verse_id<TAB>text  (ParaBible export)
+      - .txt files with raw text (cysouw corpus-txt)
+      - .csv files with columns: Verse, Text (db_export_csv.py output)
 
     Parameters
     ----------
     parabible_dir : str
         Directory containing Bible text files (one file per translation).
-        Accepted formats:
-        - .txt files with lines: verse_id<TAB>text
-        - .csv files with columns: verse_id, text (or similar)
+        Can also be the path to the parabible repo root (will look in
+        corpus-txt/ subdirectory automatically).
     script_filter : bool
         If True, only keep translations in Latin, Cyrillic, or Greek
         scripts (matching the paper's methodology).
@@ -191,51 +220,81 @@ def load_parabible_texts(
     """
     texts = {}
 
+    # Check if parabible_dir is the repo root with a corpus-txt/ subdir
+    corpus_txt_dir = os.path.join(parabible_dir, "corpus-txt")
+    if os.path.isdir(corpus_txt_dir):
+        search_dir = corpus_txt_dir
+    else:
+        search_dir = parabible_dir
+
     # Look for text files
     patterns = [
-        os.path.join(parabible_dir, "*.txt"),
-        os.path.join(parabible_dir, "*.csv"),
-        os.path.join(parabible_dir, "**", "*.txt"),
+        os.path.join(search_dir, "*.txt"),
+        os.path.join(search_dir, "*.csv"),
+        os.path.join(search_dir, "**", "*.txt"),
     ]
     files = []
     for pat in patterns:
         files.extend(glob.glob(pat, recursive=True))
+    # Exclude manifest files we may have created
+    files = [f for f in files if os.path.basename(f) != "manifest.csv"]
     files = sorted(set(files))
 
-    print(f"Found {len(files)} Bible text files in {parabible_dir}")
+    print(f"Found {len(files)} Bible text files in {search_dir}")
+
+    # Track ISO codes to handle multiple translations per language
+    # (keep the longest one)
+    iso_texts: Dict[str, Tuple[str, int]] = {}  # iso -> (text, n_tokens)
 
     for fpath in files:
-        lang_id = os.path.splitext(os.path.basename(fpath))[0]
+        raw_id = os.path.splitext(os.path.basename(fpath))[0]
+        iso_code = _extract_iso_from_filename(fpath)
         try:
             with open(fpath, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-        except UnicodeDecodeError:
+                content = f.read()
+        except (UnicodeDecodeError, OSError):
             continue
 
-        # Parse: expect TAB-separated verse_id and text
+        # Try to parse as TAB-separated (verse_id\ttext) or CSV
         all_text = []
-        for line in lines:
+        for line in content.splitlines():
             line = line.strip()
             if not line:
                 continue
             parts = line.split("\t", 1)
             if len(parts) == 2:
-                # verse_id \t text
                 all_text.append(parts[1])
+            elif "," in line and line.count(",") <= 3:
+                # Possible CSV: try to get text after first comma
+                csv_parts = line.split(",", 1)
+                if len(csv_parts) == 2 and len(csv_parts[1]) > 20:
+                    all_text.append(csv_parts[1].strip().strip('"'))
+                else:
+                    all_text.append(line)
             else:
-                # Might be CSV or just text
                 all_text.append(line)
 
         full_text = " ".join(all_text)
         tokens = full_text.split()
+        n_tokens = len(tokens)
 
-        if len(tokens) < min_tokens:
+        if n_tokens < min_tokens:
             continue
 
         if script_filter and not is_latin_cyrillic_greek(full_text[:5000]):
             continue
 
-        texts[lang_id] = full_text
+        # Keep the longest translation per ISO code
+        if iso_code not in iso_texts or n_tokens > iso_texts[iso_code][1]:
+            iso_texts[iso_code] = (full_text, n_tokens)
+
+        # Also store by raw filename ID for direct matching
+        if raw_id != iso_code:
+            texts[raw_id] = full_text
+
+    # Merge ISO-keyed texts
+    for iso_code, (text, _) in iso_texts.items():
+        texts[iso_code] = text
 
     print(f"Loaded {len(texts)} translations "
           f"(after script filter={script_filter}, "
@@ -298,25 +357,23 @@ def prepare_charlm_data(
 def match_wals_to_bible(
     df: pd.DataFrame,
     bible_lang_ids: list,
+    manual_mapping_csv: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Find the intersection of WALS languages and Bible translations.
 
-    This is a heuristic matcher. The paper used an in-house Bible corpus
-    where language IDs likely matched directly. With ParaBible (cysouw
-    corpus), filenames typically use ISO 639-3 codes or similar.
-
-    Strategy:
-    1. Try exact match on wals_code ↔ bible_lang_id
-    2. If WALS has ISO 639-3 codes, try matching on those
-
-    You will likely need to manually curate a mapping file for best
-    results. This function returns the subset of df that has a match.
+    Strategy (in priority order):
+    1. Manual mapping CSV (wals_code,bible_lang_id) if provided
+    2. ISO 639-3 code match (WALS iso639p3code ↔ bible filename)
+    3. Exact match on wals_code ↔ bible_lang_id
+    4. 3-letter prefix match
 
     Parameters
     ----------
-    df : pd.DataFrame with 'wals_code' column
+    df : pd.DataFrame with 'wals_code' column and optionally 'iso639p3code'
     bible_lang_ids : list of str
+    manual_mapping_csv : str or None
+        Path to a CSV file with columns: wals_code, bible_lang_id
 
     Returns
     -------
@@ -324,24 +381,63 @@ def match_wals_to_bible(
         'bible_lang_id' indicating the matched Bible translation.
     """
     bible_set = set(bible_lang_ids)
+    bible_set_lower = {bid.lower() for bid in bible_lang_ids}
+
+    # Build a lookup: lowercase bible_id -> original bible_id
+    bible_lower_to_orig = {}
+    for bid in bible_lang_ids:
+        bible_lower_to_orig[bid.lower()] = bid
+
+    # Load manual mapping if provided
+    manual_map = {}
+    if manual_mapping_csv and os.path.exists(manual_mapping_csv):
+        mapping_df = pd.read_csv(manual_mapping_csv)
+        for _, row in mapping_df.iterrows():
+            manual_map[str(row["wals_code"]).lower()] = str(row["bible_lang_id"])
+        print(f"Loaded {len(manual_map)} manual WALS-Bible mappings")
+
     matches = []
+    matched_wals = set()
 
     for _, row in df.iterrows():
         wals_code = str(row["wals_code"]).lower()
-        # Try direct match
-        if wals_code in bible_set:
-            matches.append({**row, "bible_lang_id": wals_code})
-        # Try 3-letter prefix (many WALS codes are 3-letter)
-        elif wals_code[:3] in bible_set:
-            matches.append({**row, "bible_lang_id": wals_code[:3]})
+        bible_id = None
+
+        # 1. Manual mapping
+        if wals_code in manual_map:
+            candidate = manual_map[wals_code]
+            if candidate in bible_set or candidate.lower() in bible_set_lower:
+                bible_id = candidate
+
+        # 2. ISO 639-3 match
+        if bible_id is None and "iso639p3code" in row.index:
+            iso = str(row.get("iso639p3code", "")).lower().strip()
+            if iso and iso != "nan" and iso in bible_set_lower:
+                bible_id = bible_lower_to_orig.get(iso, iso)
+
+        # 3. Exact match on wals_code
+        if bible_id is None and wals_code in bible_set_lower:
+            bible_id = bible_lower_to_orig.get(wals_code, wals_code)
+
+        # 4. 3-letter prefix
+        if bible_id is None:
+            prefix = wals_code[:3]
+            if prefix in bible_set_lower:
+                bible_id = bible_lower_to_orig.get(prefix, prefix)
+
+        if bible_id is not None and wals_code not in matched_wals:
+            matched_wals.add(wals_code)
+            matches.append({**row, "bible_lang_id": bible_id})
 
     matched_df = pd.DataFrame(matches)
+    if len(matched_df) > 0:
+        matched_df = matched_df.reset_index(drop=True)
     print(f"Matched {len(matched_df)} WALS languages to Bible translations "
           f"(out of {len(df)} WALS languages and "
           f"{len(bible_lang_ids)} Bible translations)")
     if len(matched_df) < 50:
-        print("WARNING: Few matches found. You likely need a manual mapping "
-              "file (wals_code → bible_lang_id). See README for details.")
+        print("WARNING: Few matches found. Consider providing a manual mapping "
+              "CSV (--manual_mapping with columns: wals_code, bible_lang_id).")
     return matched_df
 
 
@@ -387,7 +483,63 @@ def binarise_wals(
 
 
 # ============================================================================
-# 6.  End-to-End Data Preparation
+# 6.  Embedding Alignment
+# ============================================================================
+
+def align_embeddings(
+    lang_embeddings: np.ndarray,
+    charlm_lang2idx: dict,
+    wals_df: pd.DataFrame,
+    matched_df: pd.DataFrame,
+) -> np.ndarray:
+    """
+    Align char-LM language embeddings to match WALS language order.
+
+    The char-LM produces embeddings indexed by Bible language IDs.
+    This function creates an embedding matrix where row i corresponds
+    to WALS language i (after filtering). Languages without a Bible
+    match get a zero embedding.
+
+    Parameters
+    ----------
+    lang_embeddings : np.ndarray (n_charlm_langs, d)
+        Embeddings from the char-LM, ordered by charlm_lang2idx.
+    charlm_lang2idx : dict mapping bible_lang_id → index
+    wals_df : pd.DataFrame – the WALS dataframe (defines row order)
+    matched_df : pd.DataFrame – output of match_wals_to_bible()
+
+    Returns
+    -------
+    aligned : np.ndarray (n_wals_langs, d) – embeddings aligned to WALS order
+    """
+    n_wals = len(wals_df)
+    d = lang_embeddings.shape[1]
+    aligned = np.zeros((n_wals, d), dtype=np.float32)
+
+    # Build WALS code → row index mapping
+    wals_code_to_idx = {
+        str(code).lower(): i
+        for i, code in enumerate(wals_df["wals_code"])
+    }
+
+    n_matched = 0
+    for _, row in matched_df.iterrows():
+        wals_code = str(row["wals_code"]).lower()
+        bible_id = str(row["bible_lang_id"])
+
+        wals_idx = wals_code_to_idx.get(wals_code)
+        charlm_idx = charlm_lang2idx.get(bible_id)
+
+        if wals_idx is not None and charlm_idx is not None:
+            aligned[wals_idx] = lang_embeddings[charlm_idx]
+            n_matched += 1
+
+    print(f"Aligned {n_matched}/{n_wals} language embeddings")
+    return aligned
+
+
+# ============================================================================
+# 7.  End-to-End Data Preparation
 # ============================================================================
 
 def prepare_all(
