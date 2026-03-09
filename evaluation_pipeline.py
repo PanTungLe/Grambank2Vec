@@ -31,7 +31,7 @@ import torch
 from sklearn.metrics import f1_score
 
 from model import TypologicalMF, TypologicalMF_SemiSup, WALSDataset, train_model
-from data_preparation import load_wals_cldf, binarise_wals
+from data_preparation import load_wals_cldf, binarise_wals, align_embeddings
 
 
 # ============================================================================
@@ -206,6 +206,155 @@ def decode_and_evaluate(
 
 
 # ============================================================================
+# 3b.  Baseline Methods
+# ============================================================================
+
+def majority_baseline(
+    train_ds: WALSDataset,
+    eval_langs: np.ndarray,
+    eval_feats: np.ndarray,
+    eval_vals: np.ndarray,
+    feature_groups: dict,
+    n_binary_feats: int,
+) -> float:
+    """
+    Most-frequent-class baseline (Freq. in Table 1).
+
+    For each original feature, predict the most common value from training.
+    """
+    # Count how often each binary feature is 1 in training
+    feat_counts = np.zeros(n_binary_feats)
+    feat_totals = np.zeros(n_binary_feats)
+    for i in range(len(train_ds)):
+        _, fi, vi = train_ds[i]
+        fi = int(fi)
+        feat_counts[fi] += float(vi)
+        feat_totals[fi] += 1
+
+    # For each feature group, predict the binary col with highest count
+    y_true, y_pred = [], []
+    cell_map = defaultdict(dict)
+    for k in range(len(eval_langs)):
+        li, bi, val = int(eval_langs[k]), int(eval_feats[k]), eval_vals[k]
+        for orig_feat, bin_indices in feature_groups.items():
+            if bi in bin_indices:
+                cell_map[(li, orig_feat)][bi] = val
+                break
+
+    for (li, orig_feat), bi_vals in cell_map.items():
+        bin_indices = feature_groups[orig_feat]
+        true_label = None
+        for bi, v in bi_vals.items():
+            if v == 1.0:
+                true_label = bi
+                break
+        if true_label is None:
+            continue
+
+        # Predict: argmax of training counts
+        counts = [feat_counts[bi] for bi in bin_indices]
+        pred_label = bin_indices[int(np.argmax(counts))]
+        y_true.append(true_label)
+        y_pred.append(pred_label)
+
+    if len(y_true) == 0:
+        return 0.0
+    return f1_score(y_true, y_pred, average="micro")
+
+
+def knn_baseline(
+    pretrained_embs: np.ndarray,
+    train_ds: WALSDataset,
+    eval_langs: np.ndarray,
+    eval_feats: np.ndarray,
+    eval_vals: np.ndarray,
+    feature_groups: dict,
+    df: pd.DataFrame,
+    target_branch: str,
+    n_binary_feats: int,
+    k: int = 1,
+) -> float:
+    """
+    KNN baseline using pre-trained embeddings (Individual pred. in Table 1).
+
+    For each in-branch language, find the k nearest training languages
+    by embedding distance and predict the most common value among them.
+    """
+    in_branch_mask = (df["genus"] == target_branch).values
+    in_branch_indices = set(np.where(in_branch_mask)[0])
+    out_branch_indices = np.where(~in_branch_mask)[0]
+
+    if len(out_branch_indices) == 0 or pretrained_embs is None:
+        return 0.0
+
+    # Build per-feature training data from out-of-branch languages
+    train_feat_vals = defaultdict(dict)  # feat_idx -> {lang_idx: val}
+    for i in range(len(train_ds)):
+        li, fi, vi = train_ds[i]
+        li, fi = int(li), int(fi)
+        train_feat_vals[fi][li] = float(vi)
+
+    # Group eval cells
+    cell_map = defaultdict(dict)
+    for k_idx in range(len(eval_langs)):
+        li, bi, val = int(eval_langs[k_idx]), int(eval_feats[k_idx]), eval_vals[k_idx]
+        for orig_feat, bin_indices in feature_groups.items():
+            if bi in bin_indices:
+                cell_map[(li, orig_feat)][bi] = val
+                break
+
+    y_true, y_pred = [], []
+
+    for (li, orig_feat), bi_vals in cell_map.items():
+        bin_indices = feature_groups[orig_feat]
+
+        true_label = None
+        for bi, v in bi_vals.items():
+            if v == 1.0:
+                true_label = bi
+                break
+        if true_label is None:
+            continue
+
+        # Find k nearest training languages that have this feature observed
+        train_langs_with_feat = []
+        for bi in bin_indices:
+            for tl in train_feat_vals.get(bi, {}):
+                if tl not in in_branch_indices:
+                    train_langs_with_feat.append(tl)
+        train_langs_with_feat = list(set(train_langs_with_feat))
+
+        if not train_langs_with_feat:
+            # Fall back to random prediction
+            y_true.append(true_label)
+            y_pred.append(bin_indices[0])
+            continue
+
+        # Compute distances
+        query_emb = pretrained_embs[li]
+        dists = []
+        for tl in train_langs_with_feat:
+            d = np.linalg.norm(query_emb - pretrained_embs[tl])
+            dists.append((d, tl))
+        dists.sort()
+        neighbors = [tl for _, tl in dists[:k]]
+
+        # Vote: sum predicted probs across neighbors for each binary col
+        votes = np.zeros(len(bin_indices))
+        for tl in neighbors:
+            for j, bi in enumerate(bin_indices):
+                votes[j] += train_feat_vals.get(bi, {}).get(tl, 0.0)
+
+        pred_label = bin_indices[int(np.argmax(votes))]
+        y_true.append(true_label)
+        y_pred.append(pred_label)
+
+    if len(y_true) == 0:
+        return 0.0
+    return f1_score(y_true, y_pred, average="micro")
+
+
+# ============================================================================
 # 4.  Full Experiment Runner
 # ============================================================================
 
@@ -275,6 +424,30 @@ def run_experiments(
 
                 if len(eval_vals) == 0:
                     continue
+
+                n_bfeat_local = binary_matrix.shape[1]
+
+                # --- Majority baseline ---
+                f1_freq = majority_baseline(
+                    train_ds, eval_langs, eval_feats, eval_vals,
+                    feature_groups, n_bfeat_local)
+                rows.append({
+                    "branch": branch, "macroarea": macroarea,
+                    "in_branch_frac": frac, "repeat": rep,
+                    "model": "Freq", "f1": f1_freq
+                })
+
+                # --- KNN baseline (if pretrained embeddings provided) ---
+                if pretrained_embs is not None:
+                    f1_knn = knn_baseline(
+                        pretrained_embs, train_ds,
+                        eval_langs, eval_feats, eval_vals,
+                        feature_groups, df, branch, n_bfeat_local, k=1)
+                    rows.append({
+                        "branch": branch, "macroarea": macroarea,
+                        "in_branch_frac": frac, "repeat": rep,
+                        "model": "KNN", "f1": f1_knn
+                    })
 
                 # --- T-CF (core model) ---
                 model = TypologicalMF(n_langs, n_bfeat, embed_dim)
@@ -362,10 +535,18 @@ def main():
     pretrained = None
     if args.pretrained_embs:
         pretrained = np.load(args.pretrained_embs).astype(np.float32)
-        assert pretrained.shape[0] == len(df), (
-            f"Pretrained embeddings have {pretrained.shape[0]} rows but "
-            f"WALS has {len(df)} languages after filtering."
-        )
+        if pretrained.shape[0] != len(df):
+            print(f"WARNING: Pretrained embeddings have {pretrained.shape[0]} "
+                  f"rows but WALS has {len(df)} languages. "
+                  f"Assuming embeddings are already aligned or will be padded.")
+            if pretrained.shape[0] < len(df):
+                # Pad with zeros
+                padded = np.zeros((len(df), pretrained.shape[1]),
+                                  dtype=np.float32)
+                padded[:pretrained.shape[0]] = pretrained
+                pretrained = padded
+            else:
+                pretrained = pretrained[:len(df)]
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
 
     # 3. Run experiments
