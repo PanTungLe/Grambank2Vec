@@ -10,10 +10,14 @@ Handles loading from two specific sources:
      - cldf/codes.csv       (ID, Parameter_ID, Name)
      - cldf/parameters.csv  (ID, Name, ...)
 
-2. ParaBible: https://github.com/LingConLab/parabible/
-   Multilingual parallel Bible corpus (1846 translations from cysouw).
-   Bible text format: each line is TAB-separated  <verse_id>\\t<text>
-   Verse ID format: BBCCCVVV (BB=book, CCC=chapter, VVV=verse)
+2. eBible: https://github.com/BibleNLP/ebible
+   Multilingual parallel Bible corpus (~1079 translations).
+   Verse-per-line format: each translation is a plain-text file with one
+   verse per line (no verse reference prefix). A companion vref.txt provides
+   verse references correlated line-by-line.
+   Filenames: <languageCode>-<variant>.txt  (e.g. eng-eng_kjv.txt)
+
+   Also supports legacy ParaBible format (TAB-separated <verse_id>\\t<text>).
 """
 
 import os
@@ -144,7 +148,7 @@ def load_wals_cldf(
 
 
 # ============================================================================
-# 2.  ParaBible Corpus Loading
+# 2.  Bible Corpus Loading (eBible / ParaBible)
 # ============================================================================
 
 def is_latin_cyrillic_greek(text: str, threshold: float = 0.8) -> bool:
@@ -170,44 +174,40 @@ def _extract_iso_from_filename(filename: str) -> str:
     """
     Extract an ISO 639-3-like language code from a Bible text filename.
 
-    ParaBible / cysouw corpus filenames can be:
-      - Simple ISO code: "eng.txt", "fra.txt"
-      - With variant suffix: "eng-web.txt", "spa-rvr.txt"
-      - Numbered: "1234.txt" (corpus internal ID)
+    Supported naming conventions:
+      - eBible:    "eng-eng_kjv.txt", "spa-spaRV1909.txt"
+      - ParaBible: "eng.txt", "eng-web.txt", "spa-rvr.txt"
+      - Numbered:  "1234.txt" (corpus internal ID)
 
     Returns the best guess at an ISO 639-3 code.
     """
     stem = os.path.splitext(os.path.basename(filename))[0]
     # Try to extract a 3-letter code from the start
-    match = re.match(r"^([a-z]{3})", stem.lower())
+    match = re.match(r"^([a-z]{2,3})", stem.lower())
     if match:
         return match.group(1)
     return stem.lower()
 
 
-def load_parabible_texts(
-    parabible_dir: str,
+def load_ebible_texts(
+    ebible_dir: str,
     script_filter: bool = True,
     min_tokens: int = 50000,
 ) -> Dict[str, str]:
     """
-    Load Bible translations from the ParaBible export directory.
+    Load Bible translations from the BibleNLP/ebible corpus directory.
 
-    The ParaBible project (LingConLab/parabible) stores Bible texts from
-    the cysouw Parallel Bible Corpus. After running their export or
-    after extracting the corpus zip, each translation is a text file.
-
-    Accepted input formats:
-      - .txt files with lines: verse_id<TAB>text  (ParaBible export)
-      - .txt files with raw text (cysouw corpus-txt)
-      - .csv files with columns: Verse, Text (db_export_csv.py output)
+    The eBible corpus stores each translation as a plain-text file with
+    one verse per line (no verse-reference prefix; blank lines for missing
+    verses).  Filenames follow <langCode>-<variant>.txt, e.g.
+    eng-eng_kjv.txt, spa-spaRV1909.txt.
 
     Parameters
     ----------
-    parabible_dir : str
+    ebible_dir : str
         Directory containing Bible text files (one file per translation).
-        Can also be the path to the parabible repo root (will look in
-        corpus-txt/ subdirectory automatically).
+        Can be the eBible repo root (will look in corpus/ subdirectory)
+        or the corpus directory itself.
     script_filter : bool
         If True, only keep translations in Latin, Cyrillic, or Greek
         scripts (matching the paper's methodology).
@@ -218,26 +218,25 @@ def load_parabible_texts(
     -------
     texts : dict mapping language_id → concatenated text
     """
-    texts = {}
+    texts: Dict[str, str] = {}
 
-    # Check if parabible_dir is the repo root with a corpus-txt/ subdir
-    corpus_txt_dir = os.path.join(parabible_dir, "corpus-txt")
-    if os.path.isdir(corpus_txt_dir):
-        search_dir = corpus_txt_dir
+    # Auto-detect repo root vs corpus directory
+    corpus_dir = os.path.join(ebible_dir, "corpus")
+    if os.path.isdir(corpus_dir):
+        search_dir = corpus_dir
     else:
-        search_dir = parabible_dir
+        search_dir = ebible_dir
 
-    # Look for text files
+    # Find text files (exclude vref.txt and manifest)
     patterns = [
         os.path.join(search_dir, "*.txt"),
-        os.path.join(search_dir, "*.csv"),
         os.path.join(search_dir, "**", "*.txt"),
     ]
     files = []
     for pat in patterns:
         files.extend(glob.glob(pat, recursive=True))
-    # Exclude manifest files we may have created
-    files = [f for f in files if os.path.basename(f) != "manifest.csv"]
+    exclude_names = {"vref.txt", "manifest.csv"}
+    files = [f for f in files if os.path.basename(f) not in exclude_names]
     files = sorted(set(files))
 
     print(f"Found {len(files)} Bible text files in {search_dir}")
@@ -255,22 +254,17 @@ def load_parabible_texts(
         except (UnicodeDecodeError, OSError):
             continue
 
-        # Try to parse as TAB-separated (verse_id\ttext) or CSV
+        # eBible format: one verse per line, plain text (no reference prefix).
+        # Blank lines = missing verses, <range> = grouped verse placeholder.
         all_text = []
         for line in content.splitlines():
             line = line.strip()
-            if not line:
+            if not line or line == "<range>":
                 continue
+            # Also handle legacy ParaBible TAB-separated format
             parts = line.split("\t", 1)
             if len(parts) == 2:
                 all_text.append(parts[1])
-            elif "," in line and line.count(",") <= 3:
-                # Possible CSV: try to get text after first comma
-                csv_parts = line.split(",", 1)
-                if len(csv_parts) == 2 and len(csv_parts[1]) > 20:
-                    all_text.append(csv_parts[1].strip().strip('"'))
-                else:
-                    all_text.append(line)
             else:
                 all_text.append(line)
 
@@ -300,6 +294,10 @@ def load_parabible_texts(
           f"(after script filter={script_filter}, "
           f"min_tokens={min_tokens})")
     return texts
+
+
+# Keep load_parabible_texts as an alias for backwards compatibility
+load_parabible_texts = load_ebible_texts
 
 
 # ============================================================================
@@ -556,7 +554,7 @@ def prepare_all(
     wals_repo_dir : str
         Path to cloned https://github.com/cldf-datasets/wals
     parabible_dir : str or None
-        Path to exported Bible text files from ParaBible.
+        Path to Bible text files (eBible corpus or legacy ParaBible).
         If None, only WALS data is prepared (no semi-supervised setup).
     charlm_output_dir : str
         Where to write per-language text files for char-LM training.
@@ -584,9 +582,9 @@ def prepare_all(
         "feature_groups": feature_groups,
     }
 
-    # --- ParaBible (optional) ---
+    # --- Bible corpus (optional) ---
     if parabible_dir:
-        texts = load_parabible_texts(parabible_dir)
+        texts = load_ebible_texts(parabible_dir)
         manifest = prepare_charlm_data(texts, charlm_output_dir)
         matched_df = match_wals_to_bible(df, list(texts.keys()))
 
@@ -605,11 +603,11 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Prepare data from WALS CLDF repo and ParaBible corpus")
+        description="Prepare data from WALS CLDF repo and eBible corpus")
     parser.add_argument("--wals_repo", type=str, required=True,
                         help="Path to cloned cldf-datasets/wals repo")
     parser.add_argument("--parabible_dir", type=str, default=None,
-                        help="Path to directory with exported Bible texts")
+                        help="Path to eBible corpus directory (or legacy ParaBible texts)")
     parser.add_argument("--charlm_output", type=str, default="charlm_data",
                         help="Output directory for char-LM training data")
     parser.add_argument("--output_csv", type=str, default="wals_prepared.csv",

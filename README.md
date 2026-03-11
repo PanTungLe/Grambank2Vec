@@ -7,7 +7,7 @@ Bjerva, Kementchedjhieva, Cotterell & Augenstein (NAACL-HLT 2019)
 | File | Description |
 |------|-------------|
 | `model.py` | Core PyTorch models: `TypologicalMF` (Section 3) and `TypologicalMF_SemiSup` (Section 4) |
-| `data_preparation.py` | Loads WALS from CLDF format, loads ParaBible texts, binarises features, matches languages |
+| `data_preparation.py` | Loads WALS from CLDF format, loads eBible texts, binarises features, matches languages |
 | `char_lm.py` | Character-level LSTM LM for pre-training language embeddings (Östling & Tiedemann 2017) |
 | `evaluation_pipeline.py` | Branch-based splitting, experiment runner, F1 evaluation with argmax decoding |
 
@@ -36,44 +36,22 @@ This gives you the CLDF StructureDataset in the `cldf/` subdirectory:
 
 Our `data_preparation.py` reads these files directly — no manual conversion needed.
 
-### ParaBible (Multilingual Bible Corpus)
+### eBible (Multilingual Bible Corpus)
 
 ```bash
-git clone https://github.com/LingConLab/parabible.git
+git clone https://github.com/BibleNLP/ebible.git
 ```
 
-ParaBible provides 1846 Bible translations sourced from the cysouw Parallel Bible Corpus. To get the raw text files, you need to run their data pipeline:
+The [BibleNLP/ebible](https://github.com/BibleNLP/ebible) corpus provides ~1079
+Bible translations as plain-text files in the `corpus/` subdirectory. Each file
+has one verse per line (no verse-reference prefix), with filenames following the
+pattern `<languageCode>-<variant>.txt` (e.g. `eng-eng_kjv.txt`).
 
-```bash
-cd parabible
-pip install -r requirements.txt
+Blank lines indicate missing verses and `<range>` tokens mark grouped verses;
+both are automatically skipped by the loader.
 
-# Start the PostgreSQL database (requires Docker)
-docker compose up db
-# Wait for "database system is ready to accept connections" (appears twice)
-# Then Ctrl+C and:
-docker compose up -d
-
-# Populate with all ~1800 translations (takes >1 hour)
-python3 populate_db.py -m full
-
-# Export to CSV files
-python3 db_export_csv.py       # or: python3 api_export_csv.py
-```
-
-This produces one text file per translation. Each file has TAB-separated lines:
-
-```
-40001001	In the beginning was the Word, and the Word was...
-40001002	The same was in the beginning with God.
-```
-
-where the first field is a verse ID (format: `BBCCCVVV` — book, chapter, verse).
-
-**Alternative:** If you already have Bible text files from another source (e.g. the
-original cysouw corpus at http://homepages.inf.ed.ac.uk/s0787820/bible/), place
-them in a directory with one `.txt` file per language. The loader accepts any
-TAB-separated `verse_id\ttext` format.
+The `run_all.py` script will clone the repository automatically if no
+`--parabible_dir` is specified.
 
 ---
 
@@ -102,12 +80,12 @@ T-CF model.
 ```bash
 python data_preparation.py \
     --wals_repo /path/to/wals \
-    --parabible_dir /path/to/exported_bible_texts \
+    --parabible_dir /path/to/ebible/corpus \
     --charlm_output charlm_data \
     --output_csv wals_prepared.csv
 ```
 
-This loads Bible texts, filters to Latin/Cyrillic/Greek scripts (matching the
+This loads eBible texts, filters to Latin/Cyrillic/Greek scripts (matching the
 paper), and writes per-language text files. It also attempts to match WALS
 language codes to Bible translation IDs.
 
@@ -118,7 +96,7 @@ create a manual mapping CSV (`wals_code,bible_lang_id`) for best coverage.
 
 ```bash
 python char_lm.py \
-    --parabible_dir /path/to/exported_bible_texts \
+    --parabible_dir /path/to/ebible/corpus \
     --output_dir charlm_output \
     --hidden_dim 1024 \
     --char_emb_dim 128 \

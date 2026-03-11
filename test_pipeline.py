@@ -27,6 +27,7 @@ from data_preparation import (
     match_wals_to_bible,
     align_embeddings,
     _extract_iso_from_filename,
+    load_ebible_texts,
     load_parabible_texts,
 )
 from evaluation_pipeline import (
@@ -205,6 +206,9 @@ class TestDataPreparation:
         assert _extract_iso_from_filename("eng-web.txt") == "eng"
         assert _extract_iso_from_filename("/path/to/fra.txt") == "fra"
         assert _extract_iso_from_filename("spa-rvr.txt") == "spa"
+        # eBible naming convention
+        assert _extract_iso_from_filename("eng-eng_kjv.txt") == "eng"
+        assert _extract_iso_from_filename("spa-spaRV1909.txt") == "spa"
 
     def test_match_wals_to_bible_iso(self):
         df = pd.DataFrame({
@@ -260,8 +264,26 @@ class TestDataPreparation:
         np.testing.assert_array_equal(aligned[2], [0, 0, 0])  # no match
         np.testing.assert_array_equal(aligned[3], [4, 5, 6])  # fra
 
-    def test_load_parabible_texts(self):
-        """Test loading from a directory with TAB-separated files."""
+    def test_load_ebible_texts(self):
+        """Test loading from a directory with plain verse-per-line files (eBible format)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a fake eBible-style Bible text file (plain text, one verse per line)
+            lines = [" ".join(["word"] * 100) for _ in range(600)]
+            # Insert some blank lines and <range> tokens like real eBible data
+            lines.insert(50, "")
+            lines.insert(100, "<range>")
+            with open(os.path.join(tmpdir, "eng-engKJV.txt"), "w") as f:
+                f.write("\n".join(lines))
+
+            texts = load_ebible_texts(tmpdir, script_filter=False,
+                                      min_tokens=100)
+            assert "eng" in texts
+            assert len(texts["eng"].split()) >= 100
+            # Ensure <range> tokens are not in the text
+            assert "<range>" not in texts["eng"]
+
+    def test_load_parabible_texts_legacy(self):
+        """Test loading from a directory with TAB-separated files (legacy ParaBible)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a fake Bible text file
             text = "\n".join(

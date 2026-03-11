@@ -6,14 +6,13 @@ Replicates the full pipeline from Bjerva et al. (NAACL 2019):
   "A Probabilistic Generative Model of Linguistic Typology"
 
 Steps:
-  1. Clone WALS and ParaBible repos (if not already present)
-  2. Download and extract ParaBible corpus texts
-  3. Load and binarise WALS data
-  4. Match WALS languages to Bible translations
-  5. Train character-level LM to get language embeddings
-  6. Align embeddings with WALS language order
-  7. Run all experiments (T-CF, SemiSup, baselines)
-  8. Print summary table (Table 1 from the paper)
+  1. Clone WALS and eBible repos (if not already present)
+  2. Load and binarise WALS data
+  3. Match WALS languages to Bible translations
+  4. Train character-level LM to get language embeddings
+  5. Align embeddings with WALS language order
+  6. Run all experiments (T-CF, SemiSup, baselines)
+  7. Print summary table (Table 1 from the paper)
 
 Usage:
     python run_all.py --output_dir experiments/
@@ -32,7 +31,7 @@ import numpy as np
 from data_preparation import (
     load_wals_cldf,
     binarise_wals,
-    load_parabible_texts,
+    load_ebible_texts,
     match_wals_to_bible,
     align_embeddings,
 )
@@ -53,66 +52,21 @@ def clone_repo(url: str, target_dir: str) -> str:
     return target_dir
 
 
-def download_parabible_corpus(parabible_repo: str, output_dir: str) -> str:
+def clone_ebible_corpus(output_dir: str) -> str:
     """
-    Download the ParaBible corpus zip and extract text files.
+    Clone the BibleNLP/ebible repository and return the corpus directory.
 
-    The ParaBible project downloads its corpus from a remote server.
-    This function replicates that download step without requiring Docker.
+    The eBible corpus contains ~1079 Bible translations as plain-text files
+    in the corpus/ subdirectory. Each file has one verse per line.
     """
-    corpus_dir = os.path.join(output_dir, "corpus-txt")
+    ebible_repo = os.path.join(output_dir, "ebible")
+    corpus_dir = os.path.join(ebible_repo, "corpus")
+
     if os.path.isdir(corpus_dir) and len(os.listdir(corpus_dir)) > 10:
-        print(f"  Corpus already extracted: {corpus_dir}")
+        print(f"  eBible corpus already present: {corpus_dir}")
         return corpus_dir
 
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Try to download the corpus zip directly
-    zip_url = "http://91.200.84.6/parabible-data/full_pb_corpus.zip"
-    zip_path = os.path.join(output_dir, "full_pb_corpus.zip")
-
-    if not os.path.exists(zip_path):
-        print(f"  Downloading corpus from {zip_url}")
-        print("  (This may take a while for ~1800 translations)")
-        try:
-            import requests
-            resp = requests.get(zip_url, stream=True, timeout=300)
-            resp.raise_for_status()
-            with open(zip_path, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print(f"  Downloaded to {zip_path}")
-        except Exception as e:
-            print(f"  WARNING: Could not download corpus: {e}")
-            print("  You can manually place Bible text files in:")
-            print(f"    {corpus_dir}")
-            print("  (One .txt file per language, TAB-separated verse_id\\ttext)")
-            os.makedirs(corpus_dir, exist_ok=True)
-            return corpus_dir
-
-    # Extract
-    print(f"  Extracting {zip_path}")
-    import zipfile
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(output_dir)
-    print(f"  Extracted to {output_dir}")
-
-    # The zip might extract to a subdirectory
-    if not os.path.isdir(corpus_dir):
-        # Look for the actual extracted directory
-        for entry in os.listdir(output_dir):
-            candidate = os.path.join(output_dir, entry)
-            if os.path.isdir(candidate) and entry != "corpus-txt":
-                # Check if it has .txt files
-                txt_files = [f for f in os.listdir(candidate)
-                             if f.endswith(".txt")]
-                if len(txt_files) > 10:
-                    os.rename(candidate, corpus_dir)
-                    break
-
-    if not os.path.isdir(corpus_dir):
-        os.makedirs(corpus_dir, exist_ok=True)
-
+    clone_repo("https://github.com/BibleNLP/ebible.git", ebible_repo)
     return corpus_dir
 
 
@@ -125,8 +79,8 @@ def main():
                         help="Path to cloned cldf-datasets/wals repo "
                              "(will be cloned if not provided)")
     parser.add_argument("--parabible_dir", type=str, default=None,
-                        help="Path to directory with Bible text files "
-                             "(will be downloaded if not provided)")
+                        help="Path to eBible corpus directory "
+                             "(will be cloned if not provided)")
     parser.add_argument("--manual_mapping", type=str, default=None,
                         help="CSV file mapping wals_code to bible_lang_id")
 
@@ -176,18 +130,12 @@ def main():
                     args.wals_repo)
     print(f"WALS repo: {args.wals_repo}")
 
-    # ParaBible
+    # eBible corpus
     if not args.skip_charlm and args.pretrained_embs is None:
         if args.parabible_dir is None:
-            parabible_repo = os.path.join(args.output_dir, "parabible")
-            clone_repo("https://github.com/LingConLab/parabible.git",
-                        parabible_repo)
-            # Download and extract corpus texts
-            corpus_dir = download_parabible_corpus(
-                parabible_repo,
-                os.path.join(args.output_dir, "parabible_corpus"))
+            corpus_dir = clone_ebible_corpus(args.output_dir)
             args.parabible_dir = corpus_dir
-        print(f"ParaBible texts: {args.parabible_dir}")
+        print(f"eBible texts: {args.parabible_dir}")
 
     # ================================================================
     # Step 2: Load and prepare WALS data
@@ -234,7 +182,7 @@ def main():
         print("=" * 60)
 
         # 3a. Load Bible texts
-        bible_texts = load_parabible_texts(
+        bible_texts = load_ebible_texts(
             args.parabible_dir,
             script_filter=True,
             min_tokens=50000,
