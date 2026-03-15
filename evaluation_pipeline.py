@@ -101,11 +101,11 @@ def split_by_branch(
         # 80 % for evaluation pool, 20 % candidate for training
         n_eval = int(np.ceil(n_obs * 0.80))
         eval_orig = observed_orig_feats[:n_eval]
-        train_candidate = observed_orig_feats[n_eval:]
+        train_pool = observed_orig_feats[n_eval:]
 
-        # From training candidates, use `in_branch_train_frac`
-        n_use = max(int(len(train_candidate) * in_branch_train_frac), 0)
-        train_orig = train_candidate[:n_use]
+        # From training pool, use `in_branch_train_frac` of total observed
+        n_use = min(round(n_obs * in_branch_train_frac), len(train_pool))
+        train_orig = train_pool[:n_use]
 
         # Map original features back to binary column indices
         for orig_feat in eval_orig:
@@ -371,7 +371,7 @@ def run_experiments(
     l2_reg: float = 0.1,
     pretrained_embs: Optional[np.ndarray] = None,
     device: str = "cpu",
-    min_branch_size: int = 4,
+    min_branch_size: int = 5,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -517,6 +517,10 @@ def main():
                         help="Path to .npy file with pre-trained language "
                              "embeddings (n_langs × d). Row order must "
                              "match the WALS languages after filtering.")
+    parser.add_argument("--bible_lang_mask", type=str, default=None,
+                        help="Path to .npy boolean mask for Bible ∩ WALS "
+                             "filtering. If not provided and --pretrained_embs "
+                             "is set, inferred from non-zero embedding rows.")
     parser.add_argument("--embed_dim", type=int, default=64)
     parser.add_argument("--n_epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=64)
@@ -548,6 +552,21 @@ def main():
             else:
                 pretrained = pretrained[:len(df)]
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
+
+    # 2b. Filter to Bible ∩ WALS intersection (paper §7.1)
+    if pretrained is not None:
+        if args.bible_lang_mask:
+            has_bible = np.load(args.bible_lang_mask).astype(bool)
+        else:
+            has_bible = np.any(pretrained != 0, axis=1)
+        n_before = len(df)
+        df = df[has_bible].reset_index(drop=True)
+        binary_matrix = binary_matrix[has_bible]
+        pretrained = pretrained[has_bible]
+        # Re-binarise to recompute feature_groups with correct indices
+        binary_matrix, bin_names, feature_groups = binarise_wals(
+            df, feature_cols)
+        print(f"Bible ∩ WALS filter: {n_before} → {len(df)} languages")
 
     # 3. Run experiments
     results = run_experiments(

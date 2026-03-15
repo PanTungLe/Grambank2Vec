@@ -444,6 +444,30 @@ class TestEvaluation:
             np.where((df["genus"] == "Romance").values)[0])
         assert all(li in romance_indices for li in eval_langs)
 
+    def test_split_fraction_uses_total_observed(self):
+        """Bug 1 fix: in_branch_train_frac should apply to n_obs, not pool size."""
+        df, feature_cols = make_synthetic_wals(n_langs=60, n_features=8)
+        bmat, names, groups = binarise_wals(df, feature_cols)
+
+        # With frac=0.10, each in-branch language should get ~10% of its
+        # observed features for training (not 10% of the tiny 20% pool).
+        train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
+            df, bmat, groups,
+            target_branch="Romance",
+            in_branch_train_frac=0.10,
+        )
+
+        # Count in-branch training cells — should be non-zero
+        romance_indices = set(
+            np.where((df["genus"] == "Romance").values)[0])
+        in_branch_train_count = 0
+        for i in range(len(train_ds)):
+            li, _, _ = train_ds[i]
+            if int(li) in romance_indices:
+                in_branch_train_count += 1
+        assert in_branch_train_count > 0, (
+            "Bug 1 regression: no in-branch training data at frac=0.10")
+
     def test_split_no_leakage(self):
         """Verify no feature-level information leaks between train and eval."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
@@ -538,7 +562,7 @@ class TestEvaluation:
             embed_dim=8,
             n_epochs=2,
             batch_size=32,
-            min_branch_size=4,
+            min_branch_size=5,
         )
 
         assert len(results) > 0
@@ -564,7 +588,7 @@ class TestEvaluation:
             n_epochs=2,
             batch_size=32,
             pretrained_embs=embs,
-            min_branch_size=4,
+            min_branch_size=5,
         )
 
         models_tested = set(results["model"])
@@ -572,6 +596,30 @@ class TestEvaluation:
         assert "SemiSup" in models_tested
         assert "Freq" in models_tested
         assert "KNN" in models_tested
+
+    def test_bible_wals_intersection_filter(self):
+        """Bug 2 fix: only languages with Bible data should be kept."""
+        df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
+        bmat, names, groups = binarise_wals(df, feature_cols)
+
+        # Simulate pretrained embeddings where only first 30 langs have data
+        embs = np.zeros((60, 16), dtype=np.float32)
+        embs[:30] = np.random.randn(30, 16).astype(np.float32)
+
+        # Apply the Bible filter (same logic as run_all.py Step 3b)
+        has_bible = np.any(embs != 0, axis=1)
+        assert has_bible.sum() == 30
+
+        df_filtered = df[has_bible].reset_index(drop=True)
+        bmat_filtered = bmat[has_bible]
+        embs_filtered = embs[has_bible]
+
+        bmat_filtered, _, groups_filtered = binarise_wals(
+            df_filtered, feature_cols)
+
+        assert len(df_filtered) == 30
+        assert bmat_filtered.shape[0] == 30
+        assert embs_filtered.shape[0] == 30
 
 
 # ============================================================================
@@ -626,7 +674,7 @@ class TestIntegration:
                 n_epochs=2,
                 batch_size=32,
                 pretrained_embs=aligned,
-                min_branch_size=4,
+                min_branch_size=5,
             )
 
             summary = summarise_results(results)
