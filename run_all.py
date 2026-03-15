@@ -16,7 +16,9 @@ Steps:
 
 Usage:
     python run_all.py --output_dir experiments/
-    python run_all.py --wals_repo /path/to/wals --parabible_dir /path/to/texts
+    python run_all.py --bible_source ebible --ebible_dir /path/to/ebible/corpus
+    python run_all.py --bible_source parabible --parabible_dir /path/to/parabible
+    python run_all.py --bible_source both  # merge eBible + ParaBible
     python run_all.py --skip_charlm  # Skip char-LM training (T-CF only)
 """
 
@@ -31,7 +33,7 @@ import numpy as np
 from data_preparation import (
     load_wals_cldf,
     binarise_wals,
-    load_ebible_texts,
+    load_bible_texts,
     match_wals_to_bible,
     align_embeddings,
 )
@@ -70,6 +72,25 @@ def clone_ebible_corpus(output_dir: str) -> str:
     return corpus_dir
 
 
+def clone_parabible_corpus(output_dir: str) -> str:
+    """
+    Clone the christos-c/bible-corpus repository and return the bibles dir.
+
+    The ParaBible corpus provides ~100 Bible translations as plain-text
+    files in the ``bibles/`` subdirectory.
+    """
+    parabible_repo = os.path.join(output_dir, "bible-corpus")
+    bibles_dir = os.path.join(parabible_repo, "bibles")
+
+    if os.path.isdir(bibles_dir) and len(os.listdir(bibles_dir)) > 5:
+        print(f"  ParaBible corpus already present: {bibles_dir}")
+        return bibles_dir
+
+    clone_repo("https://github.com/christos-c/bible-corpus.git",
+               parabible_repo)
+    return bibles_dir
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="End-to-end replication of Bjerva et al. (NAACL 2019)")
@@ -78,8 +99,15 @@ def main():
     parser.add_argument("--wals_repo", type=str, default=None,
                         help="Path to cloned cldf-datasets/wals repo "
                              "(will be cloned if not provided)")
-    parser.add_argument("--parabible_dir", type=str, default=None,
+    parser.add_argument("--bible_source", type=str, default="ebible",
+                        choices=["ebible", "parabible", "both"],
+                        help="Bible corpus to use: ebible, parabible, or "
+                             "both (default: ebible)")
+    parser.add_argument("--ebible_dir", type=str, default=None,
                         help="Path to eBible corpus directory "
+                             "(will be cloned if not provided)")
+    parser.add_argument("--parabible_dir", type=str, default=None,
+                        help="Path to ParaBible corpus directory "
                              "(will be cloned if not provided)")
     parser.add_argument("--manual_mapping", type=str, default=None,
                         help="CSV file mapping wals_code to bible_lang_id")
@@ -130,12 +158,16 @@ def main():
                     args.wals_repo)
     print(f"WALS repo: {args.wals_repo}")
 
-    # eBible corpus
+    # Bible corpora
     if not args.skip_charlm and args.pretrained_embs is None:
-        if args.parabible_dir is None:
-            corpus_dir = clone_ebible_corpus(args.output_dir)
-            args.parabible_dir = corpus_dir
-        print(f"eBible texts: {args.parabible_dir}")
+        if args.bible_source in ("ebible", "both"):
+            if args.ebible_dir is None:
+                args.ebible_dir = clone_ebible_corpus(args.output_dir)
+            print(f"eBible texts: {args.ebible_dir}")
+        if args.bible_source in ("parabible", "both"):
+            if args.parabible_dir is None:
+                args.parabible_dir = clone_parabible_corpus(args.output_dir)
+            print(f"ParaBible texts: {args.parabible_dir}")
 
     # ================================================================
     # Step 2: Load and prepare WALS data
@@ -176,14 +208,16 @@ def main():
             else:
                 pretrained_embs = pretrained_embs[:len(df)]
 
-    elif not args.skip_charlm and args.parabible_dir:
+    elif not args.skip_charlm and (args.ebible_dir or args.parabible_dir):
         print("\n" + "=" * 60)
         print("STEP 3: Character-level LM Training")
         print("=" * 60)
 
         # 3a. Load Bible texts
-        bible_texts = load_ebible_texts(
-            args.parabible_dir,
+        bible_texts = load_bible_texts(
+            bible_source=args.bible_source,
+            ebible_dir=args.ebible_dir,
+            parabible_dir=args.parabible_dir,
             script_filter=True,
             min_tokens=50000,
         )

@@ -189,30 +189,30 @@ def _extract_iso_from_filename(filename: str) -> str:
     return stem.lower()
 
 
-def load_ebible_texts(
-    ebible_dir: str,
+def _load_bible_dir(
+    bible_dir: str,
     script_filter: bool = True,
     min_tokens: int = 50000,
+    source_label: str = "Bible",
 ) -> Dict[str, str]:
     """
-    Load Bible translations from the BibleNLP/ebible corpus directory.
+    Internal helper: load Bible translations from a single directory.
 
-    The eBible corpus stores each translation as a plain-text file with
-    one verse per line (no verse-reference prefix; blank lines for missing
-    verses).  Filenames follow <langCode>-<variant>.txt, e.g.
-    eng-eng_kjv.txt, spa-spaRV1909.txt.
+    Handles both eBible (plain verse-per-line) and legacy ParaBible
+    (TAB-separated <verse_id>\\t<text>) formats transparently.
 
     Parameters
     ----------
-    ebible_dir : str
-        Directory containing Bible text files (one file per translation).
-        Can be the eBible repo root (will look in corpus/ subdirectory)
-        or the corpus directory itself.
+    bible_dir : str
+        Directory containing Bible text files.
+        If an ``corpus/`` subdirectory exists it will be preferred (eBible
+        repo layout).
     script_filter : bool
-        If True, only keep translations in Latin, Cyrillic, or Greek
-        scripts (matching the paper's methodology).
+        If True, only keep translations in Latin, Cyrillic, or Greek scripts.
     min_tokens : int
         Only keep translations with at least this many tokens.
+    source_label : str
+        Label used in log messages (e.g. "eBible", "ParaBible").
 
     Returns
     -------
@@ -221,11 +221,11 @@ def load_ebible_texts(
     texts: Dict[str, str] = {}
 
     # Auto-detect repo root vs corpus directory
-    corpus_dir = os.path.join(ebible_dir, "corpus")
+    corpus_dir = os.path.join(bible_dir, "corpus")
     if os.path.isdir(corpus_dir):
         search_dir = corpus_dir
     else:
-        search_dir = ebible_dir
+        search_dir = bible_dir
 
     # Find text files (exclude vref.txt and manifest)
     patterns = [
@@ -239,7 +239,7 @@ def load_ebible_texts(
     files = [f for f in files if os.path.basename(f) not in exclude_names]
     files = sorted(set(files))
 
-    print(f"Found {len(files)} Bible text files in {search_dir}")
+    print(f"[{source_label}] Found {len(files)} Bible text files in {search_dir}")
 
     # Track ISO codes to handle multiple translations per language
     # (keep the longest one)
@@ -290,14 +290,134 @@ def load_ebible_texts(
     for iso_code, (text, _) in iso_texts.items():
         texts[iso_code] = text
 
-    print(f"Loaded {len(texts)} translations "
+    print(f"[{source_label}] Loaded {len(texts)} translations "
           f"(after script filter={script_filter}, "
           f"min_tokens={min_tokens})")
     return texts
 
 
-# Keep load_parabible_texts as an alias for backwards compatibility
-load_parabible_texts = load_ebible_texts
+def load_ebible_texts(
+    ebible_dir: str,
+    script_filter: bool = True,
+    min_tokens: int = 50000,
+) -> Dict[str, str]:
+    """
+    Load Bible translations from the BibleNLP/ebible corpus directory.
+
+    The eBible corpus stores each translation as a plain-text file with
+    one verse per line (no verse-reference prefix; blank lines for missing
+    verses).  Filenames follow <langCode>-<variant>.txt, e.g.
+    eng-eng_kjv.txt, spa-spaRV1909.txt.
+
+    Parameters
+    ----------
+    ebible_dir : str
+        Directory containing Bible text files (one file per translation).
+        Can be the eBible repo root (will look in corpus/ subdirectory)
+        or the corpus directory itself.
+    script_filter : bool
+        If True, only keep translations in Latin, Cyrillic, or Greek
+        scripts (matching the paper's methodology).
+    min_tokens : int
+        Only keep translations with at least this many tokens.
+
+    Returns
+    -------
+    texts : dict mapping language_id → concatenated text
+    """
+    return _load_bible_dir(ebible_dir, script_filter, min_tokens,
+                           source_label="eBible")
+
+
+def load_parabible_texts(
+    parabible_dir: str,
+    script_filter: bool = True,
+    min_tokens: int = 50000,
+) -> Dict[str, str]:
+    """
+    Load Bible translations from the christos-c/bible-corpus directory.
+
+    The ParaBible corpus uses plain-text or TAB-separated files with one
+    verse per line.  Filenames follow <langCode>.txt or
+    <langCode>-<variant>.txt.
+
+    Parameters
+    ----------
+    parabible_dir : str
+        Directory containing ParaBible text files.
+    script_filter : bool
+        If True, only keep translations in Latin, Cyrillic, or Greek scripts.
+    min_tokens : int
+        Only keep translations with at least this many tokens.
+
+    Returns
+    -------
+    texts : dict mapping language_id → concatenated text
+    """
+    return _load_bible_dir(parabible_dir, script_filter, min_tokens,
+                           source_label="ParaBible")
+
+
+def load_bible_texts(
+    bible_source: str = "ebible",
+    ebible_dir: Optional[str] = None,
+    parabible_dir: Optional[str] = None,
+    script_filter: bool = True,
+    min_tokens: int = 50000,
+) -> Dict[str, str]:
+    """
+    Load Bible translations from one or both corpus sources.
+
+    Parameters
+    ----------
+    bible_source : str
+        Which corpus to use: ``"ebible"``, ``"parabible"``, or ``"both"``.
+    ebible_dir : str or None
+        Path to eBible corpus directory (required when source is
+        ``"ebible"`` or ``"both"``).
+    parabible_dir : str or None
+        Path to ParaBible corpus directory (required when source is
+        ``"parabible"`` or ``"both"``).
+    script_filter : bool
+        If True, only keep translations in Latin, Cyrillic, or Greek scripts.
+    min_tokens : int
+        Only keep translations with at least this many tokens.
+
+    Returns
+    -------
+    texts : dict mapping language_id → concatenated text.
+        When *both* sources are used, translations are merged; for any
+        language present in both corpora the longer text is kept.
+    """
+    texts: Dict[str, str] = {}
+
+    if bible_source in ("ebible", "both"):
+        if ebible_dir is None:
+            raise ValueError("ebible_dir must be provided when bible_source "
+                             f"is '{bible_source}'")
+        texts.update(load_ebible_texts(ebible_dir, script_filter, min_tokens))
+
+    if bible_source in ("parabible", "both"):
+        if parabible_dir is None:
+            raise ValueError("parabible_dir must be provided when "
+                             f"bible_source is '{bible_source}'")
+        para_texts = load_parabible_texts(parabible_dir, script_filter,
+                                          min_tokens)
+        if bible_source == "both":
+            # Merge: keep the longer text per language
+            for lang_id, text in para_texts.items():
+                if lang_id not in texts or len(text) > len(texts[lang_id]):
+                    texts[lang_id] = text
+            print(f"[Merged] {len(texts)} unique translations after combining "
+                  f"eBible + ParaBible")
+        else:
+            texts.update(para_texts)
+
+    if bible_source not in ("ebible", "parabible", "both"):
+        raise ValueError(f"Unknown bible_source: '{bible_source}'. "
+                         f"Choose from 'ebible', 'parabible', or 'both'.")
+
+    return texts
 
 
 # ============================================================================
@@ -543,6 +663,8 @@ def align_embeddings(
 def prepare_all(
     wals_repo_dir: str,
     parabible_dir: Optional[str] = None,
+    ebible_dir: Optional[str] = None,
+    bible_source: str = "ebible",
     charlm_output_dir: str = "charlm_data",
     output_csv: str = "wals_prepared.csv",
 ) -> dict:
@@ -554,8 +676,15 @@ def prepare_all(
     wals_repo_dir : str
         Path to cloned https://github.com/cldf-datasets/wals
     parabible_dir : str or None
-        Path to Bible text files (eBible corpus or legacy ParaBible).
-        If None, only WALS data is prepared (no semi-supervised setup).
+        Path to ParaBible text files.  Also accepted as a fallback when
+        *ebible_dir* is None (legacy behaviour).
+    ebible_dir : str or None
+        Path to eBible corpus directory.  If None and *parabible_dir* is
+        set, *parabible_dir* is used for the eBible source (backwards
+        compatible).
+    bible_source : str
+        Which Bible corpus to use: ``"ebible"``, ``"parabible"``, or
+        ``"both"``.
     charlm_output_dir : str
         Where to write per-language text files for char-LM training.
     output_csv : str
@@ -583,8 +712,17 @@ def prepare_all(
     }
 
     # --- Bible corpus (optional) ---
-    if parabible_dir:
-        texts = load_ebible_texts(parabible_dir)
+    # Backwards compatibility: if only parabible_dir is given, use it as
+    # the ebible directory (original behaviour).
+    effective_ebible = ebible_dir or parabible_dir
+    has_bible = (bible_source in ("ebible", "both") and effective_ebible) or \
+                (bible_source in ("parabible", "both") and parabible_dir)
+    if has_bible:
+        texts = load_bible_texts(
+            bible_source=bible_source,
+            ebible_dir=effective_ebible,
+            parabible_dir=parabible_dir,
+        )
         manifest = prepare_charlm_data(texts, charlm_output_dir)
         matched_df = match_wals_to_bible(df, list(texts.keys()))
 
@@ -603,11 +741,16 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Prepare data from WALS CLDF repo and eBible corpus")
+        description="Prepare data from WALS CLDF repo and Bible corpus")
     parser.add_argument("--wals_repo", type=str, required=True,
                         help="Path to cloned cldf-datasets/wals repo")
+    parser.add_argument("--bible_source", type=str, default="ebible",
+                        choices=["ebible", "parabible", "both"],
+                        help="Bible corpus to use (default: ebible)")
+    parser.add_argument("--ebible_dir", type=str, default=None,
+                        help="Path to eBible corpus directory")
     parser.add_argument("--parabible_dir", type=str, default=None,
-                        help="Path to eBible corpus directory (or legacy ParaBible texts)")
+                        help="Path to ParaBible corpus directory")
     parser.add_argument("--charlm_output", type=str, default="charlm_data",
                         help="Output directory for char-LM training data")
     parser.add_argument("--output_csv", type=str, default="wals_prepared.csv",
@@ -616,7 +759,9 @@ if __name__ == "__main__":
 
     prepare_all(
         wals_repo_dir=args.wals_repo,
+        ebible_dir=args.ebible_dir,
         parabible_dir=args.parabible_dir,
+        bible_source=args.bible_source,
         charlm_output_dir=args.charlm_output,
         output_csv=args.output_csv,
     )
