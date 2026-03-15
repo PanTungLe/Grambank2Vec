@@ -136,7 +136,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--l2_reg", type=float, default=0.1)
     parser.add_argument("--n_repeats", type=int, default=5)
-    parser.add_argument("--min_branch_size", type=int, default=4)
+    parser.add_argument("--min_branch_size", type=int, default=5)
 
     parser.add_argument("--device", type=str, default="cpu")
 
@@ -266,6 +266,23 @@ def main():
         print("\n" + "=" * 60)
         print("STEP 3: Skipped (--skip_charlm)")
         print("=" * 60)
+
+    # ================================================================
+    # Step 3b: Filter to Bible ∩ WALS intersection (paper §7.1)
+    # ================================================================
+    if pretrained_embs is not None:
+        print("\n" + "=" * 60)
+        print("STEP 3b: Filter to Bible ∩ WALS intersection")
+        print("=" * 60)
+        has_bible = np.any(pretrained_embs != 0, axis=1)
+        n_before = len(df)
+        df = df[has_bible].reset_index(drop=True)
+        binary_matrix = binary_matrix[has_bible]
+        pretrained_embs = pretrained_embs[has_bible]
+        # Re-binarise to recompute feature_groups with correct indices
+        binary_matrix, bin_names, feature_groups = binarise_wals(
+            df, feature_cols)
+        print(f"Filtered: {n_before} → {len(df)} languages with Bible data")
 
     # ================================================================
     # Step 4: Run experiments
