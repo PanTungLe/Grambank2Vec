@@ -29,6 +29,7 @@ from data_preparation import (
     _extract_iso_from_filename,
     load_ebible_texts,
     load_parabible_texts,
+    load_bible_texts,
 )
 from evaluation_pipeline import (
     split_by_branch,
@@ -297,6 +298,73 @@ class TestDataPreparation:
                                           min_tokens=100)
             assert "eng" in texts
             assert len(texts["eng"].split()) >= 100
+
+    def test_load_bible_texts_both(self):
+        """Test loading from both eBible and ParaBible, merging results."""
+        with tempfile.TemporaryDirectory() as ebible_dir, \
+             tempfile.TemporaryDirectory() as para_dir:
+            # eBible: eng (shorter) + fra
+            eng_lines = [" ".join(["hello"] * 100) for _ in range(600)]
+            with open(os.path.join(ebible_dir, "eng-engKJV.txt"), "w") as f:
+                f.write("\n".join(eng_lines))
+            fra_lines = [" ".join(["bonjour"] * 100) for _ in range(600)]
+            with open(os.path.join(ebible_dir, "fra-fraLSG.txt"), "w") as f:
+                f.write("\n".join(fra_lines))
+
+            # ParaBible: eng (longer) + spa
+            eng_lines_long = [" ".join(["hello"] * 100) for _ in range(900)]
+            eng_text = "\n".join(
+                f"4000{i:04d}\t" + eng_lines_long[i]
+                for i in range(len(eng_lines_long))
+            )
+            with open(os.path.join(para_dir, "eng.txt"), "w") as f:
+                f.write(eng_text)
+            spa_lines = [" ".join(["hola"] * 100) for _ in range(600)]
+            spa_text = "\n".join(
+                f"4000{i:04d}\t" + spa_lines[i]
+                for i in range(len(spa_lines))
+            )
+            with open(os.path.join(para_dir, "spa.txt"), "w") as f:
+                f.write(spa_text)
+
+            texts = load_bible_texts(
+                bible_source="both",
+                ebible_dir=ebible_dir,
+                parabible_dir=para_dir,
+                script_filter=False,
+                min_tokens=100,
+            )
+            # Should have eng, fra, spa
+            assert "eng" in texts
+            assert "fra" in texts
+            assert "spa" in texts
+            # eng should come from ParaBible (longer)
+            assert len(texts["eng"].split()) >= 90000
+
+    def test_load_bible_texts_single_source(self):
+        """Test load_bible_texts with a single source selection."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            lines = [" ".join(["word"] * 100) for _ in range(600)]
+            with open(os.path.join(tmpdir, "eng-engKJV.txt"), "w") as f:
+                f.write("\n".join(lines))
+
+            # ebible only
+            texts = load_bible_texts(
+                bible_source="ebible",
+                ebible_dir=tmpdir,
+                script_filter=False,
+                min_tokens=100,
+            )
+            assert "eng" in texts
+
+            # parabible only
+            texts = load_bible_texts(
+                bible_source="parabible",
+                parabible_dir=tmpdir,
+                script_filter=False,
+                min_tokens=100,
+            )
+            assert "eng" in texts
 
 
 # ============================================================================

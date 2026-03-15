@@ -328,8 +328,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Train char-level LM on ParaBible data")
-    parser.add_argument("--parabible_dir", type=str, required=True,
-                        help="Directory with Bible text files")
+    parser.add_argument("--bible_source", type=str, default="ebible",
+                        choices=["ebible", "parabible", "both"],
+                        help="Bible corpus to use (default: ebible)")
+    parser.add_argument("--ebible_dir", type=str, default=None,
+                        help="Directory with eBible text files")
+    parser.add_argument("--parabible_dir", type=str, default=None,
+                        help="Directory with ParaBible text files")
     parser.add_argument("--output_dir", type=str, default="charlm_output")
     parser.add_argument("--hidden_dim", type=int, default=1024)
     parser.add_argument("--lang_emb_dim", type=int, default=64)
@@ -343,8 +348,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Import loading function
-    from data_preparation import load_parabible_texts
-    texts = load_parabible_texts(args.parabible_dir)
+    from data_preparation import load_bible_texts
+    texts = load_bible_texts(
+        bible_source=args.bible_source,
+        ebible_dir=args.ebible_dir,
+        parabible_dir=args.parabible_dir,
+    )
 
     train_charlm(
         texts,

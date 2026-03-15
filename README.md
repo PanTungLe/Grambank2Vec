@@ -38,20 +38,31 @@ Our `data_preparation.py` reads these files directly — no manual conversion ne
 
 ### eBible (Multilingual Bible Corpus)
 
+Two Bible corpora are supported. Use `--bible_source` to choose which one(s):
+
+| Source | Repository | Translations |
+|--------|-----------|-------------|
+| `ebible` (default) | [BibleNLP/ebible](https://github.com/BibleNLP/ebible) | ~1079 |
+| `parabible` | [christos-c/bible-corpus](https://github.com/christos-c/bible-corpus) | ~100 |
+| `both` | Both of the above (merged, keeping the longer text per language) | Combined |
+
 ```bash
+# Clone manually (optional — run_all.py auto-clones when needed)
 git clone https://github.com/BibleNLP/ebible.git
+git clone https://github.com/christos-c/bible-corpus.git
 ```
 
-The [BibleNLP/ebible](https://github.com/BibleNLP/ebible) corpus provides ~1079
-Bible translations as plain-text files in the `corpus/` subdirectory. Each file
-has one verse per line (no verse-reference prefix), with filenames following the
-pattern `<languageCode>-<variant>.txt` (e.g. `eng-eng_kjv.txt`).
+The eBible corpus stores each translation as a plain-text file with one verse
+per line in the `corpus/` subdirectory. Filenames follow
+`<languageCode>-<variant>.txt` (e.g. `eng-eng_kjv.txt`). Blank lines indicate
+missing verses and `<range>` tokens mark grouped verses; both are automatically
+skipped by the loader.
 
-Blank lines indicate missing verses and `<range>` tokens mark grouped verses;
-both are automatically skipped by the loader.
+The ParaBible corpus uses a similar layout in the `bibles/` subdirectory, with
+TAB-separated `<verse_id>\t<text>` lines.
 
-The `run_all.py` script will clone the repository automatically if no
-`--parabible_dir` is specified.
+`run_all.py` will clone the required repositories automatically based on the
+`--bible_source` setting.
 
 ---
 
@@ -78,14 +89,30 @@ T-CF model.
 ### 3a. Prepare Bible texts
 
 ```bash
+# Using eBible (default)
 python data_preparation.py \
     --wals_repo /path/to/wals \
-    --parabible_dir /path/to/ebible/corpus \
+    --ebible_dir /path/to/ebible/corpus \
     --charlm_output charlm_data \
     --output_csv wals_prepared.csv
+
+# Using ParaBible
+python data_preparation.py \
+    --wals_repo /path/to/wals \
+    --bible_source parabible \
+    --parabible_dir /path/to/bible-corpus/bibles \
+    --charlm_output charlm_data
+
+# Using both (merged)
+python data_preparation.py \
+    --wals_repo /path/to/wals \
+    --bible_source both \
+    --ebible_dir /path/to/ebible/corpus \
+    --parabible_dir /path/to/bible-corpus/bibles \
+    --charlm_output charlm_data
 ```
 
-This loads eBible texts, filters to Latin/Cyrillic/Greek scripts (matching the
+This loads Bible texts, filters to Latin/Cyrillic/Greek scripts (matching the
 paper), and writes per-language text files. It also attempts to match WALS
 language codes to Bible translation IDs.
 
@@ -96,7 +123,8 @@ create a manual mapping CSV (`wals_code,bible_lang_id`) for best coverage.
 
 ```bash
 python char_lm.py \
-    --parabible_dir /path/to/ebible/corpus \
+    --bible_source ebible \
+    --ebible_dir /path/to/ebible/corpus \
     --output_dir charlm_output \
     --hidden_dim 1024 \
     --char_emb_dim 128 \
