@@ -43,13 +43,13 @@ Two Bible corpora are supported. Use `--bible_source` to choose which one(s):
 | Source | Repository | Translations |
 |--------|-----------|-------------|
 | `ebible` (default) | [BibleNLP/ebible](https://github.com/BibleNLP/ebible) | ~1079 |
-| `parabible` | [christos-c/bible-corpus](https://github.com/christos-c/bible-corpus) | ~100 |
+| `parabible` | [LingConLab/parabible](https://github.com/LingConLab/parabible) | ~1846 |
 | `both` | Both of the above (merged, keeping the longer text per language) | Combined |
 
 ```bash
 # Clone manually (optional — run_all.py auto-clones when needed)
 git clone https://github.com/BibleNLP/ebible.git
-git clone https://github.com/christos-c/bible-corpus.git
+git clone https://github.com/LingConLab/parabible.git
 ```
 
 The eBible corpus stores each translation as a plain-text file with one verse
@@ -58,8 +58,10 @@ per line in the `corpus/` subdirectory. Filenames follow
 missing verses and `<range>` tokens mark grouped verses; both are automatically
 skipped by the loader.
 
-The ParaBible corpus uses a similar layout in the `bibles/` subdirectory, with
-TAB-separated `<verse_id>\t<text>` lines.
+The ParaBible corpus (~1846 translations) distributes its text files as a
+downloadable zip archive. The `run_all.py` script handles downloading and
+extraction automatically. Text files use TAB-separated `<verse_id>\t<text>`
+lines.
 
 `run_all.py` will clone the required repositories automatically based on the
 `--bible_source` setting.
@@ -100,7 +102,7 @@ python data_preparation.py \
 python data_preparation.py \
     --wals_repo /path/to/wals \
     --bible_source parabible \
-    --parabible_dir /path/to/bible-corpus/bibles \
+    --parabible_dir /path/to/parabible/corpus-txt \
     --charlm_output charlm_data
 
 # Using both (merged)
@@ -108,7 +110,7 @@ python data_preparation.py \
     --wals_repo /path/to/wals \
     --bible_source both \
     --ebible_dir /path/to/ebible/corpus \
-    --parabible_dir /path/to/bible-corpus/bibles \
+    --parabible_dir /path/to/parabible/corpus-txt \
     --charlm_output charlm_data
 ```
 

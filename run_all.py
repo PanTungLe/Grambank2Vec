@@ -74,21 +74,39 @@ def clone_ebible_corpus(output_dir: str) -> str:
 
 def clone_parabible_corpus(output_dir: str) -> str:
     """
-    Clone the christos-c/bible-corpus repository and return the bibles dir.
+    Clone the LingConLab/parabible repository and download the text corpus.
 
-    The ParaBible corpus provides ~100 Bible translations as plain-text
-    files in the ``bibles/`` subdirectory.
+    The ParaBible project (https://github.com/LingConLab/parabible) stores
+    ~1846 Bible translations.  The raw text files are distributed as a zip
+    archive that is downloaded and extracted into a ``corpus-txt/``
+    subdirectory inside the cloned repo.
     """
-    parabible_repo = os.path.join(output_dir, "bible-corpus")
-    bibles_dir = os.path.join(parabible_repo, "bibles")
+    parabible_repo = os.path.join(output_dir, "parabible")
+    corpus_dir = os.path.join(parabible_repo, "corpus-txt")
 
-    if os.path.isdir(bibles_dir) and len(os.listdir(bibles_dir)) > 5:
-        print(f"  ParaBible corpus already present: {bibles_dir}")
-        return bibles_dir
+    if os.path.isdir(corpus_dir) and len(os.listdir(corpus_dir)) > 5:
+        print(f"  ParaBible corpus already present: {corpus_dir}")
+        return corpus_dir
 
-    clone_repo("https://github.com/christos-c/bible-corpus.git",
+    clone_repo("https://github.com/LingConLab/parabible.git",
                parabible_repo)
-    return bibles_dir
+
+    # Download and extract the corpus zip if not already present
+    if not os.path.isdir(corpus_dir) or len(os.listdir(corpus_dir)) <= 5:
+        zip_url = "http://91.200.84.6/parabible-data/full_pb_corpus.zip"
+        zip_path = os.path.join(parabible_repo, "full_pb_corpus.zip")
+        if not os.path.isfile(zip_path):
+            print(f"  Downloading ParaBible corpus from {zip_url}")
+            subprocess.run(
+                ["curl", "-L", "-o", zip_path, zip_url],
+                check=True,
+            )
+        print(f"  Extracting {zip_path} → {corpus_dir}")
+        import zipfile
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(corpus_dir)
+
+    return corpus_dir
 
 
 def main():

@@ -335,7 +335,7 @@ def load_parabible_texts(
     min_tokens: int = 50000,
 ) -> Dict[str, str]:
     """
-    Load Bible translations from the christos-c/bible-corpus directory.
+    Load Bible translations from the LingConLab/parabible directory.
 
     The ParaBible corpus uses plain-text or TAB-separated files with one
     verse per line.  Filenames follow <langCode>.txt or
