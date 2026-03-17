@@ -95,14 +95,30 @@ class TypologicalMF(nn.Module):
         nn.init.normal_(self.feat_embeddings.weight, std=0.01)
 
     def forward(self, lang_idx: torch.Tensor,
-                feat_idx: torch.Tensor) -> torch.Tensor:
+                feat_idx: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Returns predicted probabilities for the given (lang, feat) pairs.
+        Returns predicted probabilities and the batch L2 penalty.
+
+        The L2 penalty is computed ONLY over the embeddings accessed
+        in this batch.  This is critical for Adam: global weight_decay
+        or global L2 applies a decay gradient to every embedding at
+        every step, but most embeddings are absent from any given batch.
+        Adam's adaptive rate turns that sparse decay into constant-rate
+        sign-gradient descent, crushing all embeddings to zero.
+
+        By regularising only the batch embeddings, unseen embeddings
+        receive zero gradient and stay at their current values.
         """
         lang_emb = self.lang_embeddings(lang_idx)   # (B, d)
         feat_emb = self.feat_embeddings(feat_idx)    # (B, d)
         logits = (lang_emb * feat_emb).sum(dim=-1)   # dot product → (B,)
-        return torch.sigmoid(logits)
+        preds = torch.sigmoid(logits)
+
+        # Per-batch L2: mean over the batch so the scale is independent
+        # of batch size and comparable to the mean BCE
+        batch_l2 = (lang_emb.pow(2).sum() + feat_emb.pow(2).sum()) / lang_idx.shape[0]
+
+        return preds, batch_l2
 
     def predict_all(self) -> torch.Tensor:
         """
@@ -168,7 +184,9 @@ class TypologicalMF_SemiSup(nn.Module):
         lang_emb = self.proj(self.lang_embeddings(lang_idx))
         feat_emb = self.feat_embeddings(feat_idx)
         logits = (lang_emb * feat_emb).sum(dim=-1)
-        return torch.sigmoid(logits)
+        preds = torch.sigmoid(logits)
+        batch_l2 = (lang_emb.pow(2).sum() + feat_emb.pow(2).sum()) / lang_idx.shape[0]
+        return preds, batch_l2
 
     def predict_all(self):
         all_lang = self.proj(self.lang_embeddings.weight)
@@ -210,9 +228,15 @@ def train_model(
     loader = DataLoader(train_dataset, batch_size=batch_size,
                         shuffle=True, drop_last=False)
 
-    # Adam optimiser with weight decay implementing the Gaussian prior
-    optimizer = optim.Adam(model.parameters(), lr=lr,
-                           weight_decay=l2_reg)
+    # Do NOT use weight_decay in Adam for sparse embeddings.
+    # Adam + global weight_decay applies decay to every embedding at
+    # every step.  For embeddings absent from the batch, the only
+    # gradient signal is the decay.  Adam's adaptive denominator turns
+    # this into sign-gradient descent toward zero — a constant-rate
+    # collapse that overwhelms the sparse data signal.
+    # Instead, model.forward() returns a per-batch L2 penalty computed
+    # only over the embeddings actually looked up in the batch.
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     criterion = nn.BCELoss()
 
     losses = []
@@ -225,14 +249,15 @@ def train_model(
             feat_idx = feat_idx.to(device)
             vals = vals.to(device)
 
-            preds = model(lang_idx, feat_idx)
-            loss = criterion(preds, vals)
+            preds, batch_l2 = model(lang_idx, feat_idx)
+            bce = criterion(preds, vals)
+            loss = bce + (l2_reg / 2.0) * batch_l2
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            epoch_loss += loss.item()
+            epoch_loss += bce.item()
             n_batches += 1
 
         avg = epoch_loss / n_batches
