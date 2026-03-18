@@ -195,7 +195,7 @@ def main():
     print("=" * 60)
 
     df, feature_cols = load_wals_cldf(args.wals_repo)
-    binary_matrix, bin_names, feature_groups = binarise_wals(df, feature_cols)
+    binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(df, feature_cols)
 
     # Save prepared data
     wals_csv = os.path.join(args.output_dir, "wals_prepared.csv")
@@ -298,7 +298,7 @@ def main():
         binary_matrix = binary_matrix[has_bible]
         pretrained_embs = pretrained_embs[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
-        binary_matrix, bin_names, feature_groups = binarise_wals(
+        binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(
             df, feature_cols)
         print(f"Filtered: {n_before} → {len(df)} languages with Bible data")
 
@@ -311,6 +311,7 @@ def main():
 
     results = run_experiments(
         df, binary_matrix, feature_groups,
+        feature_value_names=feature_value_names,
         in_branch_fracs=[0.0, 0.01, 0.05, 0.10, 0.20],
         n_repeats=args.n_repeats,
         embed_dim=args.embed_dim,
