@@ -146,6 +146,7 @@ def decode_and_evaluate(
     eval_feats: np.ndarray,
     eval_vals: np.ndarray,
     feature_groups: dict,
+    feature_value_names: dict,
     df: pd.DataFrame,
     target_branch: str,
     device: str = "cpu",
@@ -154,8 +155,12 @@ def decode_and_evaluate(
     Predict held-out features and compute micro-F1 on the
     *original* (non-binarised) features.
 
-    The decoding step: for each original multi-valued feature, pick
-    the value whose binary indicator has the highest predicted probability.
+    Decoding:
+    - For multi-valued features (≥3 values, one-hot encoded):
+      pick the value whose binary indicator has the highest
+      predicted probability (argmax).
+    - For 2-valued features (single binary column):
+      predict value_1 if p > 0.5, else value_0.
 
     Returns
     -------
@@ -165,15 +170,12 @@ def decode_and_evaluate(
     with torch.no_grad():
         prob_matrix = model.predict_all().cpu().numpy()   # (L, F_bin)
 
-    in_branch_indices = set(np.where((df["genus"] == target_branch).values)[0])
-
     y_true_orig, y_pred_orig = [], []
 
     # Group eval cells by (language, original_feature)
     cell_map = defaultdict(dict)  # (lang_idx, orig_feat) → {bin_idx: true_val}
     for k in range(len(eval_langs)):
         li, bi, val = int(eval_langs[k]), int(eval_feats[k]), eval_vals[k]
-        # Find which original feature this binary index belongs to
         for orig_feat, bin_indices in feature_groups.items():
             if bi in bin_indices:
                 cell_map[(li, orig_feat)][bi] = val
@@ -181,18 +183,29 @@ def decode_and_evaluate(
 
     for (li, orig_feat), bi_vals in cell_map.items():
         bin_indices = feature_groups[orig_feat]
-        # True label: which binary index is 1?
-        true_label = None
-        for bi, v in bi_vals.items():
-            if v == 1.0:
-                true_label = bi
-                break
-        if true_label is None:
-            continue  # skip if no positive label (shouldn't happen)
+        value_names = feature_value_names[orig_feat]
 
-        # Predicted label: argmax of predicted probs over the group
-        pred_probs = [prob_matrix[li, bi] for bi in bin_indices]
-        pred_label = bin_indices[int(np.argmax(pred_probs))]
+        if len(bin_indices) == 1:
+            # 2-valued feature: single binary column
+            bi = bin_indices[0]
+            true_bin_val = bi_vals[bi]
+            true_label = value_names[int(true_bin_val)]
+            pred_p = prob_matrix[li, bi]
+            pred_label = value_names[1] if pred_p > 0.5 else value_names[0]
+        else:
+            # Multi-valued feature (≥3): one-hot encoded
+            # True label: value name of the column that is 1
+            true_label = None
+            for j, bi in enumerate(bin_indices):
+                if bi_vals.get(bi, 0.0) == 1.0:
+                    true_label = value_names[j]
+                    break
+            if true_label is None:
+                continue  # skip if no positive label
+
+            # Predicted label: argmax
+            pred_probs = [prob_matrix[li, bi] for bi in bin_indices]
+            pred_label = value_names[int(np.argmax(pred_probs))]
 
         y_true_orig.append(true_label)
         y_pred_orig.append(pred_label)
@@ -215,6 +228,7 @@ def majority_baseline(
     eval_feats: np.ndarray,
     eval_vals: np.ndarray,
     feature_groups: dict,
+    feature_value_names: dict,
     n_binary_feats: int,
 ) -> float:
     """
@@ -231,7 +245,6 @@ def majority_baseline(
         feat_counts[fi] += float(vi)
         feat_totals[fi] += 1
 
-    # For each feature group, predict the binary col with highest count
     y_true, y_pred = [], []
     cell_map = defaultdict(dict)
     for k in range(len(eval_langs)):
@@ -243,17 +256,28 @@ def majority_baseline(
 
     for (li, orig_feat), bi_vals in cell_map.items():
         bin_indices = feature_groups[orig_feat]
-        true_label = None
-        for bi, v in bi_vals.items():
-            if v == 1.0:
-                true_label = bi
-                break
-        if true_label is None:
-            continue
+        value_names = feature_value_names[orig_feat]
 
-        # Predict: argmax of training counts
-        counts = [feat_counts[bi] for bi in bin_indices]
-        pred_label = bin_indices[int(np.argmax(counts))]
+        if len(bin_indices) == 1:
+            # 2-valued feature
+            bi = bin_indices[0]
+            true_label = value_names[int(bi_vals[bi])]
+            # Predict majority: if count_1 > count_0, predict value_1
+            n1 = feat_counts[bi]
+            n0 = feat_totals[bi] - feat_counts[bi]
+            pred_label = value_names[1] if n1 >= n0 else value_names[0]
+        else:
+            # Multi-valued feature
+            true_label = None
+            for j, bi in enumerate(bin_indices):
+                if bi_vals.get(bi, 0.0) == 1.0:
+                    true_label = value_names[j]
+                    break
+            if true_label is None:
+                continue
+            counts = [feat_counts[bi] for bi in bin_indices]
+            pred_label = value_names[int(np.argmax(counts))]
+
         y_true.append(true_label)
         y_pred.append(pred_label)
 
@@ -269,6 +293,7 @@ def knn_baseline(
     eval_feats: np.ndarray,
     eval_vals: np.ndarray,
     feature_groups: dict,
+    feature_value_names: dict,
     df: pd.DataFrame,
     target_branch: str,
     n_binary_feats: int,
@@ -307,14 +332,21 @@ def knn_baseline(
 
     for (li, orig_feat), bi_vals in cell_map.items():
         bin_indices = feature_groups[orig_feat]
+        value_names = feature_value_names[orig_feat]
 
-        true_label = None
-        for bi, v in bi_vals.items():
-            if v == 1.0:
-                true_label = bi
-                break
-        if true_label is None:
-            continue
+        if len(bin_indices) == 1:
+            # 2-valued feature
+            bi = bin_indices[0]
+            true_label = value_names[int(bi_vals[bi])]
+        else:
+            # Multi-valued feature
+            true_label = None
+            for j, bi in enumerate(bin_indices):
+                if bi_vals.get(bi, 0.0) == 1.0:
+                    true_label = value_names[j]
+                    break
+            if true_label is None:
+                continue
 
         # Find k nearest training languages that have this feature observed
         train_langs_with_feat = []
@@ -325,9 +357,8 @@ def knn_baseline(
         train_langs_with_feat = list(set(train_langs_with_feat))
 
         if not train_langs_with_feat:
-            # Fall back to random prediction
             y_true.append(true_label)
-            y_pred.append(bin_indices[0])
+            y_pred.append(value_names[0])
             continue
 
         # Compute distances
@@ -339,13 +370,19 @@ def knn_baseline(
         dists.sort()
         neighbors = [tl for _, tl in dists[:k]]
 
-        # Vote: sum predicted probs across neighbors for each binary col
-        votes = np.zeros(len(bin_indices))
-        for tl in neighbors:
-            for j, bi in enumerate(bin_indices):
-                votes[j] += train_feat_vals.get(bi, {}).get(tl, 0.0)
+        if len(bin_indices) == 1:
+            # 2-valued: vote on binary value, decode to label
+            bi = bin_indices[0]
+            vote_sum = sum(train_feat_vals.get(bi, {}).get(tl, 0.0) for tl in neighbors)
+            pred_label = value_names[1] if vote_sum > len(neighbors) / 2 else value_names[0]
+        else:
+            # Multi-valued: vote on each column
+            votes = np.zeros(len(bin_indices))
+            for tl in neighbors:
+                for j, bi in enumerate(bin_indices):
+                    votes[j] += train_feat_vals.get(bi, {}).get(tl, 0.0)
+            pred_label = value_names[int(np.argmax(votes))]
 
-        pred_label = bin_indices[int(np.argmax(votes))]
         y_true.append(true_label)
         y_pred.append(pred_label)
 
@@ -362,6 +399,7 @@ def run_experiments(
     df: pd.DataFrame,
     binary_matrix: np.ndarray,
     feature_groups: dict,
+    feature_value_names: dict = None,
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
@@ -372,6 +410,7 @@ def run_experiments(
     pretrained_embs: Optional[np.ndarray] = None,
     device: str = "cpu",
     min_branch_size: int = 5,
+    only_branches: Optional[list] = None,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -399,6 +438,8 @@ def run_experiments(
     # Identify qualifying branches
     branch_counts = df["genus"].value_counts()
     qualifying = branch_counts[branch_counts >= min_branch_size].index.tolist()
+    if only_branches:
+        qualifying = [b for b in qualifying if b in only_branches]
     print(f"\nQualifying branches (≥{min_branch_size} languages): "
           f"{len(qualifying)}")
 
@@ -430,7 +471,7 @@ def run_experiments(
                 # --- Majority baseline ---
                 f1_freq = majority_baseline(
                     train_ds, eval_langs, eval_feats, eval_vals,
-                    feature_groups, n_bfeat_local)
+                    feature_groups, feature_value_names, n_bfeat_local)
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
@@ -442,7 +483,8 @@ def run_experiments(
                     f1_knn = knn_baseline(
                         pretrained_embs, train_ds,
                         eval_langs, eval_feats, eval_vals,
-                        feature_groups, df, branch, n_bfeat_local, k=1)
+                        feature_groups, feature_value_names,
+                        df, branch, n_bfeat_local, k=1)
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
@@ -458,7 +500,7 @@ def run_experiments(
 
                 f1_tcf = decode_and_evaluate(
                     model, eval_langs, eval_feats, eval_vals,
-                    feature_groups, df, branch, device)
+                    feature_groups, feature_value_names, df, branch, device)
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
@@ -479,7 +521,7 @@ def run_experiments(
 
                     f1_ss = decode_and_evaluate(
                         model_ss, eval_langs, eval_feats, eval_vals,
-                        feature_groups, df, branch, device)
+                        feature_groups, feature_value_names, df, branch, device)
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
@@ -527,13 +569,17 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--l2_reg", type=float, default=0.1)
     parser.add_argument("--n_repeats", type=int, default=5)
+    parser.add_argument("--min_branch_size", type=int, default=5,
+                        help="Skip branches with fewer languages (paper: >4)")
+    parser.add_argument("--branches", type=str, nargs="+", default=None,
+                        help="Only evaluate these branches (e.g. --branches Oceanic Slavic)")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
 
     # 1. Load and binarise WALS from CLDF repo
     df, feature_cols = load_wals_cldf(args.wals_repo)
-    binary_matrix, bin_names, feature_groups = binarise_wals(df, feature_cols)
+    binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(df, feature_cols)
 
     # 2. Optionally load pre-trained language embeddings
     pretrained = None
@@ -564,13 +610,14 @@ def main():
         binary_matrix = binary_matrix[has_bible]
         pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
-        binary_matrix, bin_names, feature_groups = binarise_wals(
+        binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(
             df, feature_cols)
         print(f"Bible ∩ WALS filter: {n_before} → {len(df)} languages")
 
     # 3. Run experiments
     results = run_experiments(
         df, binary_matrix, feature_groups,
+        feature_value_names=feature_value_names,
         in_branch_fracs=[0.0, 0.01, 0.05, 0.10, 0.20],
         n_repeats=args.n_repeats,
         embed_dim=args.embed_dim,
@@ -580,6 +627,8 @@ def main():
         l2_reg=args.l2_reg,
         pretrained_embs=pretrained,
         device=args.device,
+        min_branch_size=args.min_branch_size,
+        only_branches=args.branches,
     )
 
     # 4. Save and display results
