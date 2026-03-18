@@ -566,38 +566,68 @@ def match_wals_to_bible(
 def binarise_wals(
     df: pd.DataFrame,
     feature_cols: list,
-) -> Tuple[np.ndarray, list, dict]:
+) -> Tuple[np.ndarray, list, dict, dict]:
     """
-    One-hot encode multi-valued features into a binary matrix.
+    Binarise WALS features following the paper's protocol (Section 6):
+
+    - Features with exactly 2 values → single binary column
+      (first value alphabetically → 0, second → 1).
+    - Features with ≥ 3 values → one-hot encoded into n binary columns.
+    - Features with 1 value → dropped (no discriminative information).
 
     Returns
     -------
     binary_matrix : np.ndarray (n_langs × n_binary_features), 0/1/NaN
     binary_col_names : list of str
     feature_groups : dict  original_feat → list of binary col indices
+    feature_value_names : dict  original_feat → list of original value names
+        For 2-valued features: [neg_value, pos_value] (0 → neg, 1 → pos)
+        For ≥3-valued features: [val_0, val_1, ...] matching feature_groups order
     """
     binary_columns = []
     binary_col_names = []
     feature_groups: Dict[str, List[int]] = {}
+    feature_value_names: Dict[str, List[str]] = {}
 
     idx = 0
     for col in feature_cols:
         unique_vals = sorted(df[col].dropna().unique())
+        n_vals = len(unique_vals)
+
+        if n_vals <= 1:
+            # Skip: no discriminative information
+            continue
+
         group_indices = []
-        for val in unique_vals:
+
+        if n_vals == 2:
+            # Single binary column: first value → 0, second → 1
             bin_col = np.full(len(df), np.nan)
             observed = df[col].notna()
-            bin_col[observed] = (df.loc[observed, col] == val).astype(float).values
+            bin_col[observed] = (df.loc[observed, col] == unique_vals[1]).astype(float).values
             binary_columns.append(bin_col)
-            binary_col_names.append(f"{col}={val}")
+            binary_col_names.append(f"{col}")
             group_indices.append(idx)
             idx += 1
+            feature_value_names[col] = unique_vals  # [neg_value, pos_value]
+        else:
+            # One-hot encode (≥ 3 values)
+            for val in unique_vals:
+                bin_col = np.full(len(df), np.nan)
+                observed = df[col].notna()
+                bin_col[observed] = (df.loc[observed, col] == val).astype(float).values
+                binary_columns.append(bin_col)
+                binary_col_names.append(f"{col}={val}")
+                group_indices.append(idx)
+                idx += 1
+            feature_value_names[col] = unique_vals  # [val_0, val_1, ...]
+
         feature_groups[col] = group_indices
 
     binary_matrix = np.column_stack(binary_columns)
     print(f"Binarised matrix: {binary_matrix.shape[0]} langs × "
           f"{binary_matrix.shape[1]} binary features")
-    return binary_matrix, binary_col_names, feature_groups
+    return binary_matrix, binary_col_names, feature_groups, feature_value_names
 
 
 # ============================================================================
@@ -698,7 +728,7 @@ def prepare_all(
     """
     # --- WALS ---
     df, feature_cols = load_wals_cldf(wals_repo_dir)
-    binary_matrix, bin_names, feature_groups = binarise_wals(df, feature_cols)
+    binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(df, feature_cols)
 
     df.to_csv(output_csv, index=False)
     print(f"Saved prepared WALS data to {output_csv}")
