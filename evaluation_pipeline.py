@@ -31,7 +31,10 @@ import torch
 from sklearn.metrics import f1_score
 
 from model import TypologicalMF, TypologicalMF_SemiSup, WALSDataset, train_model
-from data_preparation import load_wals_cldf, binarise_wals, align_embeddings
+from data_preparation import (
+    load_wals_cldf, load_grambank_cldf, binarise_features, binarise_wals,
+    align_embeddings,
+)
 
 
 # ============================================================================
@@ -553,14 +556,25 @@ def summarise_results(results_df: pd.DataFrame) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser(
         description="Replicate typological collaborative filtering experiments")
-    parser.add_argument("--wals_repo", type=str, required=True,
+    parser.add_argument("--database", type=str, default="wals",
+                        choices=["wals", "grambank"],
+                        help="Typological database to use (default: wals)")
+    parser.add_argument("--wals_repo", type=str, default=None,
                         help="Path to cloned cldf-datasets/wals repo")
+    parser.add_argument("--grambank_repo", type=str, default=None,
+                        help="Path to cloned glottobank/grambank repo")
+    parser.add_argument("--glottolog_repo", type=str, default=None,
+                        help="Path to cloned glottolog-cldf repo "
+                             "(for Grambank genus mapping)")
+    parser.add_argument("--genus_source", type=str, default="glottolog",
+                        choices=["glottolog", "family"],
+                        help="Genus source for Grambank (default: glottolog)")
     parser.add_argument("--pretrained_embs", type=str, default=None,
                         help="Path to .npy file with pre-trained language "
                              "embeddings (n_langs × d). Row order must "
-                             "match the WALS languages after filtering.")
+                             "match the languages after filtering.")
     parser.add_argument("--bible_lang_mask", type=str, default=None,
-                        help="Path to .npy boolean mask for Bible ∩ WALS "
+                        help="Path to .npy boolean mask for Bible ∩ database "
                              "filtering. If not provided and --pretrained_embs "
                              "is set, inferred from non-zero embedding rows.")
     parser.add_argument("--embed_dim", type=int, default=64)
@@ -577,9 +591,22 @@ def main():
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
 
-    # 1. Load and binarise WALS from CLDF repo
-    df, feature_cols = load_wals_cldf(args.wals_repo)
-    binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(df, feature_cols)
+    # 1. Load and binarise typological data
+    if args.database == "grambank":
+        if args.grambank_repo is None:
+            parser.error("--grambank_repo is required when --database=grambank")
+        df, feature_cols = load_grambank_cldf(
+            args.grambank_repo,
+            genus_source=args.genus_source,
+            glottolog_repo_dir=args.glottolog_repo,
+        )
+    else:
+        if args.wals_repo is None:
+            parser.error("--wals_repo is required when --database=wals")
+        df, feature_cols = load_wals_cldf(args.wals_repo)
+
+    binary_matrix, bin_names, feature_groups, feature_value_names = \
+        binarise_features(df, feature_cols)
 
     # 2. Optionally load pre-trained language embeddings
     pretrained = None
@@ -587,10 +614,9 @@ def main():
         pretrained = np.load(args.pretrained_embs).astype(np.float32)
         if pretrained.shape[0] != len(df):
             print(f"WARNING: Pretrained embeddings have {pretrained.shape[0]} "
-                  f"rows but WALS has {len(df)} languages. "
+                  f"rows but database has {len(df)} languages. "
                   f"Assuming embeddings are already aligned or will be padded.")
             if pretrained.shape[0] < len(df):
-                # Pad with zeros
                 padded = np.zeros((len(df), pretrained.shape[1]),
                                   dtype=np.float32)
                 padded[:pretrained.shape[0]] = pretrained
@@ -599,7 +625,7 @@ def main():
                 pretrained = pretrained[:len(df)]
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
 
-    # 2b. Filter to Bible ∩ WALS intersection (paper §7.1)
+    # 2b. Filter to Bible ∩ database intersection (paper §7.1)
     if pretrained is not None:
         if args.bible_lang_mask:
             has_bible = np.load(args.bible_lang_mask).astype(bool)
@@ -610,9 +636,9 @@ def main():
         binary_matrix = binary_matrix[has_bible]
         pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
-        binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(
-            df, feature_cols)
-        print(f"Bible ∩ WALS filter: {n_before} → {len(df)} languages")
+        binary_matrix, bin_names, feature_groups, feature_value_names = \
+            binarise_features(df, feature_cols)
+        print(f"Bible ∩ database filter: {n_before} → {len(df)} languages")
 
     # 3. Run experiments
     results = run_experiments(
@@ -637,7 +663,7 @@ def main():
 
     summary = summarise_results(results)
     print("\n" + "=" * 60)
-    print("AGGREGATE RESULTS (cf. Table 1 in the paper)")
+    print(f"AGGREGATE RESULTS — {args.database.upper()}")
     print("=" * 60)
     print(summary.to_string(index=False))
 
