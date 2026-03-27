@@ -9,6 +9,8 @@ Bjerva, Kementchedjhieva, Cotterell & Augenstein (NAACL-HLT 2019)
 | `model.py` | Core PyTorch models: `TypologicalMF` (Section 3) and `TypologicalMF_SemiSup` (Section 4) |
 | `data_preparation.py` | Loads WALS from CLDF format, loads eBible texts, binarises features, matches languages |
 | `char_lm.py` | Character-level LSTM LM for pre-training language embeddings (Östling & Tiedemann 2017) |
+| `model_learned.py` | Learned feature-value embedding model with softmax prediction |
+| `compare_models.py` | Side-by-side comparison of binary baseline and learned model |
 | `evaluation_pipeline.py` | Branch-based splitting, experiment runner, F1 evaluation with argmax decoding |
 
 ## Requirements
@@ -201,6 +203,62 @@ matching Table 1 from the paper:
 | 5%          | ~0.66   | ~0.76      |
 | 10%         | ~0.78   | ~0.90      |
 | 20%         | ~0.88   | ~0.98      |
+
+---
+
+## Learned Feature-Value Embedding Model
+
+In addition to the binary baseline from Bjerva et al. (2019), this repository
+includes a **learned feature-value embedding model** (`model_learned.py`) that
+addresses two limitations of the one-hot binarisation approach.
+
+### How it differs from the binary baseline
+
+| Aspect | Binary (T-CF) | Learned |
+|--------|--------------|---------|
+| Feature representation | One-hot binary columns | Single categorical column per feature |
+| Value geometry | Orthogonal (one-hot) | Learned dense embeddings |
+| Prediction | Independent sigmoids + post-hoc argmax | Softmax over values (natively categorical) |
+| Loss | Binary cross-entropy | Categorical cross-entropy (NLL) |
+| Mutual exclusivity | Enforced post-hoc | Built into architecture |
+
+### Theoretical motivation
+
+The binary baseline treats each feature value as an independent binary toggle --
+a "Principles & Parameters" style approach. This means SOV and OVS are as
+different as SOV and SVO, even though both SOV and OVS are verb-final. The model
+can also predict SOV=0.8 and SVO=0.7 simultaneously, which is incoherent.
+
+The learned model treats values as points in a shared embedding space. Values of
+the same feature that behave similarly across languages (e.g. verb-final orders)
+can learn to cluster together. The softmax ensures predictions are proper
+probability distributions over mutually exclusive outcomes.
+
+### Running the comparison
+
+```bash
+# Compare both models on specific branches
+python compare_models.py --wals_repo /path/to/wals --branches Germanic Slavic
+
+# Full comparison with custom hyperparameters
+python compare_models.py --wals_repo /path/to/wals --embed_dim 64 --n_epochs 10
+
+# Smoke test (no data needed)
+python model_learned.py
+```
+
+### What to look for in results
+
+- **F1 scores**: Compare T-CF (binary) vs Learned at each in-branch fraction.
+  The learned model should benefit especially at low in-branch fractions where
+  sharing structure between values matters most.
+- **Value embedding geometry**: After training on real WALS data, check whether
+  typologically similar values cluster together. For example, for word order
+  (feature 81A), SOV and OVS should have smaller cosine distance than SOV and
+  SVO, reflecting their shared verb-final property.
+- **Coherent predictions**: The learned model cannot produce incoherent
+  predictions like P(SOV)=0.8 and P(SVO)=0.7 -- the softmax ensures the
+  probabilities sum to 1.
 
 ---
 
