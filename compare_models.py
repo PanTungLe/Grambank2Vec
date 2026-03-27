@@ -5,6 +5,7 @@ Runs both models on identical train/eval splits for a fair comparison.
 
 Usage:
     python compare_models.py --wals_repo /path/to/wals
+    python compare_models.py --database grambank --grambank_repo /path/to/grambank
 
 This produces a single CSV with columns:
     [branch, macroarea, in_branch_frac, repeat, model, f1]
@@ -15,7 +16,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from data_preparation import load_wals_cldf, binarise_wals
+from data_preparation import load_wals_cldf, load_grambank_cldf, binarise_features
 from model import TypologicalMF, WALSDataset, train_model
 from model_learned import (
     TypologicalMF_Learned, CategoricalTypDataset,
@@ -28,7 +29,9 @@ from evaluation_pipeline import (
 
 
 def run_comparison(
-    wals_repo_dir: str,
+    df: pd.DataFrame = None,
+    feature_cols: list = None,
+    wals_repo_dir: str = None,
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
@@ -42,16 +45,23 @@ def run_comparison(
 ) -> pd.DataFrame:
     """
     Run both models on the same data and same splits.
+
+    Accepts either a pre-loaded (df, feature_cols) or a wals_repo_dir
+    for backwards compatibility.
     """
 
     # ================================================================
-    # 1. Load WALS once, prepare BOTH representations
+    # 1. Load data once, prepare BOTH representations
     # ================================================================
-    df, feature_cols = load_wals_cldf(wals_repo_dir)
+    if df is None:
+        if wals_repo_dir is None:
+            raise ValueError("Either (df, feature_cols) or wals_repo_dir "
+                             "must be provided")
+        df, feature_cols = load_wals_cldf(wals_repo_dir)
 
     # Binary representation (Bjerva et al. baseline)
     binary_matrix, bin_names, feature_groups, feature_value_names = \
-        binarise_wals(df, feature_cols)
+        binarise_features(df, feature_cols)
 
     # Categorical representation (learned embeddings)
     cat_matrix, kept_feat_names, feat_to_global_ids, feat_to_value_names = \
@@ -186,7 +196,19 @@ def summarise(results_df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Compare binary vs. learned-embedding models")
-    parser.add_argument("--wals_repo", type=str, required=True)
+    parser.add_argument("--database", type=str, default="wals",
+                        choices=["wals", "grambank"],
+                        help="Typological database to use (default: wals)")
+    parser.add_argument("--wals_repo", type=str, default=None,
+                        help="Path to cloned cldf-datasets/wals repo")
+    parser.add_argument("--grambank_repo", type=str, default=None,
+                        help="Path to cloned glottobank/grambank repo")
+    parser.add_argument("--glottolog_repo", type=str, default=None,
+                        help="Path to cloned glottolog-cldf repo "
+                             "(for Grambank genus mapping)")
+    parser.add_argument("--genus_source", type=str, default="glottolog",
+                        choices=["glottolog", "family"],
+                        help="Genus source for Grambank (default: glottolog)")
     parser.add_argument("--embed_dim", type=int, default=64)
     parser.add_argument("--n_epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=64)
@@ -201,8 +223,23 @@ if __name__ == "__main__":
                         default="comparison_results.csv")
     args = parser.parse_args()
 
+    # Load data based on selected database
+    if args.database == "grambank":
+        if args.grambank_repo is None:
+            parser.error("--grambank_repo is required when --database=grambank")
+        df, feature_cols = load_grambank_cldf(
+            args.grambank_repo,
+            genus_source=args.genus_source,
+            glottolog_repo_dir=args.glottolog_repo,
+        )
+    else:
+        if args.wals_repo is None:
+            parser.error("--wals_repo is required when --database=wals")
+        df, feature_cols = load_wals_cldf(args.wals_repo)
+
     results = run_comparison(
-        wals_repo_dir=args.wals_repo,
+        df=df,
+        feature_cols=feature_cols,
         embed_dim=args.embed_dim,
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
@@ -219,7 +256,8 @@ if __name__ == "__main__":
 
     summary, pivot = summarise(results)
     print("\n" + "=" * 70)
-    print("COMPARISON: Binary (T-CF) vs. Learned Embeddings")
+    print(f"COMPARISON — {args.database.upper()}: "
+          f"Binary (T-CF) vs. Learned Embeddings")
     print("=" * 70)
     print("\nDetailed:")
     print(summary.to_string(index=False))

@@ -23,6 +23,9 @@ from model import TypologicalMF, TypologicalMF_SemiSup, WALSDataset, train_model
 from char_lm import CharLSTM_LM, MultilingualCharDataset, build_vocab, train_charlm
 from data_preparation import (
     binarise_wals,
+    binarise_features,
+    load_grambank_cldf,
+    _extract_glottolog_genus,
     is_latin_cyrillic_greek,
     match_wals_to_bible,
     align_embeddings,
@@ -117,7 +120,7 @@ class TestModels:
         model = TypologicalMF(50, 30, embed_dim=16)
         lang_idx = torch.tensor([0, 1, 2])
         feat_idx = torch.tensor([5, 10, 15])
-        probs = model(lang_idx, feat_idx)
+        probs, batch_l2 = model(lang_idx, feat_idx)
         assert probs.shape == (3,)
         assert (probs >= 0).all() and (probs <= 1).all()
 
@@ -133,7 +136,7 @@ class TestModels:
         model = TypologicalMF_SemiSup(embs, 20, embed_dim=16)
         lang_idx = torch.tensor([0, 1])
         feat_idx = torch.tensor([5, 10])
-        probs = model(lang_idx, feat_idx)
+        probs, batch_l2 = model(lang_idx, feat_idx)
         assert probs.shape == (2,)
 
     def test_semisup_predict_all(self):
@@ -173,7 +176,7 @@ class TestModels:
 class TestDataPreparation:
     def test_binarise_wals(self):
         df, feature_cols = make_synthetic_wals(n_langs=20, n_features=3)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         assert bmat.shape[0] == len(df)
         assert bmat.shape[1] == len(names)
@@ -184,7 +187,7 @@ class TestDataPreparation:
 
     def test_binarise_feature_groups(self):
         df, feature_cols = make_synthetic_wals(n_langs=20, n_features=3)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         # Each feature should have at least 2 binary columns
         for feat, indices in groups.items():
@@ -427,7 +430,7 @@ class TestCharLM:
 class TestEvaluation:
     def test_split_by_branch(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -447,7 +450,7 @@ class TestEvaluation:
     def test_split_fraction_uses_total_observed(self):
         """Bug 1 fix: in_branch_train_frac should apply to n_obs, not pool size."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=8)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         # With frac=0.10, each in-branch language should get ~10% of its
         # observed features for training (not 10% of the tiny 20% pool).
@@ -471,7 +474,7 @@ class TestEvaluation:
     def test_split_no_leakage(self):
         """Verify no feature-level information leaks between train and eval."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -503,7 +506,7 @@ class TestEvaluation:
 
     def test_decode_and_evaluate(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -516,12 +519,12 @@ class TestEvaluation:
 
         f1 = decode_and_evaluate(
             model, eval_langs, eval_feats, eval_vals,
-            groups, df, "Romance")
+            groups, val_names, df, "Romance")
         assert 0.0 <= f1 <= 1.0
 
     def test_majority_baseline(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -531,12 +534,12 @@ class TestEvaluation:
 
         f1 = majority_baseline(
             train_ds, eval_langs, eval_feats, eval_vals,
-            groups, bmat.shape[1])
+            groups, val_names, bmat.shape[1])
         assert 0.0 <= f1 <= 1.0
 
     def test_knn_baseline(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
         embs = np.random.randn(len(df), 16).astype(np.float32)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
@@ -547,16 +550,17 @@ class TestEvaluation:
 
         f1 = knn_baseline(
             embs, train_ds, eval_langs, eval_feats, eval_vals,
-            groups, df, "Romance", bmat.shape[1], k=1)
+            groups, val_names, df, "Romance", bmat.shape[1], k=1)
         assert 0.0 <= f1 <= 1.0
 
     def test_run_experiments_small(self):
         """Full experiment on small synthetic data."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
 
         results = run_experiments(
             df, bmat, groups,
+            feature_value_names=val_names,
             in_branch_fracs=[0.0, 0.10],
             n_repeats=1,
             embed_dim=8,
@@ -577,11 +581,12 @@ class TestEvaluation:
     def test_run_experiments_with_pretrained(self):
         """Full experiment with pretrained embeddings."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
         embs = np.random.randn(len(df), 16).astype(np.float32)
 
         results = run_experiments(
             df, bmat, groups,
+            feature_value_names=val_names,
             in_branch_fracs=[0.0],
             n_repeats=1,
             embed_dim=8,
@@ -600,7 +605,7 @@ class TestEvaluation:
     def test_bible_wals_intersection_filter(self):
         """Bug 2 fix: only languages with Bible data should be kept."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, _val_names = binarise_wals(df, feature_cols)
 
         # Simulate pretrained embeddings where only first 30 langs have data
         embs = np.zeros((60, 16), dtype=np.float32)
@@ -614,7 +619,7 @@ class TestEvaluation:
         bmat_filtered = bmat[has_bible]
         embs_filtered = embs[has_bible]
 
-        bmat_filtered, _, groups_filtered = binarise_wals(
+        bmat_filtered, _, groups_filtered, _vn = binarise_wals(
             df_filtered, feature_cols)
 
         assert len(df_filtered) == 30
@@ -630,7 +635,7 @@ class TestIntegration:
     def test_full_pipeline_synthetic(self):
         """Test the full pipeline with synthetic data (no external deps)."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups = binarise_wals(df, feature_cols)
+        bmat, names, groups, val_names = binarise_wals(df, feature_cols)
 
         # Create synthetic Bible texts matching some WALS languages
         bible_texts = {}
@@ -668,6 +673,7 @@ class TestIntegration:
             # Run experiments
             results = run_experiments(
                 df, bmat, groups,
+                feature_value_names=val_names,
                 in_branch_fracs=[0.0, 0.10],
                 n_repeats=1,
                 embed_dim=8,
@@ -685,6 +691,232 @@ class TestIntegration:
             assert "SemiSup" in models_tested
             assert "Freq" in models_tested
             assert "KNN" in models_tested
+
+
+# ============================================================================
+# Grambank Tests
+# ============================================================================
+
+def make_synthetic_grambank_repo(tmpdir, n_langs=80, n_features=10, seed=42):
+    """
+    Create a synthetic Grambank-like CLDF repo for testing.
+
+    Returns the path to the repo root.
+    """
+    rng = np.random.default_rng(seed)
+    cldf_dir = os.path.join(tmpdir, "cldf")
+    os.makedirs(cldf_dir, exist_ok=True)
+
+    # --- languages.csv ---
+    families = ["Atlantic-Congo", "Austronesian", "Indo-European",
+                "Sino-Tibetan", "Uto-Aztecan"]
+    macroareas = ["Africa", "Papunesia", "Eurasia", "Eurasia",
+                  "North America"]
+    lang_rows = []
+    for i in range(n_langs):
+        fam_idx = i % len(families)
+        lang_rows.append({
+            "ID": f"abcd{i:04d}",
+            "Name": f"Language_{i}",
+            "Macroarea": macroareas[fam_idx],
+            "Latitude": rng.uniform(-60, 60),
+            "Longitude": rng.uniform(-180, 180),
+            "Glottocode": f"abcd{i:04d}",
+            "Family": families[fam_idx],
+        })
+    pd.DataFrame(lang_rows).to_csv(
+        os.path.join(cldf_dir, "languages.csv"), index=False)
+
+    # --- parameters.csv ---
+    param_rows = []
+    for fi in range(n_features):
+        param_rows.append({
+            "ID": f"GB{fi:03d}",
+            "Name": f"Feature {fi}",
+            "Description": f"Test feature {fi}",
+        })
+    pd.DataFrame(param_rows).to_csv(
+        os.path.join(cldf_dir, "parameters.csv"), index=False)
+
+    # --- codes.csv and values.csv ---
+    # Most features are binary (0/1), a few have 3 values
+    code_rows = []
+    value_rows = []
+    vid = 0
+    feature_cardinalities = []
+    for fi in range(n_features):
+        pid = f"GB{fi:03d}"
+        # First 7 features are binary, rest have 3 values
+        if fi < 7:
+            n_vals = 2
+            val_labels = ["no", "yes"]
+        else:
+            n_vals = 3
+            val_labels = ["absent", "present", "both"]
+        feature_cardinalities.append(n_vals)
+
+        for vi in range(n_vals):
+            code_rows.append({
+                "ID": f"{pid}-{vi}",
+                "Parameter_ID": pid,
+                "Name": val_labels[vi],
+            })
+
+        # Generate values for each language
+        for li in range(n_langs):
+            # 15% missing
+            if rng.random() < 0.15:
+                continue
+            val = rng.integers(0, n_vals)
+            value_rows.append({
+                "ID": f"v{vid}",
+                "Language_ID": f"abcd{li:04d}",
+                "Parameter_ID": pid,
+                "Value": str(val),
+                "Code_ID": f"{pid}-{val}",
+            })
+            vid += 1
+
+    pd.DataFrame(code_rows).to_csv(
+        os.path.join(cldf_dir, "codes.csv"), index=False)
+    pd.DataFrame(value_rows).to_csv(
+        os.path.join(cldf_dir, "values.csv"), index=False)
+
+    return tmpdir
+
+
+class TestGrambank:
+    def test_extract_glottolog_genus(self):
+        """Test Glottolog classification path parsing."""
+        assert _extract_glottolog_genus(
+            "Indo-European/Germanic/West Germanic", level=1) == "Germanic"
+        assert _extract_glottolog_genus(
+            "Indo-European/Germanic/West Germanic", level=2) == "West Germanic"
+        assert _extract_glottolog_genus(
+            "Indo-European/Germanic", level=0) == "Indo-European"
+        # Not deep enough — returns deepest available
+        assert _extract_glottolog_genus(
+            "Indo-European", level=2) == "Indo-European"
+        assert _extract_glottolog_genus("", level=1) is None
+        assert _extract_glottolog_genus(None, level=1) is None
+
+    def test_load_grambank_cldf_family_genus(self):
+        """Test loading Grambank with Family-based genus."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=50,
+                                                     n_features=8)
+            df, feature_cols = load_grambank_cldf(
+                repo_dir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            assert len(df) > 0
+            assert len(feature_cols) > 0
+            assert "genus" in df.columns
+            assert "glottocode" in df.columns
+            assert "family" in df.columns
+            # All feature columns should start with feat_GB
+            assert all(c.startswith("feat_GB") for c in feature_cols)
+            # Genus should equal family when using family source
+            assert (df["genus"] == df["family"]).all()
+
+    def test_grambank_binarise(self):
+        """Test that binarise_features works correctly on Grambank data."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=50,
+                                                     n_features=8)
+            df, feature_cols = load_grambank_cldf(
+                repo_dir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            bmat, names, groups, value_names = binarise_features(
+                df, feature_cols)
+
+            assert bmat.shape[0] == len(df)
+            assert bmat.shape[1] == len(names)
+            # Binary features should produce single columns,
+            # 3-valued features should produce 3 columns
+            valid = bmat[~np.isnan(bmat)]
+            assert set(valid.tolist()).issubset({0.0, 1.0})
+
+    def test_grambank_branch_split(self):
+        """Test branch-based splitting on Grambank data."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=80,
+                                                     n_features=8)
+            df, feature_cols = load_grambank_cldf(
+                repo_dir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            bmat, names, groups, value_names = binarise_features(
+                df, feature_cols)
+
+            # Pick a family with enough languages
+            branch_counts = df["genus"].value_counts()
+            target = branch_counts[branch_counts >= 5].index[0]
+
+            train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
+                df, bmat, groups,
+                target_branch=target,
+                in_branch_train_frac=0.10,
+            )
+
+            assert len(train_ds) > 0
+            assert len(eval_langs) > 0
+            # Eval should only contain in-branch languages
+            in_branch = set(np.where((df["genus"] == target).values)[0])
+            assert all(li in in_branch for li in eval_langs)
+
+    def test_binarise_features_alias(self):
+        """Test that binarise_wals is an alias for binarise_features."""
+        assert binarise_wals is binarise_features
+
+    def test_grambank_values_are_categorical(self):
+        """Verify Grambank values are treated as categorical labels, not numeric."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=30,
+                                                     n_features=5)
+            df, feature_cols = load_grambank_cldf(
+                repo_dir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            # Values should be strings (human-readable labels), not numeric
+            for col in feature_cols:
+                non_null = df[col].dropna()
+                if len(non_null) > 0:
+                    assert all(isinstance(v, str) for v in non_null), \
+                        f"Feature {col} has non-string values"
+
+    def test_grambank_with_glottolog_genus_missing(self):
+        """Test fallback when glottolog requested but not provided."""
+        import warnings
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=30,
+                                                     n_features=5)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                df, feature_cols = load_grambank_cldf(
+                    repo_dir,
+                    min_lang_features=1,
+                    min_feature_value_langs=1,
+                    genus_source="glottolog",
+                    glottolog_repo_dir=None,
+                )
+                # Should warn and fall back to family
+                assert any("glottolog" in str(warning.message).lower()
+                           for warning in w)
+            assert "genus" in df.columns
 
 
 # ============================================================================
