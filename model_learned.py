@@ -241,9 +241,19 @@ class TypologicalMF_Learned(nn.Module):
         # Extract the log-prob of the TRUE value for each sample
         log_probs = log_probs_all.gather(1, value_idx.unsqueeze(1)).squeeze(1)
 
-        # L2 regularisation on accessed embeddings
-        # Only the language embeddings and the actually-used value embeddings
-        batch_l2 = lang_emb.pow(2).sum() / B
+        # L2 regularisation ONLY on batch-accessed embeddings.
+        # Critical for Adam: global weight_decay applies a decay gradient
+        # to every embedding at every step, but most embeddings are absent
+        # from any given batch.  Adam's adaptive denominator turns that
+        # sparse decay into constant-rate sign-gradient descent, crushing
+        # all embeddings to zero.  See model.py for detailed explanation.
+        #
+        # We penalise the language embeddings AND the value embeddings
+        # that were actually looked up in this batch.
+        unique_global_ids = batch_padded[batch_mask].unique()
+        accessed_val_embs = self.value_embeddings(unique_global_ids)
+        batch_l2 = (lang_emb.pow(2).sum()
+                    + accessed_val_embs.pow(2).sum()) / B
 
         return log_probs, batch_l2
 
@@ -498,7 +508,56 @@ def split_by_branch_categorical(
 
 
 # ---------------------------------------------------------------------------
-# 7. Full Experiment Runner
+# 7. Majority Baseline (categorical)
+# ---------------------------------------------------------------------------
+
+def majority_baseline_categorical(
+    train_ds: CategoricalTypDataset,
+    eval_langs: np.ndarray,
+    eval_feats: np.ndarray,
+    eval_vals: np.ndarray,
+    feat_to_value_names: Dict[int, List[str]],
+) -> float:
+    """
+    Most-frequent-class baseline for categorical features.
+
+    For each feature, predict the most common value from training data.
+    """
+    from collections import defaultdict
+    from sklearn.metrics import f1_score as _f1_score
+
+    # Count occurrences of each (feat, value) in training
+    feat_val_counts: dict = defaultdict(lambda: defaultdict(int))
+    for k in range(len(train_ds)):
+        _, fi, vi = train_ds[k]
+        feat_val_counts[int(fi)][int(vi)] += 1
+
+    y_true, y_pred = [], []
+    for i in range(len(eval_langs)):
+        li = int(eval_langs[i])
+        fi = int(eval_feats[i])
+        vi = int(eval_vals[i])
+
+        value_names = feat_to_value_names[fi]
+        true_label = value_names[vi]
+
+        counts = feat_val_counts.get(fi, {})
+        if counts:
+            pred_vi = max(counts, key=counts.get)
+            pred_label = value_names[pred_vi]
+        else:
+            pred_label = value_names[0]
+
+        y_true.append(true_label)
+        y_pred.append(pred_label)
+
+    if len(y_true) == 0:
+        return 0.0
+    return _f1_score(y_true, y_pred, average="micro")
+
+
+# ---------------------------------------------------------------------------
+# 8. Full Experiment Runner
 # ---------------------------------------------------------------------------
 
 def run_experiments_learned(
@@ -558,6 +617,16 @@ def run_experiments_learned(
                 if len(ev_v) == 0:
                     continue
 
+                # --- Majority baseline ---
+                f1_freq = majority_baseline_categorical(
+                    train_ds, ev_l, ev_f, ev_v,
+                    feat_to_value_names)
+                rows.append({
+                    "branch": branch, "macroarea": macroarea,
+                    "in_branch_frac": frac, "repeat": rep,
+                    "model": "Freq", "f1": f1_freq,
+                })
+
                 # --- Learned Embedding Model ---
                 model = TypologicalMF_Learned(
                     n_langs, n_total_values, feat_to_global_ids, embed_dim)
@@ -584,13 +653,15 @@ def run_experiments_learned(
 
 
 # ---------------------------------------------------------------------------
-# 8. Smoke Test
+# 9. Smoke Test
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import pandas as pd
+    from scipy.spatial.distance import cosine as cosine_dist
 
     np.random.seed(42)
+    torch.manual_seed(42)
 
     # Synthetic data: 50 languages, 10 features with varying cardinality
     N_LANG = 50
@@ -604,7 +675,7 @@ if __name__ == "__main__":
             if np.random.rand() < 0.7:  # 70% observed
                 cat_matrix[li, fi] = np.random.randint(0, card)
 
-    # Build feat_to_global_ids
+    # Build feat_to_global_ids and feat_to_value_names
     feat_to_global_ids = {}
     feat_to_value_names = {}
     gid = 0
@@ -614,7 +685,8 @@ if __name__ == "__main__":
         gid += card
 
     n_total = gid
-    print(f"Total unique values: {n_total}")
+    print(f"Synthetic data: {N_LANG} languages, {N_FEAT} features, "
+          f"{n_total} total values")
 
     # Create dataset from observed cells
     ls, fs, vs = [], [], []
@@ -651,12 +723,38 @@ if __name__ == "__main__":
         feat_to_value_names)
     print(f"\nHeld-out F1 (random baseline varies by cardinality): {f1:.3f}")
 
-    # Check learned value geometry for a feature
-    print("\n=== Value embedding geometry for feature 0 (7 values) ===")
-    embs = model.get_value_embeddings_for_feature(0)
-    from scipy.spatial.distance import cdist
-    dists = cdist(embs, embs, metric="cosine")
-    print("Pairwise cosine distances:")
-    print(np.round(dists, 3))
+    # Print value embedding geometry (pairwise cosine distances)
+    for fi in range(N_FEAT):
+        if feature_cards[fi] >= 3:
+            print(f"\n=== Value embedding geometry for feature {fi} "
+                  f"({feature_cards[fi]} values) ===")
+            embs = model.get_value_embeddings_for_feature(fi)
+            names = feat_to_value_names[fi]
+            for i in range(len(names)):
+                for j in range(i + 1, len(names)):
+                    d = cosine_dist(embs[i], embs[j])
+                    print(f"  {names[i]} <-> {names[j]}: "
+                          f"cosine distance = {d:.3f}")
+            break  # show one feature as example
 
-    print("\nSmoke test passed ✓")
+    # Test split_by_branch_categorical with synthetic genus column
+    print("\n=== Testing split_by_branch_categorical ===")
+    df_synth = pd.DataFrame({
+        "wals_code": [f"lang_{i}" for i in range(N_LANG)],
+        "name": [f"Language {i}" for i in range(N_LANG)],
+        "genus": ["GroupA"] * 10 + ["GroupB"] * 40,
+        "family": ["FamX"] * N_LANG,
+        "macroarea": ["Eurasia"] * N_LANG,
+    })
+    train_ds2, ev_l, ev_f, ev_v = split_by_branch_categorical(
+        df_synth, cat_matrix, "GroupA", in_branch_train_frac=0.10,
+        rng=np.random.default_rng(0))
+    print(f"Train samples: {len(train_ds2)}, Eval samples: {len(ev_l)}")
+
+    model2 = TypologicalMF_Learned(N_LANG, n_total, feat_to_global_ids,
+                                    embed_dim=32)
+    train_model_learned(model2, train_ds2, n_epochs=5, batch_size=32)
+    f1_split = evaluate_learned(model2, ev_l, ev_f, ev_v, feat_to_value_names)
+    print(f"Split eval F1: {f1_split:.3f}")
+
+    print("\nSmoke test passed.")

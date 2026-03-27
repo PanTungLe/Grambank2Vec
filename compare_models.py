@@ -20,7 +20,7 @@ from model import TypologicalMF, WALSDataset, train_model
 from model_learned import (
     TypologicalMF_Learned, CategoricalTypDataset,
     prepare_categorical, train_model_learned,
-    evaluate_learned,
+    evaluate_learned, split_by_branch_categorical,
 )
 from evaluation_pipeline import (
     split_by_branch, decode_and_evaluate, majority_baseline,
@@ -137,8 +137,6 @@ def run_comparison(
                 # ------------------------------------------------
                 # Categorical split (for learned model)
                 # ------------------------------------------------
-                from model_learned import split_by_branch_categorical
-
                 train_ds_cat, eval_l_cat, eval_f_cat, eval_v_cat = \
                     split_by_branch_categorical(
                         df, cat_matrix, target_branch=branch,
