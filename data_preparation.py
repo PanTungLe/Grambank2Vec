@@ -429,6 +429,7 @@ def load_grambank_cldf(
     # Some Grambank entries have empty strings or special values for missing data
     values = values[values["Value"].notna()].copy()
     values = values[values["Value"].astype(str).str.strip() != ""].copy()
+    values = values[values["Value"].astype(str).str.strip() != "?"].copy()
 
     # --- Filter out "?" values (uncertain/not determinable) ---
     # Grambank uses "?" to mark uncertain or indeterminate observations.
