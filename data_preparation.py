@@ -202,6 +202,13 @@ def load_glottolog_genus_map(
     has a languages.csv with columns including Glottocode and
     Classification (a "/" separated genealogical path).
 
+    Supports multiple Glottolog CLDF versions:
+    - Versions with a Classification / classification / Classification_Path /
+      classification_path column → parse the "/" separated path directly.
+    - Versions without a classification column but with Family_ID and
+      Parent_ID → reconstruct a shallow hierarchy from the parent chain.
+    - Falls back to Family column if neither approach works.
+
     Parameters
     ----------
     glottolog_repo_dir : str
@@ -214,6 +221,8 @@ def load_glottolog_genus_map(
     -------
     genus_map : dict mapping Glottocode → genus string
     """
+    import warnings
+
     cldf_dir = os.path.join(glottolog_repo_dir, "cldf")
     lang_csv = os.path.join(cldf_dir, "languages.csv")
 
@@ -222,55 +231,124 @@ def load_glottolog_genus_map(
             f"Glottolog languages.csv not found at {lang_csv}. "
             f"Please clone https://github.com/glottolog/glottolog-cldf")
 
-    gl_langs = pd.read_csv(lang_csv)
+    gl_langs = pd.read_csv(lang_csv, low_memory=False)
     gl_langs.columns = [c.strip() for c in gl_langs.columns]
 
-    # Find the classification column (varies by version)
-    class_col = None
-    for c in gl_langs.columns:
-        cl = c.lower().replace("_", "").replace(" ", "")
-        if cl in ("classification", "classificationpath",
-                   "classification_path"):
-            class_col = c
-            break
-
-    # Also try "Family" + sub-classification approach
+    # --- Identify the Glottocode column ---
     glottocode_col = None
     for c in gl_langs.columns:
         cl = c.lower()
         if cl in ("id", "glottocode", "language_id"):
             glottocode_col = c
             break
-
     if glottocode_col is None:
-        raise ValueError("Cannot find Glottocode column in Glottolog CSV")
+        raise ValueError("Cannot find Glottocode column in Glottolog CSV. "
+                         f"Available columns: {list(gl_langs.columns)}")
 
-    genus_map = {}
+    # --- Strategy 1: look for a classification path column ---
+    class_col = None
+    # Try exact and normalised column names across known Glottolog versions
+    candidates = ("Classification", "classification",
+                  "Classification_Path", "classification_path",
+                  "Classification_path", "classificationpath")
+    for c in gl_langs.columns:
+        if c in candidates or c.lower().replace("_", "").replace(" ", "") in (
+                "classification", "classificationpath"):
+            class_col = c
+            break
+
+    genus_map: Dict[str, str] = {}
 
     if class_col is not None:
-        # Use classification path directly
         for _, row in gl_langs.iterrows():
             gc = str(row[glottocode_col]).strip()
             classification = str(row.get(class_col, ""))
             genus = _extract_glottolog_genus(classification, genus_level)
             if genus:
                 genus_map[gc] = genus
-    else:
-        # Fallback: try to construct from Family + Name columns
-        # This is less precise but works with some Glottolog layouts
-        family_col = None
-        for c in gl_langs.columns:
-            if c.lower() == "family":
-                family_col = c
-                break
-        if family_col:
-            for _, row in gl_langs.iterrows():
-                gc = str(row[glottocode_col]).strip()
-                family = str(row.get(family_col, ""))
-                if family and family != "nan":
-                    genus_map[gc] = family
+        print(f"Loaded Glottolog genus map (classification column): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
 
-    print(f"Loaded Glottolog genus map: {len(genus_map)} Glottocodes")
+    # --- Strategy 2: reconstruct hierarchy from Family_ID + Parent_ID ---
+    family_id_col = None
+    parent_id_col = None
+    name_col = None
+    for c in gl_langs.columns:
+        cl = c.lower()
+        if cl in ("family_id", "familyid"):
+            family_id_col = c
+        elif cl in ("parent_id", "parentid"):
+            parent_id_col = c
+        elif cl == "name":
+            name_col = c
+
+    if family_id_col is not None and parent_id_col is not None:
+        print("No classification column found; reconstructing hierarchy "
+              "from Family_ID + Parent_ID ...")
+
+        # Build ID → name and ID → parent lookups
+        id_to_name: Dict[str, str] = {}
+        id_to_parent: Dict[str, str] = {}
+        for _, row in gl_langs.iterrows():
+            gid = str(row[glottocode_col]).strip()
+            parent = str(row.get(parent_id_col, "")).strip()
+            nm = str(row.get(name_col, gid)).strip() if name_col else gid
+            id_to_name[gid] = nm
+            if parent and parent != "nan" and parent != gid:
+                id_to_parent[gid] = parent
+
+        # Walk up the parent chain for each language to build a path,
+        # then extract the node at the desired genus_level
+        for _, row in gl_langs.iterrows():
+            gc = str(row[glottocode_col]).strip()
+            # Build ancestor chain (child → ... → root)
+            chain = []
+            cur = gc
+            seen = set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                chain.append(id_to_name.get(cur, cur))
+                cur = id_to_parent.get(cur)
+            # chain is [self, parent, grandparent, ..., root]
+            # Reverse to get [root, ..., self] = classification path
+            chain.reverse()
+            genus = _extract_glottolog_genus("/".join(chain), genus_level)
+            if genus:
+                genus_map[gc] = genus
+
+        print(f"Loaded Glottolog genus map (Parent_ID hierarchy): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
+
+    # --- Strategy 3: fall back to Family column ---
+    family_col = None
+    for c in gl_langs.columns:
+        if c.lower() == "family":
+            family_col = c
+            break
+
+    if family_col is not None:
+        warnings.warn(
+            "Glottolog CSV has no Classification or Parent_ID column. "
+            "Falling back to Family column for genus mapping. "
+            "This is coarser than classification-based genus and results "
+            "may not be comparable to WALS genus-based evaluation.")
+        for _, row in gl_langs.iterrows():
+            gc = str(row[glottocode_col]).strip()
+            family = str(row.get(family_col, "")).strip()
+            if family and family != "nan":
+                genus_map[gc] = family
+        print(f"Loaded Glottolog genus map (Family fallback): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
+
+    # --- Nothing worked ---
+    warnings.warn(
+        f"Could not extract genus information from Glottolog CSV at "
+        f"{lang_csv}. Available columns: {list(gl_langs.columns)}. "
+        f"Genus mapping will be empty; genus_source='family' will be "
+        f"used as fallback in load_grambank_cldf().")
     return genus_map
 
 
@@ -351,6 +429,24 @@ def load_grambank_cldf(
     # Some Grambank entries have empty strings or special values for missing data
     values = values[values["Value"].notna()].copy()
     values = values[values["Value"].astype(str).str.strip() != ""].copy()
+
+    # --- Filter out "?" values (uncertain/not determinable) ---
+    # Grambank uses "?" to mark uncertain or indeterminate observations.
+    # These must be removed BEFORE the pivot — otherwise they become
+    # spurious categorical values like "value_?" during training.
+    n_before_q = len(values)
+    # Remove rows where the raw Value is literally "?"
+    mask_q_raw = values["Value"].astype(str).str.strip() == "?"
+    # Safety net: also remove rows where the human-readable label indicates
+    # uncertainty, since some codes.csv entries may give "?" a descriptive name
+    uncertain_patterns = r"(?i)^(not\s+known|uncertain|not\s+applicable)$"
+    mask_q_label = values["Value_Label"].astype(str).str.strip().str.match(
+        uncertain_patterns, na=False)
+    values = values[~(mask_q_raw | mask_q_label)].copy()
+    n_filtered_q = n_before_q - len(values)
+    if n_filtered_q > 0:
+        print(f"Filtered {n_filtered_q} observations with Value=\"?\" "
+              f"(uncertain/not determinable)")
 
     # --- Pivot: one row per language, one column per feature ---
     values["feat_col"] = "feat_" + values["Parameter_ID"].astype(str)

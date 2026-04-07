@@ -25,6 +25,7 @@ from data_preparation import (
     binarise_wals,
     binarise_features,
     load_grambank_cldf,
+    load_glottolog_genus_map,
     _extract_glottolog_genus,
     is_latin_cyrillic_greek,
     match_wals_to_bible,
@@ -777,6 +778,18 @@ def make_synthetic_grambank_repo(tmpdir, n_langs=80, n_features=10, seed=42):
             })
             vid += 1
 
+    # Inject some "?" values (uncertain/not determinable) for testing
+    # These should be filtered out by load_grambank_cldf
+    for li in range(min(5, n_langs)):
+        value_rows.append({
+            "ID": f"v{vid}",
+            "Language_ID": f"abcd{li:04d}",
+            "Parameter_ID": "GB000",
+            "Value": "?",
+            "Code_ID": "",
+        })
+        vid += 1
+
     pd.DataFrame(code_rows).to_csv(
         os.path.join(cldf_dir, "codes.csv"), index=False)
     pd.DataFrame(value_rows).to_csv(
@@ -917,6 +930,147 @@ class TestGrambank:
                 assert any("glottolog" in str(warning.message).lower()
                            for warning in w)
             assert "genus" in df.columns
+
+    def test_grambank_question_mark_filter(self):
+        """Verify that '?' values are filtered out before pivot."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_dir = make_synthetic_grambank_repo(tmpdir, n_langs=30,
+                                                     n_features=5)
+            df, feature_cols = load_grambank_cldf(
+                repo_dir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            # No feature column should contain "value_?" or "?" as a value
+            for col in feature_cols:
+                non_null = df[col].dropna()
+                vals = set(non_null.tolist())
+                assert "value_?" not in vals, \
+                    f"Feature {col} contains 'value_?'"
+                assert "?" not in vals, \
+                    f"Feature {col} contains '?'"
+
+    def test_grambank_uncertain_label_filter(self):
+        """Verify that 'Not known' / 'Uncertain' labels are filtered out."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cldf_dir = os.path.join(tmpdir, "cldf")
+            os.makedirs(cldf_dir, exist_ok=True)
+
+            # Minimal languages.csv
+            pd.DataFrame([{
+                "ID": "abcd0001", "Name": "Lang1",
+                "Macroarea": "Eurasia", "Family": "TestFam",
+            }, {
+                "ID": "abcd0002", "Name": "Lang2",
+                "Macroarea": "Eurasia", "Family": "TestFam",
+            }]).to_csv(os.path.join(cldf_dir, "languages.csv"), index=False)
+
+            # parameters.csv
+            pd.DataFrame([{
+                "ID": "GB001", "Name": "Feat1", "Description": "test",
+            }]).to_csv(os.path.join(cldf_dir, "parameters.csv"), index=False)
+
+            # codes.csv — map "?" code to "Not known"
+            pd.DataFrame([
+                {"ID": "GB001-0", "Parameter_ID": "GB001", "Name": "no"},
+                {"ID": "GB001-1", "Parameter_ID": "GB001", "Name": "yes"},
+                {"ID": "GB001-?", "Parameter_ID": "GB001",
+                 "Name": "Not known"},
+            ]).to_csv(os.path.join(cldf_dir, "codes.csv"), index=False)
+
+            # values.csv — one real value and one "?" with "Not known" label
+            pd.DataFrame([
+                {"ID": "v1", "Language_ID": "abcd0001",
+                 "Parameter_ID": "GB001", "Value": "1",
+                 "Code_ID": "GB001-1"},
+                {"ID": "v2", "Language_ID": "abcd0002",
+                 "Parameter_ID": "GB001", "Value": "?",
+                 "Code_ID": "GB001-?"},
+                {"ID": "v3", "Language_ID": "abcd0001",
+                 "Parameter_ID": "GB001", "Value": "0",
+                 "Code_ID": "GB001-0"},
+            ]).to_csv(os.path.join(cldf_dir, "values.csv"), index=False)
+
+            df, feature_cols = load_grambank_cldf(
+                tmpdir,
+                min_lang_features=1,
+                min_feature_value_langs=1,
+                genus_source="family",
+            )
+
+            # The "Not known" value should have been filtered out
+            for col in feature_cols:
+                non_null = df[col].dropna()
+                for v in non_null:
+                    assert "not known" not in str(v).lower(), \
+                        f"'Not known' value leaked through in {col}"
+
+    def test_glottolog_genus_map_with_classification(self):
+        """Test load_glottolog_genus_map with a Classification column."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cldf_dir = os.path.join(tmpdir, "cldf")
+            os.makedirs(cldf_dir, exist_ok=True)
+            pd.DataFrame([
+                {"ID": "germ1234", "Name": "German",
+                 "Classification": "Indo-European/Germanic/West Germanic"},
+                {"ID": "fren1234", "Name": "French",
+                 "Classification": "Indo-European/Romance/Gallo-Romance"},
+                {"ID": "mand1234", "Name": "Mandarin",
+                 "Classification": "Sino-Tibetan/Sinitic"},
+            ]).to_csv(os.path.join(cldf_dir, "languages.csv"), index=False)
+
+            genus_map = load_glottolog_genus_map(tmpdir, genus_level=1)
+            assert genus_map["germ1234"] == "Germanic"
+            assert genus_map["fren1234"] == "Romance"
+            assert genus_map["mand1234"] == "Sinitic"
+
+    def test_glottolog_genus_map_with_parent_id(self):
+        """Test load_glottolog_genus_map hierarchy reconstruction from Parent_ID."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cldf_dir = os.path.join(tmpdir, "cldf")
+            os.makedirs(cldf_dir, exist_ok=True)
+            # Simulate a Glottolog CSV with Family_ID + Parent_ID but no
+            # Classification column
+            pd.DataFrame([
+                {"ID": "indo1234", "Name": "Indo-European",
+                 "Family_ID": "", "Parent_ID": ""},
+                {"ID": "germ1235", "Name": "Germanic",
+                 "Family_ID": "indo1234", "Parent_ID": "indo1234"},
+                {"ID": "west1236", "Name": "West Germanic",
+                 "Family_ID": "indo1234", "Parent_ID": "germ1235"},
+                {"ID": "germ1237", "Name": "German",
+                 "Family_ID": "indo1234", "Parent_ID": "west1236"},
+            ]).to_csv(os.path.join(cldf_dir, "languages.csv"), index=False)
+
+            genus_map = load_glottolog_genus_map(tmpdir, genus_level=1)
+            # German: path is [Indo-European, Germanic, West Germanic, German]
+            # level=1 should give "Germanic"
+            assert genus_map["germ1237"] == "Germanic"
+
+    def test_glottolog_genus_map_family_fallback(self):
+        """Test load_glottolog_genus_map falls back to Family column."""
+        import warnings
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cldf_dir = os.path.join(tmpdir, "cldf")
+            os.makedirs(cldf_dir, exist_ok=True)
+            # CSV with only ID, Name, Family — no Classification or Parent_ID
+            pd.DataFrame([
+                {"ID": "germ1234", "Name": "German",
+                 "Family": "Indo-European"},
+                {"ID": "mand1234", "Name": "Mandarin",
+                 "Family": "Sino-Tibetan"},
+            ]).to_csv(os.path.join(cldf_dir, "languages.csv"), index=False)
+
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                genus_map = load_glottolog_genus_map(tmpdir, genus_level=1)
+                # Should warn about falling back
+                assert any("family" in str(warning.message).lower()
+                           for warning in w)
+            assert genus_map["germ1234"] == "Indo-European"
+            assert genus_map["mand1234"] == "Sino-Tibetan"
 
 
 # ============================================================================
