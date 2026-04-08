@@ -480,7 +480,7 @@ def load_grambank_cldf(
         cl = c.lower()
         if cl == "name":
             col_map[c] = "name"
-        elif cl == "family":
+        elif cl in ("family", "family_name"):
             col_map[c] = "family"
         elif cl == "macroarea":
             col_map[c] = "macroarea"
