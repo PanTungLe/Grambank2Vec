@@ -424,6 +424,7 @@ def load_grambank_cldf(
     # We use Code_ID → Name mapping for human-readable labels.
     # If Code_ID is missing, fall back to "Value_<raw>" to keep them categorical.
     values["Value_Label"] = values["Code_ID"].map(code_to_name)
+    values["Value_Label"] = values["Value_Label"].astype(object)
 
     # Handle missing Code_IDs: use the raw Value with a prefix
     mask_no_label = values["Value_Label"].isna()
