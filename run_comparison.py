@@ -104,6 +104,13 @@ def main():
             genus_source=args.genus_source,
             glottolog_repo_dir=args.glottolog_repo,
         )
+
+        print(f"DEBUG: df shape = {df.shape}")
+        print(f"DEBUG: feature_cols count = {len(feature_cols)}")
+        print(f"DEBUG: sample feature values:")
+        for col in feature_cols[:5]:
+            print(f"  {col}: {df[col].value_counts().to_dict()}")
+
     else:
         if args.wals_repo is None:
             parser.error("--wals_repo is required when --database=wals")
