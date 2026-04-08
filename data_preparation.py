@@ -413,6 +413,12 @@ def load_grambank_cldf(
     # Grambank Code_IDs look like "GB020-1", "GB020-0", etc.
     code_to_name = dict(zip(codes["ID"], codes["Name"]))
 
+    # --- Filter out missing/empty values ---
+    # Some Grambank entries have empty strings or special values for missing data
+    values = values[values["Value"].notna()].copy()
+    values = values[values["Value"].astype(str).str.strip() != ""].copy()
+    values = values[values["Value"].astype(str).str.strip() != "?"].copy()
+   
     # --- Map values to human-readable labels ---
     # Grambank Value column contains "0", "1", "2", "3" as strings.
     # We use Code_ID → Name mapping for human-readable labels.
@@ -424,12 +430,6 @@ def load_grambank_cldf(
     if mask_no_label.any():
         values.loc[mask_no_label, "Value_Label"] = (
             "value_" + values.loc[mask_no_label, "Value"].astype(str))
-
-    # --- Filter out missing/empty values ---
-    # Some Grambank entries have empty strings or special values for missing data
-    values = values[values["Value"].notna()].copy()
-    values = values[values["Value"].astype(str).str.strip() != ""].copy()
-    values = values[values["Value"].astype(str).str.strip() != "?"].copy()
 
     # --- Filter out "?" values (uncertain/not determinable) ---
     # Grambank uses "?" to mark uncertain or indeterminate observations.
