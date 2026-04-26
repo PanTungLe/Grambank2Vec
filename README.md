@@ -7,14 +7,15 @@ Bjerva, Kementchedjhieva, Cotterell & Augenstein (NAACL-HLT 2019)
 | File | Description |
 |------|-------------|
 | `model.py` | Core PyTorch models: `TypologicalMF` (Section 3) and `TypologicalMF_SemiSup` (Section 4) |
-| `model_learned.py` | Learned feature-value embeddings with softmax: `TypologicalMF_Learned` |
-| `data_preparation.py` | Loads WALS and Grambank from CLDF format, loads eBible texts, binarises features, matches languages |
+| `model_learned.py` | Learned feature-value embedding model with softmax prediction (`TypologicalMF_Learned`) |
+| `data_preparation.py` | Loads WALS and Grambank from CLDF format, loads eBible/ParaBible texts, binarises features, matches languages |
 | `char_lm.py` | Character-level LSTM LM for pre-training language embeddings (Östling & Tiedemann 2017) |
-| `model_learned.py` | Learned feature-value embedding model with softmax prediction |
-| `compare_models.py` | Side-by-side comparison of binary baseline and learned model |
 | `evaluation_pipeline.py` | Branch-based splitting, experiment runner, F1 evaluation with argmax decoding |
 | `compare_models.py` | Runs binary baseline (T-CF) and learned embeddings side-by-side on identical splits |
 | `run_comparison.py` | Unified entry point for running comparisons on WALS or Grambank |
+| `run_all.py` | End-to-end runner: clones data, trains the char-LM, runs all experiments, prints Table 1 |
+| `test_pipeline.py` | Pytest suite covering data loading, binarisation, models, char-LM, and the evaluation pipeline (synthetic data, no downloads) |
+| `requirements.txt` | Python dependencies |
 
 ## Supported Databases
 
@@ -26,8 +27,11 @@ Bjerva, Kementchedjhieva, Cotterell & Augenstein (NAACL-HLT 2019)
 ## Requirements
 
 ```bash
-pip install torch numpy pandas scikit-learn
+pip install -r requirements.txt
 ```
+
+Pulls in `torch`, `numpy`, `pandas`, `scikit-learn`, and `requests`. Use
+`pytest` to run `test_pipeline.py`.
 
 ---
 
