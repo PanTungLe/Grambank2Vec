@@ -236,7 +236,9 @@ def train_model(
     # collapse that overwhelms the sparse data signal.
     # Instead, model.forward() returns a per-batch L2 penalty computed
     # only over the embeddings actually looked up in the batch.
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
+    # Filter to trainable parameters only (skips frozen pretrained embeddings)
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = optim.Adam(trainable_params, lr=lr, weight_decay=0)
     criterion = nn.BCELoss()
 
     losses = []
