@@ -155,6 +155,9 @@ def main():
     parser.add_argument("--l2_reg", type=float, default=0.1)
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5)
+    parser.add_argument("--no_freeze_lang", action="store_true",
+                        help="Allow pretrained language embeddings to be "
+                             "fine-tuned. Default is to freeze them.")
 
     parser.add_argument("--device", type=str, default="cpu")
 
@@ -322,6 +325,7 @@ def main():
         pretrained_embs=pretrained_embs,
         device=args.device,
         min_branch_size=args.min_branch_size,
+        freeze_lang=not args.no_freeze_lang,
     )
 
     # ================================================================
