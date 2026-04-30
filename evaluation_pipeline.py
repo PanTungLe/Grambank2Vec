@@ -414,6 +414,7 @@ def run_experiments(
     device: str = "cpu",
     min_branch_size: int = 5,
     only_branches: Optional[list] = None,
+    freeze_lang: bool = True,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -515,7 +516,7 @@ def run_experiments(
                 if pretrained_embs is not None:
                     model_ss = TypologicalMF_SemiSup(
                         pretrained_embs, n_bfeat,
-                        embed_dim=embed_dim, freeze_lang=False)
+                        embed_dim=embed_dim, freeze_lang=freeze_lang)
                     print(f"  [SemiSup] branch={branch}, frac={frac}, "
                           f"rep={rep+1}")
                     train_model(model_ss, train_ds, n_epochs=n_epochs,
@@ -587,6 +588,11 @@ def main():
                         help="Skip branches with fewer languages (paper: >4)")
     parser.add_argument("--branches", type=str, nargs="+", default=None,
                         help="Only evaluate these branches (e.g. --branches Oceanic Slavic)")
+    parser.add_argument("--no_freeze_lang", action="store_true",
+                        help="Allow pretrained language embeddings to be "
+                             "fine-tuned during training. Default is to "
+                             "freeze them, which preserves high-quality "
+                             "pretrained geometry (e.g. from Östling vectors).")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
@@ -655,6 +661,7 @@ def main():
         device=args.device,
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
+        freeze_lang=not args.no_freeze_lang,
     )
 
     # 4. Save and display results
