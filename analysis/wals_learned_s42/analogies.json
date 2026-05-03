@@ -1,0 +1,46 @@
+{
+  "_annotation": "Learned: nearest neighbours are over per-featvalue embeddings (one row per (feature, value) pair).",
+  "_architecture": "learned",
+  "_database": "wals",
+  "results": [
+    {
+      "name": "Greenberg-U4 (SOV/Post vs VSO/Prep)",
+      "a_pos": "81A=SOV",
+      "a_neg": "85A=Postpositions",
+      "b_pos": "81A=VSO",
+      "b_neg": "85A=Prepositions",
+      "residual": 1.4216389656066895,
+      "baseline_mean": 1.8194713107943534,
+      "baseline_p5": 1.0181373059749603,
+      "baseline_median": 1.785041868686676,
+      "empirical_p_value": 0.223,
+      "n_baseline": 1000
+    },
+    {
+      "name": "Word-order/Adposition (SVO/Prep vs SOV/Post)",
+      "a_pos": "81A=SVO",
+      "a_neg": "85A=Prepositions",
+      "b_pos": "81A=SOV",
+      "b_neg": "85A=Postpositions",
+      "residual": 1.4687458276748657,
+      "baseline_mean": 1.7954243643283845,
+      "baseline_p5": 0.9735465496778488,
+      "baseline_median": 1.7287113070487976,
+      "empirical_p_value": 0.288,
+      "n_baseline": 1000
+    },
+    {
+      "name": "Tone vs Classifier (SimpleTone/NoClass vs NoTone/ObligClass)",
+      "a_pos": "13A=Simple tone system",
+      "a_neg": "55A=Absent",
+      "b_pos": "13A=No tones",
+      "b_neg": "55A=Obligatory",
+      "residual": 2.8881537914276123,
+      "baseline_mean": 1.7947345235943795,
+      "baseline_p5": 1.0001385986804963,
+      "baseline_median": 1.7262932658195496,
+      "empirical_p_value": 0.965,
+      "n_baseline": 1000
+    }
+  ]
+}
