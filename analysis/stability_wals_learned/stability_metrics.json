@@ -1,0 +1,162 @@
+{
+  "database": "wals",
+  "architecture": "learned",
+  "k_seeds": 5,
+  "checkpoints": [
+    "checkpoints/wals_learned_s42",
+    "checkpoints/wals_learned_s43",
+    "checkpoints/wals_learned_s44",
+    "checkpoints/wals_learned_s45",
+    "checkpoints/wals_learned_s46"
+  ],
+  "probe_a_jaccard": {
+    "81A=SOV": {
+      "mean_jaccard": 0.8575757575757577,
+      "std_jaccard": 0.10325287901455042,
+      "n_pairs": 10
+    },
+    "81A=SVO": {
+      "mean_jaccard": 0.806060606060606,
+      "std_jaccard": 0.08803538815959971,
+      "n_pairs": 10
+    },
+    "81A=VSO": {
+      "mean_jaccard": 0.6218781218781219,
+      "std_jaccard": 0.12177401481045348,
+      "n_pairs": 10
+    },
+    "81A=VOS": {
+      "mean_jaccard": 0.6305361305361306,
+      "std_jaccard": 0.08697637858650648,
+      "n_pairs": 10
+    },
+    "81A=OVS": {
+      "mean_jaccard": 0.7144522144522145,
+      "std_jaccard": 0.09242799017672192,
+      "n_pairs": 10
+    },
+    "85A=Postpositions": {
+      "mean_jaccard": 0.8727272727272728,
+      "std_jaccard": 0.08331955809010616,
+      "n_pairs": 10
+    },
+    "85A=Prepositions": {
+      "mean_jaccard": 0.9272727272727274,
+      "std_jaccard": 0.08907235428302464,
+      "n_pairs": 10
+    },
+    "55A=Absent": {
+      "mean_jaccard": 0.7757575757575759,
+      "std_jaccard": 0.10338619460140597,
+      "n_pairs": 10
+    },
+    "55A=Obligatory": {
+      "mean_jaccard": 0.6608391608391608,
+      "std_jaccard": 0.11587801550193001,
+      "n_pairs": 10
+    },
+    "55A=Optional": {
+      "mean_jaccard": 0.5052614052614052,
+      "std_jaccard": 0.14284263060201544,
+      "n_pairs": 10
+    },
+    "13A=No tones": {
+      "mean_jaccard": 0.6456876456876457,
+      "std_jaccard": 0.10356578038006092,
+      "n_pairs": 10
+    },
+    "13A=Simple tone system": {
+      "mean_jaccard": 0.47225274725274724,
+      "std_jaccard": 0.13437036958200646,
+      "n_pairs": 10
+    },
+    "13A=Complex tone system": {
+      "mean_jaccard": 0.6841491841491842,
+      "std_jaccard": 0.07700250190750087,
+      "n_pairs": 10
+    }
+  },
+  "probe_b_silhouette": {
+    "mean": -0.36337538361549376,
+    "std": 0.0015875411247678343,
+    "min": -0.3654811382293701,
+    "max": -0.36158061027526855,
+    "per_seed": [
+      -0.36490631103515625,
+      -0.3631274700164795,
+      -0.36158061027526855,
+      -0.36178138852119446,
+      -0.3654811382293701
+    ]
+  },
+  "probe_c_greenberg": [
+    {
+      "name": "Greenberg-U4 (SOV/Post vs VSO/Prep)",
+      "n_seeds": 5,
+      "residual_mean": 1.4223517417907714,
+      "residual_std": 0.034863748527942946,
+      "p_value_mean": 0.1828,
+      "p_value_std": 0.02196724834839357
+    },
+    {
+      "name": "Word-order/Adposition (SVO/Prep vs SOV/Post)",
+      "n_seeds": 5,
+      "residual_mean": 1.4109781742095948,
+      "residual_std": 0.0458980726127677,
+      "p_value_mean": 0.2684,
+      "p_value_std": 0.022285421243494585
+    },
+    {
+      "name": "Tone vs Classifier (SimpleTone/NoClass vs NoTone/ObligClass)",
+      "n_seeds": 5,
+      "residual_mean": 2.983888339996338,
+      "residual_std": 0.07974888371561373,
+      "p_value_mean": 0.9751999999999998,
+      "p_value_std": 0.004118252056394804
+    }
+  ],
+  "procrustes_stability": {
+    "mean_disparity": 0.04306400194042967,
+    "std_disparity": 0.0014279970734885341,
+    "min_disparity": 0.04119642777607832,
+    "max_disparity": 0.046104802922303956,
+    "n_pairs": 10,
+    "disparity_matrix": [
+      [
+        0.0,
+        0.043267890470324824,
+        0.04306120671880416,
+        0.04198697346088892,
+        0.042859361379781066
+      ],
+      [
+        0.043267890470324824,
+        0.0,
+        0.04119642777607832,
+        0.0423048976308469,
+        0.046104802922303956
+      ],
+      [
+        0.04306120671880416,
+        0.04119642777607832,
+        0.0,
+        0.04175546398113693,
+        0.04509437817403016
+      ],
+      [
+        0.04198697346088892,
+        0.0423048976308469,
+        0.04175546398113693,
+        0.0,
+        0.043008616890101437
+      ],
+      [
+        0.042859361379781066,
+        0.046104802922303956,
+        0.04509437817403016,
+        0.043008616890101437,
+        0.0
+      ]
+    ]
+  }
+}
