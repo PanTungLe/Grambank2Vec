@@ -477,8 +477,12 @@ def main(argv: list[str] | None = None) -> None:
                   f"lang_norm={lang_norm:.6f}, fv_norm={fv_norm:.6f}. "
                   f"This is the Adam weight_decay=0 violation.  Halting.")
             break
-        if epoch >= 10 and train_loss > 0.693:
-            print(f"\nWARNING: train_loss≈ln(2) at epoch {epoch} — "
+        # For T-CF (binary CE) the random baseline is ln(2)≈0.693.
+        # For Learned (multiclass CE) the random baseline is ln(K) where K
+        # is the avg number of values per feature — always > ln(2), so we
+        # don't flag Learned with the binary threshold.
+        if epoch >= 10 and args.architecture == "tcf" and train_loss > 0.693:
+            print(f"\nWARNING: T-CF train_loss≈ln(2) at epoch {epoch} — "
                   f"model may not be learning.  Check data and seeding.")
 
         # --- Early stopping ---
