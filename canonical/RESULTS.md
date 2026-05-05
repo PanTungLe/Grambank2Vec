@@ -114,31 +114,107 @@ as in lexical embedding spaces.
 
 ---
 
+## Phase 4 — Grambank geometry probes
+
+### Grambank corpus stats
+
+| Statistic | Value |
+|-----------|-------|
+| Languages | 2 360 |
+| Features (raw) | 195 |
+| Feature-value embeddings (Learned) | 392 |
+| Binary columns (T-CF) | 206 |
+| Training epochs (Learned seed 42) | 69 (best 59, val NLL=0.490) |
+| Training epochs (T-CF seed 42) | 70 (best 60, val BCE=0.521) |
+
+### Probe A — Grambank Learned nearest neighbours
+
+The model discovers the **Greenberg head-final cluster** independently of WALS:
+
+| Target | Top neighbours (cosine) |
+|--------|------------------------|
+| `GB133=1` (verb-final / SOV-analogue) | `GB074=0` no-prep (0.974), `GB075=1` postpos (0.972), `GB328=1` RC-before-N (0.938) |
+| `GB075=1` (postpositions) | `GB133=1` verb-final (0.972), `GB074=0` no-prep (0.966), `GB065=1` poss-N (0.884) |
+| `GB074=1` (prepositions) | `GB133=0` not-verb-final (0.974), `GB075=0` no-postpos (0.966), `GB328=0` RC-after-N (0.878) |
+
+These co-embeddings replicate Greenberg Universal 4 (SOV → postpositions;
+VSO → prepositions) and the broader head-final cluster (verb-final ↔ pre-N
+relative clauses ↔ case morphology) directly from Grambank's different
+feature inventory.
+
+### Probe B — Grambank silhouette
+
+| Setting | Global silhouette |
+|---------|------------------|
+| Grambank Learned | −0.540 |
+| Grambank T-CF | −0.383 |
+
+Negative silhouette is expected (same interpretation as WALS — see Phase 4
+notes above).
+
+### Probe C — Grambank Greenberg probes
+
+| Universal | Residual | Baseline mean | Empirical p |
+|-----------|----------|---------------|-------------|
+| Greenberg-U4 (verb-final/Post vs verb-init/Prep) | 0.982 | 1.400 | 0.280 |
+
+The U4 analogy holds (p=0.28 is directionally correct, residual below
+baseline mean) but does not reach significance — consistent with the WALS
+result (p=0.223).
+
+---
+
 ## Phase 5 — Cross-database comparison (RQ1 second clause)
 
-As a cross-*architecture* sanity check (WALS Learned vs WALS T-CF, same
-data), comparing whether two different model families trained on the same
-corpus learn the same language geometry:
+### Cross-architecture sanity check (WALS Learned vs WALS T-CF)
+
+Both architectures trained on the same corpus:
 
 | Metric | Value |
 |--------|-------|
 | Shared languages | 1 641 |
-| Procrustes disparity (observed) | 0.735 |
-| Procrustes null mean | 0.999 |
+| Procrustes disparity | 0.735 |
 | Procrustes p-value | 0.000 |
 | CCA mean canonical correlation | 0.894 |
 | CCA component range | 0.805–0.990 |
 
-**Interpretation:** The observed Procrustes disparity (0.735) is far below the
-null distribution mean (0.999) with p=0.000 → both architectures learn
-significantly more similar language geometry than chance.  CCA canonical
-correlations all exceed 0.80 → the two 64-dimensional embedding spaces share
-a high fraction of common variance.  This suggests the typological signal
-in WALS is robust to architecture choice.
+### WALS vs Grambank (cross-database, RQ1)
 
-**Cross-database comparison (WALS vs Grambank) is pending** Grambank
-checkpoint training, which requires network access to clone the CLDF repo.
-The `compare_databases.py` script is fully implemented and ready to run.
+| Metric | Learned | T-CF |
+|--------|---------|------|
+| Shared languages | 1 015 | 1 015 |
+| Procrustes disparity (observed) | 0.712 | 0.613 |
+| Procrustes null mean | 0.995 | 0.999 |
+| Procrustes p-value | 0.000 | 0.000 |
+| CCA mean canonical correlation | 0.607 | 0.508 |
+| CCA top correlation | 0.899 | 0.883 |
+
+**Interpretation:** Both architectures show highly significant cross-database
+similarity (p=0.000).  The observed Procrustes disparities (0.612–0.712) are
+well below the null means (0.995–0.999), confirming that the 1 015 shared
+languages occupy geometrically similar positions in WALS and Grambank embedding
+spaces.  CCA correlations decay from ~0.90 for the first component to ~0.43,
+indicating the first few principal typological dimensions are robustly shared
+while later dimensions encode database-specific features.
+
+**Hierarchy of similarity (Procrustes disparity scale):**
+
+| Comparison | Disparity |
+|------------|-----------|
+| Within Learned, different seeds | 0.043 |
+| Within T-CF, different seeds | 0.126 |
+| WALS Learned vs WALS T-CF (same data, diff arch) | 0.735 |
+| WALS vs Grambank (Learned) | 0.712 |
+| WALS vs Grambank (T-CF) | 0.613 |
+| Random permutation baseline | ~0.997 |
+
+The cross-database Procrustes disparity (~0.7 Learned, ~0.6 T-CF) is
+comparable to the cross-architecture same-database disparity (0.735),
+suggesting that **the typological signal captured by the databases is at
+least as strong as the architectural choice**.  The T-CF cross-database
+disparity (0.613) is notably lower than Learned (0.712), reflecting that
+binary feature columns map more directly between the two databases'
+feature inventories.
 
 ---
 

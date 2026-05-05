@@ -68,18 +68,18 @@ DEFAULT_WALS_TARGETS: list[str] = [
 # include a placeholder list so the script doesn't crash on Grambank input
 # (the silent-skip behaviour will drop unknown keys).
 DEFAULT_GRAMBANK_TARGETS: list[str] = [
-    # GB070 — VO order (binary 0/1) — the binarycol/featvalue label is "GB070=1"
-    "GB070=1", "GB070=0",
-    # GB071 — OV order
-    "GB071=1", "GB071=0",
-    # GB022 — Postpositions
-    "GB022=1", "GB022=0",
-    # GB023 — Prepositions
-    "GB023=1", "GB023=0",
-    # GB082 — Numeral classifiers
-    "GB082=1", "GB082=0",
-    # GB319 — Lexical tone (binary)
-    "GB319=1", "GB319=0",
+    # GB133 — Verb-final transitive order (SOV-analogue)
+    "GB133=1", "GB133=0",
+    # GB131 — Verb-initial transitive order (VSO-analogue)
+    "GB131=1", "GB131=0",
+    # GB074 — Prepositions
+    "GB074=1", "GB074=0",
+    # GB075 — Postpositions
+    "GB075=1", "GB075=0",
+    # GB193 — Order of adnominal property word and noun (0=adj-N, 1=N-adj, 2=both, 3=neither)
+    "GB193=0", "GB193=1",
+    # GB203 — Order of quantifier 'all' and noun
+    "GB203=0", "GB203=1",
 ]
 
 
@@ -108,9 +108,14 @@ GREENBERG_PAIRS_WALS: list[dict[str, Any]] = [
 
 GREENBERG_PAIRS_GRAMBANK: list[dict[str, Any]] = [
     {
-        "name": "Word-order/Adposition (OV/Post vs VO/Prep)",
-        "a_pos": "GB071=1", "a_neg": "GB022=1",
-        "b_pos": "GB070=1", "b_neg": "GB023=1",
+        "name": "Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep)",
+        "a_pos": "GB133=1", "a_neg": "GB075=1",
+        "b_pos": "GB131=1", "b_neg": "GB074=1",
+    },
+    {
+        "name": "Adj-N order vs Verb-final (head-final cluster)",
+        "a_pos": "GB193=0", "a_neg": "GB133=1",
+        "b_pos": "GB193=1", "b_neg": "GB131=1",
     },
 ]
 

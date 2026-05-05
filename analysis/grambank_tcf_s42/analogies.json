@@ -1,0 +1,11 @@
+{
+  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_architecture": "tcf",
+  "_database": "grambank",
+  "results": [
+    {
+      "name": "Word-order/Adposition (OV/Post vs VO/Prep)",
+      "skipped": "missing featvalues: ['GB071=1', 'GB022=1', 'GB070=1', 'GB023=1']"
+    }
+  ]
+}
