@@ -1,0 +1,115 @@
+{
+  "database": "grambank",
+  "architecture": "tcf",
+  "k_seeds": 5,
+  "checkpoints": [
+    "checkpoints/grambank_tcf_s42",
+    "checkpoints/grambank_tcf_s43",
+    "checkpoints/grambank_tcf_s44",
+    "checkpoints/grambank_tcf_s45",
+    "checkpoints/grambank_tcf_s46"
+  ],
+  "probe_a_jaccard": {
+    "GB193=0": {
+      "mean_jaccard": 0.16931544547643618,
+      "std_jaccard": 0.09006854397712323,
+      "n_pairs": 10
+    },
+    "GB193=1": {
+      "mean_jaccard": 0.4787545787545787,
+      "std_jaccard": 0.10913107824658642,
+      "n_pairs": 10
+    },
+    "GB203=0": {
+      "mean_jaccard": 0.25511204481792715,
+      "std_jaccard": 0.08193998507845812,
+      "n_pairs": 10
+    },
+    "GB203=1": {
+      "mean_jaccard": 0.5957375957375957,
+      "std_jaccard": 0.11633394156976885,
+      "n_pairs": 10
+    }
+  },
+  "probe_b_silhouette": {
+    "mean": -0.3821639776229858,
+    "std": 0.008339714812267548,
+    "min": -0.39710527658462524,
+    "max": -0.37208014726638794,
+    "per_seed": [
+      -0.38292938470840454,
+      -0.39710527658462524,
+      -0.3811461329460144,
+      -0.37208014726638794,
+      -0.37755894660949707
+    ]
+  },
+  "probe_c_greenberg": [
+    {
+      "name": "Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep)",
+      "n_seeds": 0,
+      "skipped_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "Adj-N order vs Verb-final (head-final cluster)",
+      "n_seeds": 0,
+      "skipped_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "procrustes_stability": {
+    "mean_disparity": 0.22170891190627623,
+    "std_disparity": 0.02856494841932922,
+    "min_disparity": 0.16869787660756314,
+    "max_disparity": 0.26338879216278355,
+    "n_pairs": 10,
+    "disparity_matrix": [
+      [
+        0.0,
+        0.20166630647290573,
+        0.19169520058794545,
+        0.23481805224756963,
+        0.16869787660756314
+      ],
+      [
+        0.20166630647290573,
+        0.0,
+        0.2376498615930829,
+        0.26338879216278355,
+        0.2129669620197508
+      ],
+      [
+        0.19169520058794545,
+        0.2376498615930829,
+        0.0,
+        0.2584217654671205,
+        0.2088938211545387
+      ],
+      [
+        0.23481805224756963,
+        0.26338879216278355,
+        0.2584217654671205,
+        0.0,
+        0.2388904807495022
+      ],
+      [
+        0.16869787660756314,
+        0.2129669620197508,
+        0.2088938211545387,
+        0.2388904807495022,
+        0.0
+      ]
+    ]
+  }
+}
