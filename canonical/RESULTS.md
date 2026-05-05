@@ -282,6 +282,37 @@ The standard deviations across seeds are small relative to the mean values
 (CV < 10% for all pairs), confirming that the Greenberg-probe results are
 stable across random initialisations and are not artefacts of a specific seed.
 
+### Grambank stability (K=5 seeds)
+
+| Metric | Grambank Learned | Grambank T-CF |
+|--------|-----------------|---------------|
+| Mean Jaccard@10 (Probe A) | 0.672 ± 0.138 | 0.375 ± 0.170 |
+| Silhouette mean ± std | −0.540 ± 0.001 | −0.382 ± 0.008 |
+| Procrustes disparity mean ± std | 0.072 ± 0.003 | 0.222 ± 0.029 |
+
+Grambank Learned Probe C across seeds:
+
+| Universal | Residual ± std | p-value ± std |
+|-----------|---------------|---------------|
+| Greenberg U4 (verb-final/Post vs verb-init/Prep) | 0.980 ± 0.030 | 0.296 ± 0.021 |
+
+### Complete stability hierarchy
+
+| Setting | Jaccard@10 | Silhouette std | Procrustes |
+|---------|-----------|----------------|------------|
+| WALS Learned (K=5) | 0.706 ± 0.133 | ±0.002 | 0.043 ± 0.001 |
+| Grambank Learned (K=5) | 0.672 ± 0.138 | ±0.001 | 0.072 ± 0.003 |
+| WALS T-CF (K=5) | 0.204 ± 0.144 | ±0.002 | 0.126 ± 0.005 |
+| Grambank T-CF (K=5) | 0.375 ± 0.170 | ±0.008 | 0.222 ± 0.029 |
+
+The Learned architecture is consistently more stable than T-CF across both
+databases.  Grambank models are slightly less stable than WALS models of the
+same architecture, likely because Grambank's larger dataset (2360 vs 1683
+languages) and sparser coverage create a more complex loss landscape with
+multiple near-equivalent local minima.  Nevertheless, all Learned models
+(Procrustes ≤ 0.072) are far more stable than any cross-database comparison
+(Procrustes ≥ 0.613).
+
 ---
 
 ## Reproducibility checklist
