@@ -1,0 +1,6 @@
+{
+  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_architecture": "tcf",
+  "_database": "grambank",
+  "results": {}
+}

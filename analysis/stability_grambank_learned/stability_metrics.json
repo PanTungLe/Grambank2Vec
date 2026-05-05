@@ -1,0 +1,149 @@
+{
+  "database": "grambank",
+  "architecture": "learned",
+  "k_seeds": 5,
+  "checkpoints": [
+    "checkpoints/grambank_learned_s42",
+    "checkpoints/grambank_learned_s43",
+    "checkpoints/grambank_learned_s44",
+    "checkpoints/grambank_learned_s45",
+    "checkpoints/grambank_learned_s46"
+  ],
+  "probe_a_jaccard": {
+    "GB133=1": {
+      "mean_jaccard": 0.7447552447552448,
+      "std_jaccard": 0.0965398060134211,
+      "n_pairs": 10
+    },
+    "GB133=0": {
+      "mean_jaccard": 0.790909090909091,
+      "std_jaccard": 0.0972061511051239,
+      "n_pairs": 10
+    },
+    "GB131=1": {
+      "mean_jaccard": 0.6759906759906761,
+      "std_jaccard": 0.12518155321303082,
+      "n_pairs": 10
+    },
+    "GB131=0": {
+      "mean_jaccard": 0.6778221778221779,
+      "std_jaccard": 0.1342182411086678,
+      "n_pairs": 10
+    },
+    "GB074=1": {
+      "mean_jaccard": 0.7477855477855478,
+      "std_jaccard": 0.12392429214001997,
+      "n_pairs": 10
+    },
+    "GB074=0": {
+      "mean_jaccard": 0.7477855477855478,
+      "std_jaccard": 0.12392429214001997,
+      "n_pairs": 10
+    },
+    "GB075=1": {
+      "mean_jaccard": 0.6498501498501499,
+      "std_jaccard": 0.13116462104374194,
+      "n_pairs": 10
+    },
+    "GB075=0": {
+      "mean_jaccard": 0.6498501498501499,
+      "std_jaccard": 0.13116462104374194,
+      "n_pairs": 10
+    },
+    "GB193=0": {
+      "mean_jaccard": 0.34642857142857136,
+      "std_jaccard": 0.0744309477730504,
+      "n_pairs": 10
+    },
+    "GB193=1": {
+      "mean_jaccard": 0.7757575757575758,
+      "std_jaccard": 0.10338619460140597,
+      "n_pairs": 10
+    },
+    "GB203=0": {
+      "mean_jaccard": 0.4341575091575091,
+      "std_jaccard": 0.08767754312163448,
+      "n_pairs": 10
+    },
+    "GB203=1": {
+      "mean_jaccard": 0.8272727272727274,
+      "std_jaccard": 0.12931265632334468,
+      "n_pairs": 10
+    }
+  },
+  "probe_b_silhouette": {
+    "mean": -0.5395732522010803,
+    "std": 0.0010470412256905562,
+    "min": -0.5408793091773987,
+    "max": -0.5376763343811035,
+    "per_seed": [
+      -0.5397045612335205,
+      -0.5396378636360168,
+      -0.5399681925773621,
+      -0.5376763343811035,
+      -0.5408793091773987
+    ]
+  },
+  "probe_c_greenberg": [
+    {
+      "name": "Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep)",
+      "n_seeds": 5,
+      "residual_mean": 0.9800487756729126,
+      "residual_std": 0.029658427070563643,
+      "p_value_mean": 0.2964,
+      "p_value_std": 0.020991426821443077
+    },
+    {
+      "name": "Adj-N order vs Verb-final (head-final cluster)",
+      "n_seeds": 5,
+      "residual_mean": 2.2556588649749756,
+      "residual_std": 0.02814047595976128,
+      "p_value_mean": 0.8832000000000001,
+      "p_value_std": 0.006013318551349169
+    }
+  ],
+  "procrustes_stability": {
+    "mean_disparity": 0.07241999092415696,
+    "std_disparity": 0.0026527855839957337,
+    "min_disparity": 0.06733530111540537,
+    "max_disparity": 0.07702547381535574,
+    "n_pairs": 10,
+    "disparity_matrix": [
+      [
+        0.0,
+        0.07303090907230712,
+        0.07031482854529407,
+        0.06733530111540537,
+        0.07105099973199973
+      ],
+      [
+        0.07303090907230712,
+        0.0,
+        0.07454350334150245,
+        0.07386449468550052,
+        0.07702547381535574
+      ],
+      [
+        0.07031482854529407,
+        0.07454350334150245,
+        0.0,
+        0.07047434862320473,
+        0.07482410515671617
+      ],
+      [
+        0.06733530111540537,
+        0.07386449468550052,
+        0.07047434862320473,
+        0.0,
+        0.07173594515428386
+      ],
+      [
+        0.07105099973199973,
+        0.07702547381535574,
+        0.07482410515671617,
+        0.07173594515428386,
+        0.0
+      ]
+    ]
+  }
+}

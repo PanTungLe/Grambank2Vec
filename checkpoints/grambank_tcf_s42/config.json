@@ -1,0 +1,19 @@
+{
+  "database": "grambank",
+  "architecture": "tcf",
+  "data_path": "/home/user/grambank",
+  "glottolog_repo": null,
+  "out_dir": "checkpoints/grambank_tcf_s42",
+  "seed": 42,
+  "embed_dim": 64,
+  "n_epochs": 200,
+  "patience": 10,
+  "batch_size": 64,
+  "lr": 0.001,
+  "l2_coef": 0.1,
+  "val_frac": 0.05,
+  "device": "cpu",
+  "n_epochs_run": 70,
+  "best_epoch": 60,
+  "best_val_loss": 0.5209351773947886
+}
