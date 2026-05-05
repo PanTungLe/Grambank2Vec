@@ -1,0 +1,46 @@
+{
+  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_architecture": "tcf",
+  "_database": "wals",
+  "results": [
+    {
+      "name": "Greenberg-U4 (SOV/Post vs VSO/Prep)",
+      "a_pos": "81A=SOV",
+      "a_neg": "85A=Postpositions",
+      "b_pos": "81A=VSO",
+      "b_neg": "85A=Prepositions",
+      "residual": 1.3284308910369873,
+      "baseline_mean": 1.2341982307210564,
+      "baseline_p5": 0.25480257868766787,
+      "baseline_median": 1.0920832753181458,
+      "empirical_p_value": 0.608,
+      "n_baseline": 1000
+    },
+    {
+      "name": "Word-order/Adposition (SVO/Prep vs SOV/Post)",
+      "a_pos": "81A=SVO",
+      "a_neg": "85A=Prepositions",
+      "b_pos": "81A=SOV",
+      "b_neg": "85A=Postpositions",
+      "residual": 0.31826820969581604,
+      "baseline_mean": 1.229987074635923,
+      "baseline_p5": 0.25135487169027326,
+      "baseline_median": 1.1393224000930786,
+      "empirical_p_value": 0.073,
+      "n_baseline": 1000
+    },
+    {
+      "name": "Tone vs Classifier (SimpleTone/NoClass vs NoTone/ObligClass)",
+      "a_pos": "13A=Simple tone system",
+      "a_neg": "55A=Absent",
+      "b_pos": "13A=No tones",
+      "b_neg": "55A=Obligatory",
+      "residual": 2.722661256790161,
+      "baseline_mean": 1.2461470115333795,
+      "baseline_p5": 0.27011321783065795,
+      "baseline_median": 1.085785150527954,
+      "empirical_p_value": 0.949,
+      "n_baseline": 1000
+    }
+  ]
+}

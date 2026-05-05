@@ -1,0 +1,980 @@
+{
+  "100A": [
+    "Accusative",
+    "Active",
+    "Ergative",
+    "Hierarchical",
+    "Neutral",
+    "Split"
+  ],
+  "101A": [
+    "Mixed",
+    "Obligatory pronouns in subject position",
+    "Optional pronouns in subject position",
+    "Subject affixes on verb",
+    "Subject clitics on variable host",
+    "Subject pronouns in different position"
+  ],
+  "102A": [
+    "Both the A and P arguments",
+    "No person marking",
+    "Only the A argument",
+    "Only the P argument"
+  ],
+  "103A": [
+    "No person marking",
+    "No zero realization",
+    "Zero in all 3rd person forms",
+    "Zero in all 3sg forms",
+    "Zero in some 3sg forms"
+  ],
+  "104A": [
+    "A and P are fused",
+    "A and P do not or do not both occur on the verb",
+    "A precedes P",
+    "Both orders of A and P occur",
+    "P precedes A"
+  ],
+  "105A": [
+    "Double-object construction",
+    "Indirect-object construction",
+    "Mixed",
+    "Secondary-object construction"
+  ],
+  "106A": [
+    "Distinct from reflexive",
+    "Identical to reflexive",
+    "Mixed",
+    "No reciprocals"
+  ],
+  "107A": [
+    "Absent",
+    "Present"
+  ],
+  "108A": [
+    "Implicit patient",
+    "No antipassive",
+    "Oblique patient"
+  ],
+  "108B": [
+    "no antipassive",
+    "partially productive",
+    "productive"
+  ],
+  "109A": [
+    "Benefactive and other; both bases",
+    "Benefactive object; both bases",
+    "No applicative construction"
+  ],
+  "109B": [
+    "Instrument",
+    "Instrument and locative",
+    "Locative",
+    "No applicative construction",
+    "No other roles (= Only benefactive)"
+  ],
+  "10A": [
+    "Contrast absent",
+    "Contrast present"
+  ],
+  "110A": [
+    "Both",
+    "Purposive but no sequential",
+    "Sequential but no purposive"
+  ],
+  "111A": [
+    "Both",
+    "Morphological but no compound",
+    "Neither"
+  ],
+  "112A": [
+    "Double negation",
+    "Negative affix",
+    "Negative auxiliary verb",
+    "Negative particle",
+    "Negative word, unclear if verb or particle",
+    "Variation between negative word and affix"
+  ],
+  "113A": [
+    "Asymmetric",
+    "Both",
+    "Symmetric"
+  ],
+  "114A": [
+    "A/Cat",
+    "A/Fin",
+    "A/Fin and A/Cat",
+    "A/NonReal",
+    "A/NonReal and A/Cat",
+    "Non-assignable"
+  ],
+  "115A": [
+    "Mixed behaviour",
+    "No predicate negation",
+    "Predicate negation also present"
+  ],
+  "116A": [
+    "Interrogative intonation only",
+    "Interrogative verb morphology",
+    "Interrogative word order",
+    "Mixture of previous two types",
+    "Question particle"
+  ],
+  "117A": [
+    "'Have'",
+    "Conjunctional",
+    "Genitive",
+    "Locational",
+    "Topic"
+  ],
+  "118A": [
+    "Mixed",
+    "Nonverbal encoding",
+    "Verbal encoding"
+  ],
+  "119A": [
+    "Different",
+    "Identical"
+  ],
+  "120A": [
+    "Impossible",
+    "Possible"
+  ],
+  "121A": [
+    "Conjoined",
+    "Exceed",
+    "Locational",
+    "Particle"
+  ],
+  "122A": [
+    "Gap",
+    "Non-reduction",
+    "Relative pronoun"
+  ],
+  "123A": [
+    "Gap",
+    "Non-reduction",
+    "Not possible",
+    "Pronoun-retention",
+    "Relative pronoun"
+  ],
+  "124A": [
+    "Both construction types exist",
+    "Desiderative verbal affix",
+    "Subject is expressed overtly",
+    "Subject is left implicit"
+  ],
+  "125A": [
+    "Balanced",
+    "Balanced/deranked",
+    "Deranked"
+  ],
+  "126A": [
+    "Balanced",
+    "Balanced/deranked",
+    "Deranked"
+  ],
+  "127A": [
+    "Balanced",
+    "Balanced/deranked",
+    "Deranked"
+  ],
+  "128A": [
+    "Balanced",
+    "Balanced/deranked",
+    "Deranked"
+  ],
+  "129A": [
+    "Different",
+    "Identical"
+  ],
+  "12A": [
+    "Complex",
+    "Moderately complex",
+    "Simple"
+  ],
+  "130A": [
+    "Different",
+    "Identical"
+  ],
+  "130B": [
+    "Farmer-foragers",
+    "Hunter-gatherers"
+  ],
+  "131A": [
+    "Decimal",
+    "Hybrid vigesimal-decimal",
+    "Pure vigesimal",
+    "Restricted"
+  ],
+  "132A": [
+    "5",
+    "6"
+  ],
+  "133A": [
+    "3-4",
+    "4.5-5.5",
+    "6-6.5",
+    "7-7.5"
+  ],
+  "134A": [
+    "Green vs. blue",
+    "Green/blue"
+  ],
+  "136A": [
+    "M-T pronouns, paradigmatic",
+    "No M-T pronouns"
+  ],
+  "136B": [
+    "No m in first person singular",
+    "m in first person singular"
+  ],
+  "137A": [
+    "N-M pronouns, non-paradigmatic",
+    "N-M pronouns, paradigmatic",
+    "No N-M pronouns"
+  ],
+  "137B": [
+    "No m in second person singular",
+    "m in second person singular"
+  ],
+  "138A": [
+    "Others",
+    "Words derived from Min Nan Chinese te",
+    "Words derived from Sinitic cha"
+  ],
+  "13A": [
+    "Complex tone system",
+    "No tones",
+    "Simple tone system"
+  ],
+  "142A": [
+    "Affective meanings",
+    "Logical meanings",
+    "Other or none"
+  ],
+  "143A": [
+    "NegV",
+    "ObligDoubleNeg",
+    "OptDoubleNeg",
+    "Type 1 / Type 2",
+    "Type 1 / Type 4",
+    "VNeg",
+    "[Neg-V]",
+    "[V-Neg]"
+  ],
+  "143B": [
+    "NegVNeg",
+    "Neg[V-Neg]",
+    "[Neg-V-Neg]"
+  ],
+  "143C": [
+    "(Neg)VNeg",
+    "NegV(Neg)"
+  ],
+  "143E": [
+    "NegV",
+    "NegV&[Neg-V]",
+    "[Neg-V]"
+  ],
+  "143F": [
+    "VNeg",
+    "VNeg&[V-Neg]",
+    "[V-Neg]"
+  ],
+  "144A": [
+    "More than one position",
+    "MorphNeg",
+    "NegSOV",
+    "NegSVO",
+    "NegVOS",
+    "NegVSO",
+    "ObligDoubleNeg",
+    "OptDoubleNeg",
+    "Other",
+    "SNegOV",
+    "SNegVO",
+    "SONegV",
+    "SOVNeg",
+    "SVONeg"
+  ],
+  "144B": [
+    "Beginning, not immed preverbal",
+    "End, not immed postverbal",
+    "Immed postverbal",
+    "Immed preverbal",
+    "Preverbal, not beginning or immed"
+  ],
+  "144D": [
+    "More than one construction",
+    "ObligNeg",
+    "OptNeg",
+    "Other NegV",
+    "SNegVO",
+    "SVONeg",
+    "S[Neg-V]O",
+    "S[V-Neg]O"
+  ],
+  "144H": [
+    "No NegSVO",
+    "NoDoubleNeg"
+  ],
+  "144I": [
+    "No SNegVO",
+    "Prefix&NoDoubleNeg",
+    "Prefix&OnlyWithAnotherNeg",
+    "Word&NoDoubleNeg",
+    "Word&OnlyWithAnotherNeg"
+  ],
+  "144J": [
+    "No SVNegO",
+    "Suffix&NoDoubleNeg",
+    "Suffix&OnlyWithAnotherNeg",
+    "Word&NoDoubleNeg",
+    "Word&OnlyWithAnotherNeg"
+  ],
+  "144K": [
+    "No SVONeg",
+    "NoDoubleNeg",
+    "OnlyWithAnotherNeg",
+    "OptDoubleNeg"
+  ],
+  "144L": [
+    "More than one construction",
+    "NegSOV",
+    "ObligDoubleNeg",
+    "OptDoubleNeg",
+    "Other NegV",
+    "SNegOV",
+    "SONegV",
+    "SOVNeg",
+    "SO[Neg-V]",
+    "SO[V-Neg]",
+    "SV&OV&NegV",
+    "SV&OV&[Neg-V]",
+    "SV&OV&[V-Neg]"
+  ],
+  "144P": [
+    "No NegSOV",
+    "NoDoubleNeg"
+  ],
+  "144Q": [
+    "No SNegOV",
+    "NoDoubleNeg",
+    "OnlyWithAnotherNeg"
+  ],
+  "144R": [
+    "No SONegV",
+    "Prefix&NoDoubleNeg",
+    "Prefix&OnlyWithAnotherNeg",
+    "Word&NoDoubleNeg",
+    "Word&OnlyWithAnotherNeg"
+  ],
+  "144S": [
+    "NoSOVNeg",
+    "Suffix&NoDoubleNeg",
+    "Suffix&OnlyWithAnotherNeg",
+    "Word&NoDoubleNeg",
+    "Word&OnlyWithAnotherNeg"
+  ],
+  "144T": [
+    "NegV & VS & VO",
+    "NegVOS",
+    "NegVSO",
+    "NegVSO/NegVOS",
+    "OptDoubleNeg"
+  ],
+  "144V": [
+    "Prefix, no double negation  Prefix&NoDoubleNeg",
+    "Separate word, no double negation  Word&NoDoubleNeg"
+  ],
+  "14A": [
+    "Antepenultimate",
+    "Initial",
+    "No fixed stress",
+    "Penultimate",
+    "Second",
+    "Ultimate"
+  ],
+  "15A": [
+    "Fixed stress (no weight-sensitivity)",
+    "Left-edge: First or second",
+    "Not predictable",
+    "Right-edge: Ultimate or penultimate",
+    "Right-oriented: One of the last three",
+    "Unbounded: Stress can be anywhere"
+  ],
+  "16A": [
+    "Coda consonant",
+    "Combined",
+    "Lexical stress",
+    "Long vowel",
+    "Long vowel or coda consonant",
+    "No weight",
+    "Prominence"
+  ],
+  "17A": [
+    "Iambic",
+    "No rhythmic stress",
+    "Trochaic",
+    "Undetermined"
+  ],
+  "18A": [
+    "All present",
+    "No fricatives",
+    "No nasals"
+  ],
+  "19A": [
+    "'Th' sounds",
+    "Labial-velars",
+    "Pharyngeals"
+  ],
+  "1A": [
+    "Average",
+    "Large",
+    "Moderately large",
+    "Moderately small",
+    "Small"
+  ],
+  "20A": [
+    "Exclusively concatenative",
+    "Exclusively isolating",
+    "Isolating/concatenative"
+  ],
+  "21A": [
+    "Monoexponential case",
+    "No case"
+  ],
+  "21B": [
+    "TAM+agreement",
+    "monoexponential TAM"
+  ],
+  "22A": [
+    "2-3 categories per word",
+    "4-5 categories per word",
+    "6-7 categories per word",
+    "8-9 categories per word"
+  ],
+  "23A": [
+    "Dependent marking",
+    "Double marking",
+    "Head marking",
+    "No marking"
+  ],
+  "24A": [
+    "Dependent marking",
+    "Double marking",
+    "Head marking",
+    "No marking"
+  ],
+  "25A": [
+    "Dependent-marking",
+    "Double-marking",
+    "Head-marking",
+    "Inconsistent or other"
+  ],
+  "25B": [
+    "Non-zero marking",
+    "Zero-marking"
+  ],
+  "26A": [
+    "Equal prefixing and suffixing",
+    "Little affixation",
+    "Strong prefixing",
+    "Strongly suffixing",
+    "Weakly prefixing",
+    "Weakly suffixing"
+  ],
+  "27A": [
+    "Full reduplication only",
+    "No productive reduplication",
+    "Productive full and partial reduplication"
+  ],
+  "28A": [
+    "Core and non-core",
+    "Core cases only",
+    "No case marking",
+    "No syncretism"
+  ],
+  "29A": [
+    "No subject person/number marking",
+    "Not syncretic",
+    "Syncretic"
+  ],
+  "2A": [
+    "Average (5-6)",
+    "Large (7-14)",
+    "Small (2-4)"
+  ],
+  "30A": [
+    "Five or more",
+    "Four",
+    "Three",
+    "Two"
+  ],
+  "31A": [
+    "No gender",
+    "Non-sex-based",
+    "Sex-based"
+  ],
+  "32A": [
+    "No gender",
+    "Semantic",
+    "Semantic and formal"
+  ],
+  "33A": [
+    "Mixed morphological plural",
+    "No plural",
+    "Plural clitic",
+    "Plural prefix",
+    "Plural suffix",
+    "Plural word"
+  ],
+  "34A": [
+    "All nouns, always obligatory",
+    "All nouns, always optional",
+    "All nouns, optional in inanimates",
+    "No nominal plural",
+    "Only human nouns, obligatory",
+    "Only human nouns, optional"
+  ],
+  "35A": [
+    "Person stem + nominal plural affix",
+    "Person stem + pronominal plural affix",
+    "Person-number affixes",
+    "Person-number stem",
+    "Person-number stem + nominal plural affix",
+    "Person-number stem + pronominal plural affix"
+  ],
+  "36A": [
+    "Associative same as additive plural",
+    "No associative plural",
+    "Unique affixal associative plural",
+    "Unique periphrastic associative plural"
+  ],
+  "37A": [
+    "Definite affix",
+    "Definite word distinct from demonstrative",
+    "Demonstrative word used as definite article",
+    "No definite or indefinite article",
+    "No definite, but indefinite article"
+  ],
+  "38A": [
+    "Indefinite affix",
+    "Indefinite word distinct from 'one'",
+    "Indefinite word same as 'one'",
+    "No definite or indefinite article",
+    "No indefinite, but definite article"
+  ],
+  "39A": [
+    "'We' the same as 'I'",
+    "Inclusive/exclusive",
+    "No inclusive/exclusive"
+  ],
+  "39B": [
+    "Inclusive and exclusive differentiated",
+    "No inclusive/exclusive opposition"
+  ],
+  "3A": [
+    "Average",
+    "High",
+    "Low",
+    "Moderately high",
+    "Moderately low"
+  ],
+  "40A": [
+    "'We' the same as 'I'",
+    "Inclusive/exclusive",
+    "No inclusive/exclusive",
+    "No person marking"
+  ],
+  "41A": [
+    "Three-way contrast",
+    "Two-way contrast"
+  ],
+  "42A": [
+    "Different inflection",
+    "Different stem",
+    "Identical"
+  ],
+  "43A": [
+    "Related by gender markers",
+    "Related for all demonstratives",
+    "Related for non-human reference",
+    "Related to non-remote demonstratives",
+    "Related to remote demonstratives",
+    "Unrelated"
+  ],
+  "44A": [
+    "3rd person only, but also non-singular",
+    "3rd person singular only",
+    "In 3rd person + 1st and/or 2nd person",
+    "No gender distinctions"
+  ],
+  "45A": [
+    "Binary politeness distinction",
+    "Multiple politeness distinctions",
+    "No politeness distinction"
+  ],
+  "46A": [
+    "Generic-noun-based",
+    "Interrogative-based",
+    "Mixed",
+    "Special"
+  ],
+  "47A": [
+    "Differentiated",
+    "Identical"
+  ],
+  "48A": [
+    "No adpositions",
+    "No person marking",
+    "Pronouns and nouns",
+    "Pronouns only"
+  ],
+  "49A": [
+    "10 or more cases",
+    "2 cases",
+    "5 cases",
+    "6-7 cases",
+    "8-9 cases",
+    "Exclusively borderline case-marking",
+    "No morphological case-marking"
+  ],
+  "4A": [
+    "In both plosives and fricatives",
+    "In fricatives alone",
+    "In plosives alone",
+    "No voicing contrast"
+  ],
+  "50A": [
+    "Additive-quantitatively asymmetrical",
+    "No case-marking",
+    "Subtractive-quantitatively asymmetrical",
+    "Symmetrical",
+    "Syncretism in relevant NP-types"
+  ],
+  "51A": [
+    "Case prefixes",
+    "Case suffixes",
+    "No case affixes or adpositional clitics",
+    "Postpositional clitics",
+    "Prepositional clitics"
+  ],
+  "52A": [
+    "Differentiation",
+    "Identity",
+    "Mixed"
+  ],
+  "53A": [
+    "First, second, three-th",
+    "First, two-th, three-th",
+    "First/one-th, two-th, three-th",
+    "One-th, two-th, three-th"
+  ],
+  "54A": [
+    "Marked by mixed or other strategies",
+    "Marked by preceding word",
+    "Marked by prefix",
+    "Marked by reduplication",
+    "Marked by suffix",
+    "No distributive numerals"
+  ],
+  "55A": [
+    "Absent",
+    "Obligatory",
+    "Optional"
+  ],
+  "56A": [
+    "Formally different",
+    "Formally similar, with interrogative",
+    "Formally similar, without interrogative"
+  ],
+  "57A": [
+    "No possessive affixes",
+    "Possessive prefixes",
+    "Possessive suffixes",
+    "Prefixes and suffixes"
+  ],
+  "58A": [
+    "Absent",
+    "Exists"
+  ],
+  "59A": [
+    "No possessive classification",
+    "Three to five classes",
+    "Two classes"
+  ],
+  "5A": [
+    "Missing /g/",
+    "Missing /p/",
+    "None missing in /p t k b d g/",
+    "Other"
+  ],
+  "60A": [
+    "Adjectives and relative clauses collapsed",
+    "Highly differentiated",
+    "Weakly differentiated"
+  ],
+  "61A": [
+    "Marked by preceding word",
+    "Marked by suffix",
+    "Without marking"
+  ],
+  "62A": [
+    "Ergative-Possessive",
+    "Mixed",
+    "No action nominals",
+    "Possessive-Accusative",
+    "Restricted",
+    "Sentential"
+  ],
+  "63A": [
+    "'And' different from 'with'",
+    "'And' identical to 'with'"
+  ],
+  "64A": [
+    "Both expressed by juxtaposition",
+    "Differentiation",
+    "Identity"
+  ],
+  "65A": [
+    "Grammatical marking",
+    "No grammatical marking"
+  ],
+  "66A": [
+    "No past tense",
+    "Present, 2-3 remoteness distinctions",
+    "Present, no remoteness distinctions"
+  ],
+  "67A": [
+    "Inflectional future exists",
+    "No inflectional future"
+  ],
+  "68A": [
+    "From 'finish', 'already'",
+    "No perfect",
+    "Other perfect"
+  ],
+  "69A": [
+    "Mixed type",
+    "No tense-aspect inflection",
+    "Tense-aspect prefixes",
+    "Tense-aspect suffixes",
+    "Tense-aspect tone"
+  ],
+  "6A": [
+    "Uvular continuants only",
+    "Uvular stops and continuants",
+    "Uvular stops only"
+  ],
+  "70A": [
+    "No second-person imperatives",
+    "Second person number-neutral",
+    "Second singular",
+    "Second singular and second plural"
+  ],
+  "71A": [
+    "Normal imperative + normal negative",
+    "Normal imperative + special negative",
+    "Special imperative + normal negative",
+    "Special imperative + special negative"
+  ],
+  "72A": [
+    "Both types of system",
+    "Maximal system",
+    "Minimal system",
+    "Neither type of system"
+  ],
+  "73A": [
+    "Inflectional optative absent",
+    "Inflectional optative present"
+  ],
+  "74A": [
+    "Affixes on verbs",
+    "Other kinds of markers",
+    "Verbal constructions"
+  ],
+  "75A": [
+    "Affixes on verbs",
+    "Other",
+    "Verbal constructions"
+  ],
+  "76A": [
+    "No overlap",
+    "Overlap for both possibility and necessity",
+    "Overlap for either possibility or necessity"
+  ],
+  "77A": [
+    "Direct and indirect",
+    "Indirect only",
+    "No grammatical evidentials"
+  ],
+  "78A": [
+    "No grammatical evidentials",
+    "Part of the tense system",
+    "Separate particle",
+    "Verbal affix or clitic"
+  ],
+  "79A": [
+    "Tense",
+    "Tense and aspect"
+  ],
+  "79B": [
+    "Imperative",
+    "None (= no suppletive imperatives reported in the reference material)"
+  ],
+  "7A": [
+    "Ejectives and glottalized resonants",
+    "Ejectives and implosives",
+    "Ejectives only",
+    "Implosives only",
+    "No glottalized consonants"
+  ],
+  "80A": [
+    "Singular-plural pairs, no suppletion",
+    "Singular-plural pairs, suppletion"
+  ],
+  "81A": [
+    "No dominant order",
+    "OVS",
+    "SOV",
+    "SVO",
+    "VOS",
+    "VSO"
+  ],
+  "81B": [
+    "SOV or SVO",
+    "SVO or VSO",
+    "VSO or VOS"
+  ],
+  "82A": [
+    "No dominant order",
+    "SV",
+    "VS"
+  ],
+  "83A": [
+    "No dominant order",
+    "OV",
+    "VO"
+  ],
+  "84A": [
+    "No dominant order",
+    "OVX",
+    "OXV",
+    "VOX",
+    "XOV"
+  ],
+  "85A": [
+    "No adpositions",
+    "No dominant order",
+    "Postpositions",
+    "Prepositions"
+  ],
+  "86A": [
+    "Genitive-Noun",
+    "No dominant order",
+    "Noun-Genitive"
+  ],
+  "87A": [
+    "Adjective-Noun",
+    "No dominant order",
+    "Noun-Adjective"
+  ],
+  "88A": [
+    "Demonstrative before and after Noun",
+    "Demonstrative suffix",
+    "Demonstrative-Noun",
+    "Mixed",
+    "Noun-Demonstrative"
+  ],
+  "89A": [
+    "No dominant order",
+    "Noun-Numeral",
+    "Numeral-Noun"
+  ],
+  "8A": [
+    "/l/ and lateral obstruent",
+    "/l/, no obstruent laterals",
+    "Laterals, but no /l/, no obstruent laterals",
+    "No laterals"
+  ],
+  "90A": [
+    "Internally headed",
+    "Mixed",
+    "Noun-Relative clause",
+    "Relative clause-Noun"
+  ],
+  "90B": [
+    "RelN or NRel",
+    "RelN or internally-headed",
+    "Relative clause-Noun (RelN) dominant"
+  ],
+  "90C": [
+    "NRel or RelN",
+    "Noun-Relative clause (NRel) dominant"
+  ],
+  "90D": [
+    "Internally-headed occurs as nondominant type",
+    "Internally-headed or RelN",
+    "Internally-headed relative clause dominant"
+  ],
+  "91A": [
+    "Adjective-Degree word",
+    "Degree word-Adjective",
+    "No dominant order"
+  ],
+  "92A": [
+    "Final",
+    "In either of two positions",
+    "Initial",
+    "No question particle",
+    "Second position"
+  ],
+  "93A": [
+    "Initial interrogative phrase",
+    "Mixed",
+    "Not initial interrogative phrase"
+  ],
+  "94A": [
+    "Final subordinator word",
+    "Initial subordinator word",
+    "Mixed",
+    "Subordinating suffix"
+  ],
+  "95A": [
+    "OV and Postpositions",
+    "OV and Prepositions",
+    "Other",
+    "VO and Postpositions",
+    "VO and Prepositions"
+  ],
+  "96A": [
+    "OV and NRel",
+    "OV and RelN",
+    "Other",
+    "VO and NRel"
+  ],
+  "97A": [
+    "OV and AdjN",
+    "OV and NAdj",
+    "Other",
+    "VO and AdjN",
+    "VO and NAdj"
+  ],
+  "98A": [
+    "Ergative - absolutive",
+    "Neutral",
+    "Nominative - accusative (standard)"
+  ],
+  "99A": [
+    "Ergative - absolutive",
+    "Neutral",
+    "Nominative - accusative (standard)"
+  ],
+  "9A": [
+    "Initial velar nasal",
+    "No initial velar nasal",
+    "No velar nasal"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "database": "wals",
+  "architecture": "learned",
+  "data_path": "/home/user/wals",
+  "glottolog_repo": null,
+  "out_dir": "checkpoints/wals_learned_s42",
+  "seed": 42,
+  "embed_dim": 64,
+  "n_epochs": 200,
+  "patience": 10,
+  "batch_size": 64,
+  "lr": 0.001,
+  "l2_coef": 0.1,
+  "val_frac": 0.05,
+  "device": "cpu",
+  "n_epochs_run": 74,
+  "best_epoch": 64,
+  "best_val_loss": 0.8398678983960833
+}
