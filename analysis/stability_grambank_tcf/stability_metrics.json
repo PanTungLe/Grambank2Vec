@@ -10,6 +10,26 @@
     "checkpoints/grambank_tcf_s46"
   ],
   "probe_a_jaccard": {
+    "GB133=1": {
+      "mean_jaccard": 0.43841126194067376,
+      "std_jaccard": 0.23267710956753979,
+      "n_pairs": 10
+    },
+    "GB131=1": {
+      "mean_jaccard": 0.20106147722246792,
+      "std_jaccard": 0.11613407814118544,
+      "n_pairs": 10
+    },
+    "GB074=1": {
+      "mean_jaccard": 0.5829170829170829,
+      "std_jaccard": 0.1148659295683466,
+      "n_pairs": 10
+    },
+    "GB075=1": {
+      "mean_jaccard": 0.7191142191142192,
+      "std_jaccard": 0.12631043264467448,
+      "n_pairs": 10
+    },
     "GB193=0": {
       "mean_jaccard": 0.16931544547643618,
       "std_jaccard": 0.09006854397712323,
@@ -47,25 +67,19 @@
   "probe_c_greenberg": [
     {
       "name": "Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep)",
-      "n_seeds": 0,
-      "skipped_seeds": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "n_seeds": 5,
+      "residual_mean": 1.105841076374054,
+      "residual_std": 0.12603084011788226,
+      "p_value_mean": 0.50098,
+      "p_value_std": 0.06303482846807784
     },
     {
-      "name": "Adj-N order vs Verb-final (head-final cluster)",
-      "n_seeds": 0,
-      "skipped_seeds": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "name": "Word-order/Adj-N (head-final cluster vs head-initial cluster)",
+      "n_seeds": 5,
+      "residual_mean": 1.836599063873291,
+      "residual_std": 0.17706125616079577,
+      "p_value_mean": 0.7951999999999999,
+      "p_value_std": 0.04829049595935
     }
   ],
   "procrustes_stability": {

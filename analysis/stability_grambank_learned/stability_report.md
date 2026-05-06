@@ -56,8 +56,8 @@ Residual = ||(a_pos − a_neg) − (b_pos − b_neg)||₂.  Low residual (low em
 
 | Universal | Residual mean ± std | p-value mean ± std |
 |-----------|--------------------|--------------------|
-| Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep) | 0.980 ± 0.030 | 0.296 ± 0.021 |
-| Adj-N order vs Verb-final (head-final cluster) | 2.256 ± 0.028 | 0.883 ± 0.006 |
+| Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep) | 0.980 ± 0.030 | 0.271 ± 0.022 |
+| Word-order/Adj-N (head-final cluster vs head-initial cluster) | 2.004 ± 0.058 | 0.832 ± 0.017 |
 
 ---
 

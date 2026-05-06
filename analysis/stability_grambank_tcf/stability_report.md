@@ -17,12 +17,16 @@ Jaccard similarity of the top-K neighbour sets across all seed pairs.  Values ne
 
 | Feature-value | Mean Jaccard@10 | Std |
 |---------------|---------------------|-----|
+| GB075=1 | 0.719 | 0.126 |
 | GB203=1 | 0.596 | 0.116 |
+| GB074=1 | 0.583 | 0.115 |
 | GB193=1 | 0.479 | 0.109 |
+| GB133=1 | 0.438 | 0.233 |
 | GB203=0 | 0.255 | 0.082 |
+| GB131=1 | 0.201 | 0.116 |
 | GB193=0 | 0.169 | 0.090 |
 
-**Overall mean Jaccard@10:** 0.375 ± 0.170
+**Overall mean Jaccard@10:** 0.430 ± 0.190
 
 ---
 
@@ -48,8 +52,8 @@ Residual = ||(a_pos − a_neg) − (b_pos − b_neg)||₂.  Low residual (low em
 
 | Universal | Residual mean ± std | p-value mean ± std |
 |-----------|--------------------|--------------------|
-| Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep) | SKIPPED | — |
-| Adj-N order vs Verb-final (head-final cluster) | SKIPPED | — |
+| Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep) | 1.106 ± 0.126 | 0.501 ± 0.063 |
+| Word-order/Adj-N (head-final cluster vs head-initial cluster) | 1.837 ± 0.177 | 0.795 ± 0.048 |
 
 ---
 
@@ -76,6 +80,6 @@ s46  0.1687  0.2130  0.2089  0.2389  0.0000
 
 | Metric | Value |
 |--------|-------|
-| Mean Jaccard@10 (Probe A) | 0.375 ± 0.170 |
+| Mean Jaccard@10 (Probe A) | 0.430 ± 0.190 |
 | Silhouette mean ± std (Probe B) | -0.3822 ± 0.0083 |
 | Procrustes disparity mean ± std | 0.2217 ± 0.0286 |

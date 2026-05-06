@@ -1,5 +1,5 @@
 {
-  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued '=1' targets fall back to the bare 'X' column (no separate '=0' embedding row exists).",
   "_architecture": "tcf",
   "_database": "wals",
   "results": {

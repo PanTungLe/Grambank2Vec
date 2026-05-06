@@ -16,11 +16,32 @@ sys.path.insert(0, str(CANONICAL_DIR))
 from analyze_geometry import (
     cosine_normalise,
     feature_id_of,
+    resolve_fv_id,
     probe_a_nearest_neighbours,
     probe_b_silhouette,
     probe_c_greenberg,
     _residual,
 )
+
+
+class TestResolveFvId:
+    def test_direct_hit(self):
+        assert resolve_fv_id({"81A=SOV": 5, "81A=SVO": 6}, "81A=SOV") == 5
+
+    def test_tcf_fallback_eq1_to_bare(self):
+        # T-CF: bare 'GB071' represents 'GB071=1' (the presence column)
+        assert resolve_fv_id({"GB071": 12, "GB022": 13}, "GB071=1") == 12
+
+    def test_tcf_eq0_returns_none(self):
+        # T-CF has no row for the absence value
+        assert resolve_fv_id({"GB071": 12}, "GB071=0") is None
+
+    def test_unknown_label(self):
+        assert resolve_fv_id({"GB071": 12}, "GB999=1") is None
+
+    def test_eq1_prefers_literal_over_fallback(self):
+        # If both 'X=1' and 'X' are present, the literal wins
+        assert resolve_fv_id({"X=1": 10, "X": 99}, "X=1") == 10
 
 
 class TestCosineNormalise:
