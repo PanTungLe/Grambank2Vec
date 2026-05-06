@@ -113,9 +113,15 @@ GREENBERG_PAIRS_GRAMBANK: list[dict[str, Any]] = [
         "b_pos": "GB131=1", "b_neg": "GB074=1",
     },
     {
-        "name": "Adj-N order vs Verb-final (head-final cluster)",
-        "a_pos": "GB193=0", "a_neg": "GB133=1",
-        "b_pos": "GB193=1", "b_neg": "GB131=1",
+        # Tests (verb-final − AdjN) ≈ (verb-initial − NAdj) — the geometric
+        # gap between word-order and NP-modifier-order is consistent across
+        # head-final and head-initial clusters.
+        # GB193 codes (from grambank/cldf/codes.csv):
+        #   GB193=1 → ANM−N (AdjN, head-final NP)
+        #   GB193=2 → N−ANM (NAdj, head-initial NP)
+        "name": "Word-order/Adj-N (head-final cluster vs head-initial cluster)",
+        "a_pos": "GB133=1", "a_neg": "GB193=1",
+        "b_pos": "GB131=1", "b_neg": "GB193=2",
     },
 ]
 
@@ -183,6 +189,31 @@ def feature_id_of(featvalue_label: str) -> str:
     return featvalue_label.split("=", 1)[0]
 
 
+def resolve_fv_id(fv2id: dict[str, int], label: str) -> int | None:
+    """
+    Look up a featvalue label, with T-CF fallback for binary 2-value features.
+
+    For T-CF, 2-valued features (e.g. all Grambank features and WALS binary
+    features) are stored as bare 'GB071' rather than 'GB071=1'/'GB071=0'.
+    The single binary column represents 'value present (=1)'; there is no
+    separate row for the absent ('=0') value, since it is just the negation
+    of the presence column.
+
+    Behaviour:
+      - If `label` is in fv2id, return that index.
+      - If `label` ends with '=1' and the bare prefix is in fv2id, return that
+        index (T-CF presence column).
+      - Otherwise return None ('=0' labels have no T-CF embedding row).
+    """
+    if label in fv2id:
+        return fv2id[label]
+    if label.endswith("=1"):
+        bare = label[:-2]
+        if bare in fv2id:
+            return fv2id[bare]
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Probe A — Nearest neighbours
 # ---------------------------------------------------------------------------
@@ -193,15 +224,21 @@ def probe_a_nearest_neighbours(
     targets: list[str],
     top_k: int = 10,
 ) -> dict[str, list[dict[str, float]]]:
-    """For each curated target, return the top-K cosine-nearest neighbours."""
+    """
+    For each curated target, return the top-K cosine-nearest neighbours.
+
+    Uses `resolve_fv_id` so 'X=1' targets fall back to the bare 'X' embedding
+    on T-CF checkpoints (where 2-valued features are stored as a single
+    presence column).
+    """
     id2fv = {i: name for name, i in fv2id.items()}
     normed = cosine_normalise(fv_emb)
     results: dict[str, list[dict[str, float]]] = {}
 
     for tgt in targets:
-        if tgt not in fv2id:
+        i = resolve_fv_id(fv2id, tgt)
+        if i is None:
             continue
-        i = fv2id[tgt]
         sims = normed @ normed[i]
         sims[i] = -np.inf
         top = np.argsort(-sims)[:top_k]
@@ -292,16 +329,18 @@ def probe_c_greenberg(
                    ALL featvalue rows.
     Report observed vs baseline mean / 5th-percentile / empirical p.
 
-    Pairs that reference featvalues missing from the checkpoint are skipped
-    (their entry in the result has a "skipped" key with the reason).
+    Featvalue lookups use `resolve_fv_id`, so 'X=1' targets fall back to the
+    bare 'X' embedding for T-CF 2-value features.  Pairs whose featvalues
+    cannot be resolved (e.g. 'X=0' on T-CF) are skipped.
     """
     rng = np.random.default_rng(seed)
     n = fv_emb.shape[0]
     results: list[dict[str, Any]] = []
 
     for spec in pairs:
-        missing = [k for k in ("a_pos", "a_neg", "b_pos", "b_neg")
-                   if spec[k] not in fv2id]
+        resolved = {k: resolve_fv_id(fv2id, spec[k])
+                    for k in ("a_pos", "a_neg", "b_pos", "b_neg")}
+        missing = [k for k, v in resolved.items() if v is None]
         if missing:
             results.append({
                 "name": spec["name"],
@@ -309,10 +348,10 @@ def probe_c_greenberg(
             })
             continue
 
-        a_pos = fv2id[spec["a_pos"]]
-        a_neg = fv2id[spec["a_neg"]]
-        b_pos = fv2id[spec["b_pos"]]
-        b_neg = fv2id[spec["b_neg"]]
+        a_pos = resolved["a_pos"]
+        a_neg = resolved["a_neg"]
+        b_pos = resolved["b_pos"]
+        b_neg = resolved["b_neg"]
 
         observed = _residual(fv_emb, a_pos, a_neg, b_pos, b_neg)
 
@@ -352,7 +391,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional JSON file with a list of featvalue labels for Probe A. "
              "Falls back to a built-in default list per database.")
     p.add_argument("--top_k", type=int, default=10)
-    p.add_argument("--n_baseline", type=int, default=1000)
+    p.add_argument("--n_baseline", type=int, default=10000,
+                   help="Permutation samples for Probe C empirical p-value. "
+                        "10000 yields ~±0.5%% Monte-Carlo precision; 1000 was "
+                        "previously default but produced ±1.4%% noise.")
     p.add_argument("--seed", type=int, default=0)
     return p.parse_args(argv)
 
@@ -401,13 +443,25 @@ def main(argv: list[str] | None = None) -> None:
     if skipped:
         print(f"  skipped: {skipped[:10]}{'...' if len(skipped)>10 else ''}")
 
-    annotation = ("T-CF: nearest neighbours are over per-binary-column "
-                  "embeddings; 2-valued features only have a '1' column."
-                  if arch == "tcf" else
-                  "Learned: nearest neighbours are over per-featvalue "
-                  "embeddings (one row per (feature, value) pair).")
+    nn_annotation = ("T-CF: nearest neighbours are over per-binary-column "
+                     "embeddings; 2-valued '=1' targets fall back to the bare "
+                     "'X' column (no separate '=0' embedding row exists)."
+                     if arch == "tcf" else
+                     "Learned: nearest neighbours are over per-featvalue "
+                     "embeddings (one row per (feature, value) pair).")
+    sil_annotation = ("Silhouette is computed over featvalue embeddings, "
+                      "grouped by parent feature ID. Negative scores are "
+                      "expected (softmax/sigmoid push within-feature values "
+                      "apart while attracting cross-feature implicational pairs).")
+    analogies_annotation = (
+        "T-CF: residual = ||(a_pos - a_neg) - (b_pos - b_neg)||; '=1' targets "
+        "resolve to the bare 'X' column (no '=0' embedding row in T-CF)."
+        if arch == "tcf" else
+        "Residual = ||(a_pos - a_neg) - (b_pos - b_neg)||. Low empirical "
+        "p-value ⇒ residual is unusually small ⇒ analogy is supported.")
+
     nn_payload = {
-        "_annotation": annotation,
+        "_annotation": nn_annotation,
         "_architecture": arch,
         "_database": db,
         "results": nn_results,
@@ -419,7 +473,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"\n[Probe B] Silhouette by feature membership")
     sil = probe_b_silhouette(ckpt["fv_emb"], ckpt["fv2id"])
     sil_payload = {
-        "_annotation": annotation,
+        "_annotation": sil_annotation,
         "_architecture": arch,
         "_database": db,
         **sil,
@@ -447,7 +501,7 @@ def main(argv: list[str] | None = None) -> None:
         ckpt["fv_emb"], ckpt["fv2id"], pairs,
         n_baseline=args.n_baseline, seed=args.seed)
     analogies_payload = {
-        "_annotation": annotation,
+        "_annotation": analogies_annotation,
         "_architecture": arch,
         "_database": db,
         "results": analogies,

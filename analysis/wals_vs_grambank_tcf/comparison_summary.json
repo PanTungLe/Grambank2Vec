@@ -45,6 +45,15 @@
     ],
     "mean_correlation": 0.5074480812079217
   },
-  "family_probe": null,
+  "family_probe": {
+    "n_valid_languages": 922,
+    "n_families": 84,
+    "score_a": 0.14175704989154012,
+    "score_b": 0.2198481561822126,
+    "baseline_mean": 0.05345748373101952,
+    "baseline_p95": 0.05845986984815619,
+    "p_value_a": 0.0,
+    "p_value_b": 0.0
+  },
   "seed": 42
 }

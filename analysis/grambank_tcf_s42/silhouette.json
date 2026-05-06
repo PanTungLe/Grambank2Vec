@@ -1,5 +1,5 @@
 {
-  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_annotation": "Silhouette is computed over featvalue embeddings, grouped by parent feature ID. Negative scores are expected (softmax/sigmoid push within-feature values apart while attracting cross-feature implicational pairs).",
   "_architecture": "tcf",
   "_database": "grambank",
   "silhouette_global": -0.38292938470840454,

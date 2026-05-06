@@ -1,5 +1,5 @@
 {
-  "_annotation": "Learned: nearest neighbours are over per-featvalue embeddings (one row per (feature, value) pair).",
+  "_annotation": "Silhouette is computed over featvalue embeddings, grouped by parent feature ID. Negative scores are expected (softmax/sigmoid push within-feature values apart while attracting cross-feature implicational pairs).",
   "_architecture": "learned",
   "_database": "wals",
   "silhouette_global": -0.36490631103515625,

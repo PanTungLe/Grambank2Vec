@@ -1,11 +1,33 @@
 {
-  "_annotation": "T-CF: nearest neighbours are over per-binary-column embeddings; 2-valued features only have a '1' column.",
+  "_annotation": "T-CF: residual = ||(a_pos - a_neg) - (b_pos - b_neg)||; '=1' targets resolve to the bare 'X' column (no '=0' embedding row in T-CF).",
   "_architecture": "tcf",
   "_database": "grambank",
   "results": [
     {
-      "name": "Word-order/Adposition (OV/Post vs VO/Prep)",
-      "skipped": "missing featvalues: ['GB071=1', 'GB022=1', 'GB070=1', 'GB023=1']"
+      "name": "Greenberg-U4 (verb-final/Postpos vs verb-initial/Prep)",
+      "a_pos": "GB133=1",
+      "a_neg": "GB075=1",
+      "b_pos": "GB131=1",
+      "b_neg": "GB074=1",
+      "residual": 1.2238163948059082,
+      "baseline_mean": 1.263168267383054,
+      "baseline_p5": 0.2904631569981575,
+      "baseline_median": 1.115818440914154,
+      "empirical_p_value": 0.5579,
+      "n_baseline": 10000
+    },
+    {
+      "name": "Word-order/Adj-N (head-final cluster vs head-initial cluster)",
+      "a_pos": "GB133=1",
+      "a_neg": "GB193=1",
+      "b_pos": "GB131=1",
+      "b_neg": "GB193=2",
+      "residual": 1.7812018394470215,
+      "baseline_mean": 1.2585658819004892,
+      "baseline_p5": 0.29411552697420124,
+      "baseline_median": 1.1126021146774292,
+      "empirical_p_value": 0.7786,
+      "n_baseline": 10000
     }
   ]
 }

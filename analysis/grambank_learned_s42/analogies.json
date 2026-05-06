@@ -1,5 +1,5 @@
 {
-  "_annotation": "Learned: nearest neighbours are over per-featvalue embeddings (one row per (feature, value) pair).",
+  "_annotation": "Residual = ||(a_pos - a_neg) - (b_pos - b_neg)||. Low empirical p-value \u21d2 residual is unusually small \u21d2 analogy is supported.",
   "_architecture": "learned",
   "_database": "grambank",
   "results": [
@@ -10,24 +10,24 @@
       "b_pos": "GB131=1",
       "b_neg": "GB074=1",
       "residual": 0.9822852611541748,
-      "baseline_mean": 1.3998841669261455,
-      "baseline_p5": 0.5399102628231048,
-      "baseline_median": 1.2949431538581848,
-      "empirical_p_value": 0.28,
-      "n_baseline": 1000
+      "baseline_mean": 1.4031420948594808,
+      "baseline_p5": 0.5642156541347504,
+      "baseline_median": 1.301517128944397,
+      "empirical_p_value": 0.2733,
+      "n_baseline": 10000
     },
     {
-      "name": "Adj-N order vs Verb-final (head-final cluster)",
-      "a_pos": "GB193=0",
-      "a_neg": "GB133=1",
-      "b_pos": "GB193=1",
-      "b_neg": "GB131=1",
-      "residual": 2.2152132987976074,
-      "baseline_mean": 1.424455945327878,
-      "baseline_p5": 0.5961864411830902,
-      "baseline_median": 1.3103705644607544,
-      "empirical_p_value": 0.881,
-      "n_baseline": 1000
+      "name": "Word-order/Adj-N (head-final cluster vs head-initial cluster)",
+      "a_pos": "GB133=1",
+      "a_neg": "GB193=1",
+      "b_pos": "GB131=1",
+      "b_neg": "GB193=2",
+      "residual": 1.92916738986969,
+      "baseline_mean": 1.3994895881891252,
+      "baseline_p5": 0.5569480061531067,
+      "baseline_median": 1.297296941280365,
+      "empirical_p_value": 0.8103,
+      "n_baseline": 10000
     }
   ]
 }
