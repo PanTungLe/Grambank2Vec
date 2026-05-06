@@ -214,9 +214,10 @@ while later dimensions encode database-specific features.
 
 ### Family-preservation probe
 
-For each shared language with a known Glottolog family (built from
-Grambank's `Family_level_ID` with WALS `Family` fallback; 922/1015 shared
-languages with ≥2 same-family members across 84 families), the probe
+For each shared language with a known Glottolog family (canonical Glottolog
+`Family_ID` from Glottolog CLDF `languages.csv`, applied to all 3 511
+unique Glottocodes across WALS and Grambank; 327 distinct canonical families;
+922/1015 shared languages with ≥2 same-family members across 84 families), the probe
 measures the fraction of top-10 cosine-nearest neighbours that share the
 language's family.  The baseline shuffles family labels with the embedding
 fixed.
@@ -383,13 +384,27 @@ Three issues identified during artifact review and corrected:
 
 3. **`family_probe = null` in cross-database comparisons.**  Both
    `comparison_summary.json` files had a null family probe because no
-   `--family_csv` was supplied.  Built `analysis/families.csv` from
-   Grambank `Family_level_ID` (Glottolog families, 215 unique) with WALS
-   `Family` fallback for non-Grambank Glottocodes.  Re-running both
-   cross-database comparisons now yields the headline RQ1 result:
+   `--family_csv` was supplied.  Built `analysis/families.csv` and re-ran
+   both cross-database comparisons, yielding the headline RQ1 result:
    p=0.000 family preservation in *both* architectures, with Learned
    showing 30–38 % top-10 same-family hit rate vs T-CF's 14–22 %, both
    far above the 5.4 % baseline.
+
+4. **`analysis/families.csv` family-label normalisation.**  The initial
+   `families.csv` mixed Glottolog family IDs for Grambank-sourced languages
+   (e.g. `aust1307`) with human-readable WALS `Family` strings (e.g.
+   `"Austronesian"`), yielding 414 spurious distinct "families" where the
+   true count is ~240–330.  Fixed by replacing all family labels with
+   canonical Glottolog `Family_ID` values from the Glottolog CLDF
+   `languages.csv` (sparse-checked via `glottolog/glottolog-cldf`).
+   Isolates receive their own Glottocode as the family ID.  The one
+   language not in Glottolog CLDF (`guer1240`, WALS Kru) is assigned
+   `atla1278` (Atlantic-Congo) based on WALS genus lineage.  The rebuilt
+   CSV covers 3 511 unique Glottocodes across 327 canonical families.
+   Family-preservation scores for the cross-database probe are unchanged
+   because that probe is restricted to the 1 015 WALS/Grambank shared
+   languages, which were already in Grambank and therefore already carried
+   correct Glottolog IDs in the pre-fix CSV.
 
 Other tightening: `n_baseline` for Probe C bumped from 1 000 → 10 000 to
 reduce Monte-Carlo noise from ±1.4 % to ±0.5 %.  Per-probe annotation
