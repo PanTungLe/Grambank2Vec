@@ -234,6 +234,37 @@ permutations).  The Learned model's Procrustes-aligned space preserves
 Glottolog families with ~30–38 % top-10 same-family hit rate vs T-CF's
 ~14–22 %, consistent with the geometric stability findings.
 
+### Within-database family preservation (full language set, K=5 seeds)
+
+The cross-database probe above is restricted to the 1 015 WALS/Grambank shared
+languages.  The within-database probe instead runs on each model's *full*
+Glottocoded language set, providing a cleaner per-database measure of how well
+each canonical embedding clusters by Glottolog family.  Aggregated across
+seeds 42–46 (`canonical/within_db_family.py`):
+
+| Setting | Score (mean ± std) | Baseline | n_valid / n_total | n_families |
+|---------|--------------------|----------|-------------------|------------|
+| WALS Learned | **0.277 ± 0.004** | 0.044 | 1 487 / 1 641 | 128 |
+| WALS T-CF | 0.125 ± 0.005 | 0.044 | 1 487 / 1 641 | 128 |
+| Grambank Learned | **0.448 ± 0.003** | 0.085 | 2 272 / 2 360 | 129 |
+| Grambank T-CF | 0.230 ± 0.031 | 0.085 | 2 272 / 2 360 | 129 |
+
+All four settings clear `p = 0.000` against a 500-permutation label-shuffle
+baseline.  Three patterns stand out:
+
+1. **Learned > T-CF in both databases** — the Learned architecture's
+   continuous softmax embedding picks up family signal at roughly twice the
+   rate of T-CF's binarised representation.
+2. **Grambank > WALS in both architectures** — Grambank's larger language
+   coverage (2 272 vs 1 487 valid languages) gives each family more
+   neighbours to find, so the top-10 hit rate scales upward.
+3. **Variance tracks Procrustes seed-stability** — Learned models have
+   ~0.003–0.004 std (under 1 % of the score), whereas Grambank T-CF's
+   ±0.031 mirrors its higher Procrustes seed-disparity (0.222 vs Learned's
+   0.072).  Within-architecture, the family-preservation score is
+   essentially seed-invariant for Learned and only modestly seed-sensitive
+   for T-CF.
+
 **Hierarchy of similarity (Procrustes disparity scale):**
 
 | Comparison | Disparity |
