@@ -1,0 +1,58 @@
+{
+  "mode": "sanity_check",
+  "per_database": {
+    "wals": {
+      "n_languages": 1683,
+      "n_featvalues": 640,
+      "embed_dim": 64,
+      "lang_norm_mean": 1.8945637941360474,
+      "lang_norm_std": 0.2349986582994461,
+      "fv_norm_mean": 0.8804267048835754,
+      "fv_norm_std": 0.3384733498096466,
+      "norm_ratio": 0.46471208333969116,
+      "lang_cosine_mean": 0.2415391057729721,
+      "lang_cosine_std": 0.2684449553489685,
+      "fv_cosine_mean": 0.02171909622848034,
+      "fv_cosine_std": 0.37968364357948303,
+      "wasserstein_lang_vs_fv": 0.22182035439475437,
+      "norm_ratio_ok": false,
+      "wasserstein_ok": false
+    },
+    "grambank": {
+      "n_languages": 2360,
+      "n_featvalues": 392,
+      "embed_dim": 64,
+      "lang_norm_mean": 1.067397952079773,
+      "lang_norm_std": 0.16877776384353638,
+      "fv_norm_mean": 0.7345000505447388,
+      "fv_norm_std": 0.22154732048511505,
+      "norm_ratio": 0.688122034072876,
+      "lang_cosine_mean": 0.6334458589553833,
+      "lang_cosine_std": 0.23323602974414825,
+      "fv_cosine_mean": 0.005306545179337263,
+      "fv_cosine_std": 0.6177223920822144,
+      "wasserstein_lang_vs_fv": 0.6286517801401206,
+      "norm_ratio_ok": true,
+      "wasserstein_ok": false
+    }
+  },
+  "approach_a_sound": false,
+  "approach_a_verdict": "DEMOTED",
+  "headline_method": "B",
+  "decision_criteria": {
+    "norm_ratio_bounds": [
+      0.5,
+      2.0
+    ],
+    "wasserstein_threshold": 0.2,
+    "norm_ratio_ok": false,
+    "wasserstein_ok": false
+  },
+  "n_pairs_sampled": 10000,
+  "smoke": false,
+  "checkpoint_wals": "/home/user/Grambank2Vec/checkpoints/wals_learned_s42",
+  "checkpoint_grambank": "/home/user/Grambank2Vec/checkpoints/grambank_learned_s42",
+  "seed": 42,
+  "timestamp": "2026-05-07T03:51:24.384996+00:00",
+  "elapsed_seconds": 0.032
+}
