@@ -147,3 +147,86 @@ class TestConditioningVariants:
         result_default  = _run_pipeline_patched(tmp_path / "a")
         result_explicit = _run_pipeline_patched(tmp_path / "b", variants=["both"])
         assert len(result_explicit) == len(result_default)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Spec-numbered tests (points 1-4) + TCF interface verification
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestConditioningVariantsSpec:
+    """
+    Explicit tests mirroring the four numbered spec assertions plus a check
+    that TypologicalMF_TCF_Conditioned exposes the same cond_mode interface.
+    """
+
+    def test_spec_1_default_no_flag_produces_n_rows(self, tmp_path):
+        """Spec 1 — Default (no flag) produces N rows (N > 0)."""
+        result = _run_pipeline_patched(tmp_path)
+        assert len(result) > 0, "Default run must produce at least one row"
+
+    def test_spec_2_explicit_both_produces_n_rows_with_both_column(self, tmp_path):
+        """Spec 2 — --conditioning_variants both produces N rows with conditioning='both'."""
+        result_default  = _run_pipeline_patched(tmp_path / "default")
+        result_explicit = _run_pipeline_patched(tmp_path / "explicit", variants=["both"])
+        assert len(result_explicit) == len(result_default), (
+            f"Explicit 'both' must produce same row count as default: "
+            f"{len(result_explicit)} vs {len(result_default)}"
+        )
+        assert "conditioning" in result_explicit.columns
+        assert (result_explicit["conditioning"] == "both").all(), (
+            "Every row must carry conditioning='both' when only 'both' is requested"
+        )
+
+    def test_spec_3_geo_phylo_both_produces_3n_rows_one_per_variant(self, tmp_path):
+        """Spec 3 — --conditioning_variants geo phylo both produces 3N rows, one per variant."""
+        n_result     = _run_pipeline_patched(tmp_path / "n",  variants=["both"])
+        tri_result   = _run_pipeline_patched(tmp_path / "3n", variants=["geo", "phylo", "both"])
+        n = len(n_result)
+        assert len(tri_result) == 3 * n, (
+            f"Expected 3×{n}={3*n} rows, got {len(tri_result)}"
+        )
+        # Each variant accounts for exactly N rows
+        for v in ("geo", "phylo", "both"):
+            n_v = len(tri_result[tri_result["conditioning"] == v])
+            assert n_v == n, (
+                f"Expected {n} rows for conditioning={v!r}, got {n_v}"
+            )
+
+    def test_spec_4_conditioning_column_matches_variant_used(self, tmp_path):
+        """Spec 4 — The 'conditioning' column value matches the variant used."""
+        cases = [
+            (["geo"],                  {"geo"}),
+            (["phylo"],                {"phylo"}),
+            (["both"],                 {"both"}),
+            (["geo", "phylo", "both"], {"geo", "phylo", "both"}),
+        ]
+        for i, (variants, expected) in enumerate(cases):
+            result = _run_pipeline_patched(tmp_path / f"case{i}", variants=variants)
+            got = set(result["conditioning"].unique())
+            assert got == expected, (
+                f"variants={variants}: expected conditioning values {expected}, got {got}"
+            )
+
+    def test_tcf_conditioned_class_exposes_cond_mode(self):
+        """
+        TypologicalMF_TCF_Conditioned must accept the same cond_mode kwarg as
+        TypologicalMF_Conditioned, even though the pipeline's Tier-1 runs use
+        the Learned architecture.
+        """
+        import inspect
+        from canonical.conditioning_model import TypologicalMF_TCF_Conditioned
+
+        sig = inspect.signature(TypologicalMF_TCF_Conditioned.__init__)
+        assert "cond_mode" in sig.parameters, (
+            "TypologicalMF_TCF_Conditioned.__init__ must accept a 'cond_mode' kwarg"
+        )
+
+        # All four valid mode strings must be accepted without raising.
+        geo   = np.zeros((4, GEO_DIM),   dtype=np.float32)
+        phylo = np.zeros((4, PHYLO_DIM), dtype=np.float32)
+        for mode in ("both", "geo_only", "phylo_only", "init_only"):
+            m = TypologicalMF_TCF_Conditioned(4, 3, geo, phylo,
+                                              embed_dim=8, cond_mode=mode)
+            assert m.cond_mode == mode, (
+                f"Expected m.cond_mode={mode!r}, got {m.cond_mode!r}"
+            )
