@@ -2,37 +2,19 @@
 RQ4 conditioning pipeline — full factorial evaluation.
 
 For each (database, architecture, imputation, seed) configuration:
-  1. Load data and URIEL+ geo+phylo vectors.
-  2. For each qualifying branch × in_branch_frac × repeat:
-       a. Build train/eval split (branch-based protocol).
-       b. Train BASELINE model (no conditioning).
-       c. Train CONDITIONED model (URIEL+ geo+phylo offset via cond_proj).
-       d. Evaluate both; record F1 rows.
-  3. Save results to analysis/conditioning_results/<run_id>.parquet and .csv.
+  1. Load data, URIEL+ geo+phylo vectors, and pre-computed baseline F1 scores.
+  2. For each qualifying branch × in_branch_frac × repeat × conditioning_variant:
+       a. Look up baseline F1 from analysis/baselines/comparison_results_{db}.csv.
+          Skip the cell (with a warning) if the tuple is absent.
+       b. Build train/eval split.
+       c. Train CONDITIONED model only (URIEL+ geo+phylo offset via cond_proj).
+       d. Evaluate; record baseline and conditioned F1 rows.
+  3. Save results to analysis/conditioning_results/<run_id>.csv.
 
-IMPORTANT — full factorial is ~24 000 model trainings; Claude runs smoke only.
-Run the full factorial on a lab server using the runbook in
-  canonical/LAB_SERVER_RUNBOOK.md
+Baseline reuse halves per-cell wall-clock vs training both models from scratch.
 
-Usage (smoke — safe to run locally)
--------------------------------------
-python canonical/conditioning_pipeline.py \\
-    --database wals \\
-    --architecture learned \\
-    --data_path /path/to/wals \\
-    --imputation familymean \\
-    --seed 42 \\
-    --smoke
-
-Usage (full — lab server only)
--------------------------------
-python canonical/conditioning_pipeline.py \\
-    --database wals \\
-    --architecture learned \\
-    --data_path /path/to/wals \\
-    --imputation familymean \\
-    --seed 42 \\
-    --full
+IMPORTANT — full factorial is ~12 000 model trainings; run on a lab server.
+See canonical/LAB_SERVER_RUNBOOK.md
 """
 
 import argparse
@@ -46,9 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from torch.utils.data import DataLoader
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
@@ -59,10 +39,7 @@ from data_preparation import (
     load_grambank_cldf,
     binarise_features,
 )
-from model import TypologicalMF, WALSDataset
 from model_learned import (
-    TypologicalMF_Learned,
-    CategoricalTypDataset,
     prepare_categorical,
     split_by_branch_categorical,
     evaluate_learned,
@@ -74,7 +51,7 @@ from canonical.conditioning_model import (
     train_conditioned,
 )
 from canonical.train_canonical import build_lang2id
-from utils import seed_everything, build_all_triples_binary, build_all_triples_categorical
+from utils import seed_everything
 
 log = logging.getLogger(__name__)
 logging.basicConfig(
@@ -89,6 +66,47 @@ _VARIANT_TO_COND_MODE = {
     "phylo": "phylo_only",
     "both":  "both",
 }
+
+# Maps pipeline architecture name → model column in comparison_results CSV.
+_ARCH_TO_MODEL_NAME = {
+    "tcf":     "T-CF",
+    "learned": "Learned",
+}
+
+_DEFAULT_BASELINES_DIR = str(_REPO_ROOT / "analysis" / "baselines")
+
+
+def load_baseline_lookup(
+    baselines_dir: str,
+    database: str,
+    architecture: str,
+) -> Dict[Tuple[str, float, int], float]:
+    """
+    Load pre-computed baseline F1 scores from comparison_results_{database}.csv.
+
+    Returns a dict keyed on (branch, in_branch_frac, repeat) → f1_baseline.
+    Only rows whose 'model' column matches the current architecture are kept.
+
+    Raises FileNotFoundError if the CSV is absent.
+    """
+    csv_path = Path(baselines_dir) / f"comparison_results_{database}.csv"
+    if not csv_path.exists():
+        raise FileNotFoundError(
+            f"Baseline CSV not found: {csv_path}\n"
+            f"Expected at analysis/baselines/comparison_results_{{database}}.csv"
+        )
+    model_name = _ARCH_TO_MODEL_NAME[architecture]
+    df_bl = pd.read_csv(csv_path)
+    subset = df_bl[df_bl["model"] == model_name]
+    lookup: Dict[Tuple[str, float, int], float] = {
+        (row["branch"],
+         round(float(row["in_branch_frac"]), 6),
+         int(row["repeat"])): float(row["f1"])
+        for _, row in subset.iterrows()
+    }
+    log.info("Loaded %d baseline entries (model=%s) from %s",
+             len(lookup), model_name, csv_path.name)
+    return lookup
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -118,6 +136,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "--uriel_dir",
         default="analysis/conditioning_uriel_plus",
         help="Directory containing uriel_plus_vectors_<method>.parquet files.",
+    )
+    p.add_argument(
+        "--baselines_dir",
+        default=_DEFAULT_BASELINES_DIR,
+        help="Directory containing comparison_results_{database}.csv files.",
     )
     p.add_argument(
         "--out_dir",
@@ -314,7 +337,7 @@ def evaluate_tcf(
     return float(f1_score(y_true, y_pred, average="micro", zero_division=0))
 
 
-def _run_one(
+def _run_conditioned(
     architecture: str,
     df: pd.DataFrame,
     data_dict: dict,
@@ -332,11 +355,12 @@ def _run_one(
     l2_coef: float,
     device: str,
     cond_mode: str = "both",
-) -> Tuple[float, float]:
+) -> float:
     """
-    Train baseline + conditioned models for one (branch, frac, cond_mode) split.
+    Train the conditioned model for one (branch, frac, cond_mode) split.
 
-    Returns (f1_baseline, f1_conditioned).
+    Returns conditioned F1.  Baseline F1 is loaded externally from the
+    pre-computed comparison CSV (see load_baseline_lookup).
     """
     rng = np.random.default_rng(seed)
 
@@ -352,19 +376,8 @@ def _run_one(
             df, cat_matrix, target_branch, in_branch_frac, rng)
 
         if len(ev_v) == 0:
-            return float("nan"), float("nan")
+            return float("nan")
 
-        # Baseline
-        baseline = TypologicalMF_Learned(
-            n_langs, n_total_values, feat_to_global_ids, embed_dim)
-        from model_learned import train_model_learned
-        train_model_learned(
-            baseline, train_ds, n_epochs=n_epochs, batch_size=batch_size,
-            lr=lr, l2_reg=l2_coef, device=device)
-        f1_base = evaluate_learned(
-            baseline, ev_l, ev_f, ev_v, feat_to_value_names, device)
-
-        # Conditioned
         cond = TypologicalMF_Conditioned(
             n_langs, n_total_values, feat_to_global_ids,
             geo_matrix, phylo_matrix, embed_dim,
@@ -372,10 +385,7 @@ def _run_one(
         train_conditioned(
             cond, train_ds, n_epochs=n_epochs, batch_size=batch_size,
             lr=lr, l2_reg=l2_coef, device=device, patience=patience)
-        f1_cond = evaluate_learned(
-            cond, ev_l, ev_f, ev_v, feat_to_value_names, device)
-
-        return f1_base, f1_cond
+        return evaluate_learned(cond, ev_l, ev_f, ev_v, feat_to_value_names, device)
 
     else:  # tcf
         binary_matrix = data_dict["binary_matrix"]
@@ -385,7 +395,7 @@ def _run_one(
             df, binary_matrix, target_branch, in_branch_frac, rng)
 
         if len(ev_v) == 0:
-            return float("nan"), float("nan")
+            return float("nan")
 
         from torch.utils.data import TensorDataset
         train_ds = TensorDataset(
@@ -394,50 +404,13 @@ def _run_one(
             torch.FloatTensor(tr_v),
         )
 
-        # Baseline
-        baseline_tcf = TypologicalMF(n_langs, n_binary, embed_dim)
-        _train_tcf(baseline_tcf, train_ds, n_epochs, batch_size,
-                   lr, l2_coef, device)
-        f1_base = evaluate_tcf(baseline_tcf, ev_l, ev_f, ev_v, device)
-
-        # Conditioned
         cond_tcf = TypologicalMF_TCF_Conditioned(
             n_langs, n_binary, geo_matrix, phylo_matrix, embed_dim,
             cond_mode=cond_mode)
         train_conditioned(
             cond_tcf, train_ds, n_epochs=n_epochs, batch_size=batch_size,
             lr=lr, l2_reg=l2_coef, device=device, patience=patience)
-        f1_cond = evaluate_tcf(cond_tcf, ev_l, ev_f, ev_v, device)
-
-        return f1_base, f1_cond
-
-
-def _train_tcf(
-    model: TypologicalMF,
-    train_ds,
-    n_epochs: int,
-    batch_size: int,
-    lr: float,
-    l2_coef: float,
-    device: str,
-) -> None:
-    """Thin training wrapper for the baseline TCF model."""
-    import torch.optim as optim
-    model = model.to(device)
-    loader = DataLoader(train_ds, batch_size=batch_size,
-                        shuffle=True, drop_last=False)
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-    for _ in range(n_epochs):
-        model.train()
-        for lang_idx, feat_idx, vals in loader:
-            lang_idx = lang_idx.to(device)
-            feat_idx = feat_idx.to(device)
-            vals = vals.to(device)
-            preds, batch_l2 = model(lang_idx, feat_idx)
-            loss = F.binary_cross_entropy(preds, vals) + (l2_coef / 2.0) * batch_l2
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        return evaluate_tcf(cond_tcf, ev_l, ev_f, ev_v, device)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -480,6 +453,10 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     log.info("URIEL+ coverage for %s: %.1f%% (%d/%d)",
              args.database, uriel_meta["pct_found"],
              uriel_meta["found"], uriel_meta["n_langs"])
+
+    # ── 2b. Load pre-computed baseline F1 scores ──
+    baseline_lookup = load_baseline_lookup(
+        args.baselines_dir, args.database, args.architecture)
 
     # ── 3. Determine qualifying branches ──
     branch_counts = df["genus"].value_counts()
@@ -574,11 +551,20 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
                     log.info("[%d/%d] branch=%-30s frac=%.2f rep=%d variant=%s",
                              combo_i, total_combos, branch, frac, rep, variant)
 
+                    lookup_key = (branch, round(frac, 6), rep)
+                    f1_base = baseline_lookup.get(lookup_key)
+                    if f1_base is None:
+                        log.warning(
+                            "  No baseline F1 for branch=%s frac=%.2f rep=%d"
+                            " — skipping cell",
+                            branch, frac, rep)
+                        continue
+
                     rep_seed = (args.seed * 10_000 + rep * 1_000
                                 + hash(branch) % 1000)
                     cond_mode = _VARIANT_TO_COND_MODE[variant]
                     try:
-                        f1_base, f1_cond = _run_one(
+                        f1_cond = _run_conditioned(
                             architecture=args.architecture,
                             df=df,
                             data_dict=data_dict,

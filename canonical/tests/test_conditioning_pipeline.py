@@ -50,6 +50,20 @@ def _fake_uriel_meta() -> dict:
     return {"pct_found": 100.0, "found": N_LANGS, "n_langs": N_LANGS}
 
 
+def _fake_baseline_lookup() -> dict:
+    """
+    Baseline lookup covering all (branch, frac, rep) combos used by smoke mode.
+    Smoke mode uses 1 branch (BranchA, first by value_counts order), frac=0.0,
+    rep=0.  BranchB is included for robustness.
+    """
+    lookup = {}
+    for branch in ("BranchA", "BranchB"):
+        for frac in (0.0,):
+            for rep in (0,):
+                lookup[(branch, round(frac, 6), rep)] = 0.5
+    return lookup
+
+
 def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
     """
     Build minimal args and call run_pipeline with all heavy ops patched out.
@@ -98,8 +112,12 @@ def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
             ),
         ),
         patch(
-            "canonical.conditioning_pipeline._run_one",
-            return_value=(0.5, 0.6),
+            "canonical.conditioning_pipeline.load_baseline_lookup",
+            return_value=_fake_baseline_lookup(),
+        ),
+        patch(
+            "canonical.conditioning_pipeline._run_conditioned",
+            return_value=0.6,
         ),
     ):
         return run_pipeline(args)
