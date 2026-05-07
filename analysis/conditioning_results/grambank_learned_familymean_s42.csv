@@ -1,9 +1,0 @@
-database,architecture,imputation,seed,branch,macroarea,in_branch_frac,repeat,model_type,f1
-grambank,learned,familymean,42,Austronesian,Papunesia,0.0,0,baseline,0.5009027145345029
-grambank,learned,familymean,42,Austronesian,Papunesia,0.0,0,conditioned,0.6857594785026123
-grambank,learned,familymean,42,Austronesian,Papunesia,0.1,0,baseline,0.7499880170637013
-grambank,learned,familymean,42,Austronesian,Papunesia,0.1,0,conditioned,0.763057406253495
-grambank,learned,familymean,42,Atlantic-Congo,Africa,0.0,0,baseline,0.4942227655053989
-grambank,learned,familymean,42,Atlantic-Congo,Africa,0.0,0,conditioned,0.6847696382316133
-grambank,learned,familymean,42,Atlantic-Congo,Africa,0.1,0,baseline,0.7151837946389592
-grambank,learned,familymean,42,Atlantic-Congo,Africa,0.1,0,conditioned,0.7208009546261532

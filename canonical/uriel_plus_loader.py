@@ -81,6 +81,12 @@ _FORBIDDEN_FEATURE_TYPES = frozenset(["fea", "typological", "featural",
                                        "syntactic", "phonological",
                                        "inventory", "morphological"])
 
+# Columns that are permitted to appear in the output parquet (Constraint 3).
+_PERMITTED_PARQUET_COLUMNS = frozenset([
+    "glottocode", "geo_vec", "phylo_vec",
+    "geo_imputed", "phylo_imputed", "imputation_method",
+])
+
 
 def _assert_not_typological(label: str) -> None:
     """Raise if `label` names a typological / featural vector category."""
@@ -94,6 +100,18 @@ def _assert_not_typological(label: str) -> None:
                 "Only 'geo' (geographic) and 'fam' / 'phylogeny' vectors "
                 "are permitted for RQ4 conditioning."
             )
+
+
+def _verify_parquet_schema(out_path: Path) -> None:
+    """Raise if the saved parquet contains any column outside the permitted set."""
+    t = pq.read_table(str(out_path))
+    actual = set(t.schema.names)
+    forbidden = actual - _PERMITTED_PARQUET_COLUMNS
+    assert not forbidden, (
+        f"[Constraint 3] Parquet {out_path.name} contains forbidden columns: "
+        f"{sorted(forbidden)}. Only geo/phylo data is permitted (no typological)."
+    )
+    log.info("[Constraint 3] Parquet schema verified — no forbidden columns.")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -357,6 +375,70 @@ def _knn_impute(
     return imputed_geo, imputed_phylo
 
 
+def _svt_impute(
+    M: np.ndarray,
+    rank: int = 50,
+    lambda_frac: float = 0.05,
+    max_iter: int = 20,
+    tol: float = 1e-3,
+) -> np.ndarray:
+    """
+    SVT-based SoftImpute using randomised truncated SVD.
+
+    For each iteration:
+      1. Compute rank-k truncated SVD of the current (filled) matrix.
+      2. Soft-threshold singular values by lambda.
+      3. Reconstruct the full matrix from the thresholded decomposition.
+      4. Update only the missing-entry positions.
+
+    Because missing rows are entirely NaN (no partial observations), they are
+    initialised with column means and then pulled toward the global low-rank
+    structure of the observed sub-matrix.  This gives a different imputation
+    from familymean (which uses family-local means).
+
+    Parameters
+    ----------
+    M         : float64 array, NaN at missing entries
+    rank      : number of singular components to retain
+    lambda_frac : lambda = lambda_frac × sigma_max (auto-tuned from data)
+    max_iter  : SVT iteration cap
+    tol       : convergence threshold on max absolute change in missing entries
+    """
+    from sklearn.utils.extmath import randomized_svd
+
+    nan_mask = np.isnan(M)
+    col_means = np.nanmean(M, axis=0)
+    np.nan_to_num(col_means, nan=0.0, copy=False)
+
+    # Initialise missing entries with column means
+    M_filled = M.copy()
+    M_filled[nan_mask] = np.take(col_means, np.where(nan_mask)[1])
+
+    # Estimate lambda from the leading singular value
+    _, s0, _ = randomized_svd(M_filled, n_components=1, n_iter=3, random_state=42)
+    lambda_ = float(s0[0]) * lambda_frac
+    log.info("SVT: lambda=%.3f  rank=%d  shape=%s  n_missing=%d",
+             lambda_, rank, M.shape, nan_mask.sum())
+
+    prev_missing = M_filled[nan_mask].copy()
+
+    for it in range(max_iter):
+        U, s, Vt = randomized_svd(M_filled, n_components=rank,
+                                   n_iter=4, random_state=42)
+        s_thresh = np.maximum(s - lambda_, 0)
+        M_new = (U * s_thresh) @ Vt
+        M_filled[nan_mask] = M_new[nan_mask]
+
+        change = float(np.abs(M_filled[nan_mask] - prev_missing).max())
+        prev_missing = M_filled[nan_mask].copy()
+        log.info("  SVT iter %d/%d: max-change=%.6f", it + 1, max_iter, change)
+        if change < tol:
+            log.info("  SVT converged at iter %d.", it + 1)
+            break
+
+    return M_filled
+
+
 def _softimpute_impute(
     missing: list[str],
     geo_vecs: dict[str, np.ndarray],
@@ -369,13 +451,13 @@ def _softimpute_impute(
     running SoftImpute.  For completely missing rows, SoftImpute fills based
     on the low-rank structure of the observed matrix.
 
-    Falls back to familymean if fancyimpute is unavailable or SoftImpute
-    fails to converge.
+    Tries fancyimpute.SoftImpute first; if it fails (e.g. sklearn ≥ 1.6
+    incompatibility), falls back to an internal SVT implementation that
+    produces genuinely different results from familymean.
     """
     found_gcs = list(geo_vecs.keys())
     n_found = len(found_gcs)
     n_missing = len(missing)
-    all_gcs = found_gcs + missing
 
     geo_dim   = next(iter(geo_vecs.values())).shape[0]
     phylo_dim = next(iter(phylo_vecs.values())).shape[0]
@@ -389,14 +471,18 @@ def _softimpute_impute(
 
     try:
         from fancyimpute import SoftImpute
-        log.info("Running SoftImpute on %d × %d matrix (%d missing rows) …",
-                 M.shape[0], M.shape[1], n_missing)
+        log.info("Running fancyimpute.SoftImpute on %d × %d matrix …",
+                 M.shape[0], M.shape[1])
         t0 = time.perf_counter()
         M_filled = SoftImpute(verbose=False).fit_transform(M)
-        log.info("SoftImpute done in %.1f s.", time.perf_counter() - t0)
+        log.info("fancyimpute.SoftImpute done in %.1f s.", time.perf_counter() - t0)
     except Exception as exc:
-        log.warning("SoftImpute failed (%s); falling back to familymean.", exc)
-        return _familymean_impute(missing, geo_vecs, phylo_vecs, families_csv)
+        log.warning(
+            "fancyimpute.SoftImpute failed (%s); "
+            "falling back to internal SVT implementation.", exc)
+        t0 = time.perf_counter()
+        M_filled = _svt_impute(M)
+        log.info("SVT imputation done in %.1f s.", time.perf_counter() - t0)
 
     imputed_geo: dict[str, np.ndarray] = {}
     imputed_phylo: dict[str, np.ndarray] = {}
@@ -524,6 +610,9 @@ def run_loader(
         imputation_method=imputation_method,
         out_path=out_path,
     )
+
+    # Constraint 3 post-save guard: verify no typological columns leaked in.
+    _verify_parquet_schema(out_path)
 
     summary = {
         "imputation_method": imputation_method,

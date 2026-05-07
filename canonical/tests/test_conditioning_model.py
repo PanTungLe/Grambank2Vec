@@ -251,6 +251,142 @@ class TestTypologicalMFTCFConditioned:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# cond_mode ablations (geo_only, phylo_only, init_only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestCondModeAblations:
+    """Tests for channel-zeroing and init_only conditioning modes."""
+
+    def _model(self, cond_mode: str):
+        feat_to_global_ids, n_total = _make_feat_global_ids()
+        geo, phylo = _make_geo_phylo()
+        return TypologicalMF_Conditioned(
+            N_LANG, n_total, feat_to_global_ids, geo, phylo, EMBED_DIM,
+            cond_mode=cond_mode)
+
+    def _tcf_model(self, cond_mode: str):
+        n_binary = sum(FEATURE_CARDS)
+        geo, phylo = _make_geo_phylo()
+        return TypologicalMF_TCF_Conditioned(
+            N_LANG, n_binary, geo, phylo, EMBED_DIM, cond_mode=cond_mode)
+
+    # -- geo_only / phylo_only start as no-ops (zero cond_proj) --
+
+    def test_geo_only_noop_at_init(self):
+        m = self._model("geo_only")
+        assert torch.all(m.cond_proj.weight == 0)
+        with torch.no_grad():
+            idx = torch.arange(5)
+            assert torch.allclose(m.lang_embeddings(idx),
+                                   m._conditioned_lang_emb(idx))
+
+    def test_phylo_only_noop_at_init(self):
+        m = self._model("phylo_only")
+        assert torch.all(m.cond_proj.weight == 0)
+        with torch.no_grad():
+            idx = torch.arange(5)
+            assert torch.allclose(m.lang_embeddings(idx),
+                                   m._conditioned_lang_emb(idx))
+
+    # -- channel zeroing produces distinct outputs with non-zero weights --
+
+    def test_channel_zeroing_produces_distinct_outputs(self):
+        """geo_only and phylo_only with the same non-zero cond_proj must differ."""
+        feat_to_global_ids, n_total = _make_feat_global_ids()
+        geo, phylo = _make_geo_phylo()
+
+        m_geo = TypologicalMF_Conditioned(
+            N_LANG, n_total, feat_to_global_ids, geo, phylo, EMBED_DIM,
+            cond_mode="geo_only")
+        m_phy = TypologicalMF_Conditioned(
+            N_LANG, n_total, feat_to_global_ids, geo, phylo, EMBED_DIM,
+            cond_mode="phylo_only")
+
+        # Synchronise weights so only the zeroing differs
+        w = torch.randn(EMBED_DIM, GEO_DIM + PHYLO_DIM) * 0.1
+        m_geo.cond_proj.weight.data.copy_(w)
+        m_phy.cond_proj.weight.data.copy_(w)
+        m_phy.lang_embeddings.weight.data.copy_(m_geo.lang_embeddings.weight.data)
+
+        with torch.no_grad():
+            idx = torch.arange(5)
+            emb_geo = m_geo._conditioned_lang_emb(idx)
+            emb_phy = m_phy._conditioned_lang_emb(idx)
+
+        assert not torch.allclose(emb_geo, emb_phy), \
+            "geo_only and phylo_only with same weights must give different outputs"
+
+    def test_channel_zeroing_produces_distinct_outputs_tcf(self):
+        n_binary = sum(FEATURE_CARDS)
+        geo, phylo = _make_geo_phylo()
+
+        m_geo = TypologicalMF_TCF_Conditioned(
+            N_LANG, n_binary, geo, phylo, EMBED_DIM, cond_mode="geo_only")
+        m_phy = TypologicalMF_TCF_Conditioned(
+            N_LANG, n_binary, geo, phylo, EMBED_DIM, cond_mode="phylo_only")
+
+        w = torch.randn(EMBED_DIM, GEO_DIM + PHYLO_DIM) * 0.1
+        m_geo.cond_proj.weight.data.copy_(w)
+        m_phy.cond_proj.weight.data.copy_(w)
+        m_phy.lang_embeddings.weight.data.copy_(m_geo.lang_embeddings.weight.data)
+
+        with torch.no_grad():
+            idx = torch.arange(5)
+            emb_geo = m_geo._conditioned_lang_emb(idx)
+            emb_phy = m_phy._conditioned_lang_emb(idx)
+
+        assert not torch.allclose(emb_geo, emb_phy)
+
+    # -- init_only: forward returns plain lang_emb; cond_proj is frozen --
+
+    def test_init_only_forward_is_unconditioned(self):
+        m = self._model("init_only")
+        with torch.no_grad():
+            idx = torch.arange(5)
+            assert torch.allclose(m.lang_embeddings(idx),
+                                   m._conditioned_lang_emb(idx)), \
+                "init_only: _conditioned_lang_emb must return plain lang_emb"
+
+    def test_init_only_cond_proj_frozen(self):
+        m = self._model("init_only")
+        trainable = {n for n, p in m.named_parameters() if p.requires_grad}
+        assert not any("cond_proj" in n for n in trainable), \
+            "init_only: cond_proj must be frozen (requires_grad=False)"
+
+    def test_init_only_lang_emb_differs_from_baseline(self):
+        """init_only lang_emb must differ from default (which is zero-offset)."""
+        feat_to_global_ids, n_total = _make_feat_global_ids()
+        geo, phylo = _make_geo_phylo()
+
+        torch.manual_seed(7)
+        m_init = TypologicalMF_Conditioned(
+            N_LANG, n_total, feat_to_global_ids, geo, phylo, EMBED_DIM,
+            cond_mode="init_only")
+
+        torch.manual_seed(7)
+        m_base = TypologicalMF_Conditioned(
+            N_LANG, n_total, feat_to_global_ids, geo, phylo, EMBED_DIM,
+            cond_mode="both")  # zero-init cond_proj → same start as baseline
+
+        # init_only bakes a non-zero offset into lang_emb.weight
+        assert not torch.allclose(m_init.lang_embeddings.weight,
+                                    m_base.lang_embeddings.weight), \
+            "init_only lang_emb must differ from zero-offset (both) init"
+
+    def test_init_only_tcf_forward_is_unconditioned(self):
+        m = self._tcf_model("init_only")
+        with torch.no_grad():
+            idx = torch.arange(5)
+            assert torch.allclose(m.lang_embeddings(idx),
+                                   m._conditioned_lang_emb(idx))
+
+    def test_init_only_tcf_cond_proj_frozen(self):
+        m = self._tcf_model("init_only")
+        trainable = {n for n, p in m.named_parameters() if p.requires_grad}
+        assert not any("cond_proj" in n for n in trainable)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # load_uriel_vectors_for_lang2id
 # ──────────────────────────────────────────────────────────────────────────────
 

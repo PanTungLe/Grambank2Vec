@@ -99,11 +99,10 @@ class TypologicalMF_Conditioned(nn.Module):
     """
     TypologicalMF_Learned augmented with URIEL+ geo+phylo conditioning.
 
-    The conditioning offset is:
+    The conditioning offset (default cond_mode='both') is:
         offset = cond_proj( concat(geo_vec, phylo_vec) )   [shape (d,)]
 
-    cond_proj is a single linear layer, no nonlinearity, bias=False,
-    initialised to zero so the model starts identical to the baseline.
+    cond_proj is a single linear layer, no nonlinearity, bias=False.
 
     Parameters
     ----------
@@ -117,6 +116,12 @@ class TypologicalMF_Conditioned(nn.Module):
     phylo_matrix : np.ndarray, shape (n_languages, phylo_dim)
         URIEL+ phylogenetic vectors aligned to lang2id order.
     embed_dim : int
+    cond_mode : str
+        'both'       — residual from concat(geo, phylo) [default, zero-init]
+        'geo_only'   — residual from concat(geo, zeros) [phylo channel zeroed]
+        'phylo_only' — residual from concat(zeros, phylo) [geo channel zeroed]
+        'init_only'  — conditioning applied once at init to seed lang_emb,
+                       cond_proj then frozen (normal-init weights, not zero)
     """
 
     def __init__(
@@ -127,9 +132,13 @@ class TypologicalMF_Conditioned(nn.Module):
         geo_matrix: np.ndarray,
         phylo_matrix: np.ndarray,
         embed_dim: int = 64,
+        cond_mode: str = "both",
     ) -> None:
         super().__init__()
+        assert cond_mode in ("both", "geo_only", "phylo_only", "init_only"), \
+            f"Unknown cond_mode: {cond_mode!r}"
         self.embed_dim = embed_dim
+        self.cond_mode = cond_mode
         self.feat_to_global_ids = feat_to_global_ids
 
         geo_dim = geo_matrix.shape[1]
@@ -138,8 +147,6 @@ class TypologicalMF_Conditioned(nn.Module):
         self.lang_embeddings = nn.Embedding(n_languages, embed_dim)
         self.value_embeddings = nn.Embedding(n_total_values, embed_dim)
 
-        # Single linear layer, no bias, no nonlinearity.
-        # Initialised to zero → conditioning starts as a no-op.
         self.cond_proj = nn.Linear(geo_dim + phylo_dim, embed_dim, bias=False)
 
         # Fixed URIEL+ buffers (not trained — registered as buffers so they
@@ -151,7 +158,19 @@ class TypologicalMF_Conditioned(nn.Module):
 
         nn.init.normal_(self.lang_embeddings.weight, std=0.01)
         nn.init.normal_(self.value_embeddings.weight, std=0.01)
-        nn.init.zeros_(self.cond_proj.weight)
+
+        if cond_mode == "init_only":
+            # Seed lang_emb from geo+phylo once, then freeze cond_proj.
+            nn.init.normal_(self.cond_proj.weight, std=0.01)
+            with torch.no_grad():
+                concat = torch.cat([self.geo_vecs, self.phylo_vecs], dim=-1)
+                offsets = self.cond_proj(concat)           # (n_langs, d)
+                self.lang_embeddings.weight.data.add_(offsets)
+            for p in self.cond_proj.parameters():
+                p.requires_grad = False
+        else:
+            # 'both', 'geo_only', 'phylo_only': zero-init → no-op at start.
+            nn.init.zeros_(self.cond_proj.weight)
 
         # Pre-compute padded value-ID tables for efficient batched softmax.
         max_n_vals = max(len(gids) for gids in feat_to_global_ids.values())
@@ -167,10 +186,17 @@ class TypologicalMF_Conditioned(nn.Module):
 
     # ------------------------------------------------------------------
     def _conditioned_lang_emb(self, lang_idx: torch.Tensor) -> torch.Tensor:
-        """Return base language embedding + URIEL+ conditioning offset."""
+        """Return language embedding, optionally with URIEL+ conditioning offset."""
         lang_emb = self.lang_embeddings(lang_idx)                 # (B, d)
+        if self.cond_mode == "init_only":
+            # Conditioning was baked into lang_emb.weight at init; no runtime offset.
+            return lang_emb
         geo = self.geo_vecs[lang_idx]                              # (B, geo_dim)
         phylo = self.phylo_vecs[lang_idx]                          # (B, phylo_dim)
+        if self.cond_mode == "geo_only":
+            phylo = torch.zeros_like(phylo)
+        elif self.cond_mode == "phylo_only":
+            geo = torch.zeros_like(geo)
         offset = self.cond_proj(torch.cat([geo, phylo], dim=-1))   # (B, d)
         return lang_emb + offset
 
@@ -266,6 +292,8 @@ class TypologicalMF_TCF_Conditioned(nn.Module):
     geo_matrix : np.ndarray, shape (n_languages, geo_dim)
     phylo_matrix : np.ndarray, shape (n_languages, phylo_dim)
     embed_dim : int
+    cond_mode : str
+        'both' | 'geo_only' | 'phylo_only' | 'init_only'  (see Learned variant)
     """
 
     def __init__(
@@ -275,9 +303,13 @@ class TypologicalMF_TCF_Conditioned(nn.Module):
         geo_matrix: np.ndarray,
         phylo_matrix: np.ndarray,
         embed_dim: int = 64,
+        cond_mode: str = "both",
     ) -> None:
         super().__init__()
+        assert cond_mode in ("both", "geo_only", "phylo_only", "init_only"), \
+            f"Unknown cond_mode: {cond_mode!r}"
         self.embed_dim = embed_dim
+        self.cond_mode = cond_mode
 
         geo_dim = geo_matrix.shape[1]
         phylo_dim = phylo_matrix.shape[1]
@@ -293,13 +325,29 @@ class TypologicalMF_TCF_Conditioned(nn.Module):
 
         nn.init.normal_(self.lang_embeddings.weight, std=0.01)
         nn.init.normal_(self.feat_embeddings.weight, std=0.01)
-        nn.init.zeros_(self.cond_proj.weight)
+
+        if cond_mode == "init_only":
+            nn.init.normal_(self.cond_proj.weight, std=0.01)
+            with torch.no_grad():
+                concat = torch.cat([self.geo_vecs, self.phylo_vecs], dim=-1)
+                offsets = self.cond_proj(concat)
+                self.lang_embeddings.weight.data.add_(offsets)
+            for p in self.cond_proj.parameters():
+                p.requires_grad = False
+        else:
+            nn.init.zeros_(self.cond_proj.weight)
 
     # ------------------------------------------------------------------
     def _conditioned_lang_emb(self, lang_idx: torch.Tensor) -> torch.Tensor:
         lang_emb = self.lang_embeddings(lang_idx)
+        if self.cond_mode == "init_only":
+            return lang_emb
         geo = self.geo_vecs[lang_idx]
         phylo = self.phylo_vecs[lang_idx]
+        if self.cond_mode == "geo_only":
+            phylo = torch.zeros_like(phylo)
+        elif self.cond_mode == "phylo_only":
+            geo = torch.zeros_like(geo)
         return lang_emb + self.cond_proj(torch.cat([geo, phylo], dim=-1))
 
     # ------------------------------------------------------------------
