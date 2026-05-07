@@ -969,6 +969,253 @@ def run_discover(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Tier-1 discovery: B∩C intersection
+# ---------------------------------------------------------------------------
+
+def run_discover_bc(args: argparse.Namespace) -> dict[str, Any]:
+    """
+    Tier-1 discovery: WALS featvalues absent from the gold standard whose
+    Approach B top-5 AND Approach C top-5 share at least one Grambank
+    featvalue.  The B∩C intersection requires two independent methods to
+    agree, giving higher-confidence candidates than either alone.
+
+    Outputs novel_correspondences_tier1.json and updates the two-tier
+    novel_correspondences.md (combined with Tier-2 from discover_b.json).
+    """
+    out = Path(args.output_dir)
+
+    for mode_name in ("approach_b", "approach_c"):
+        fpath = out / f"{mode_name}.json"
+        if not fpath.exists():
+            print(f"[ERROR] {fpath} not found. Run --mode {mode_name} first.",
+                  file=sys.stderr)
+            sys.exit(1)
+
+    b_data = json.loads((out / "approach_b.json").read_text())["results"]
+    c_data = json.loads((out / "approach_c.json").read_text())["results"]
+
+    vp = json.loads(Path(_VALIDATION_PAIRS_FILE).read_text())
+    known_wals = {p["wals"] for p in vp["pairs"]}
+
+    smoke_limit = 30 if args.smoke else None
+    wals_fvs = [w for w in b_data if w not in known_wals and w in c_data]
+    if smoke_limit:
+        rng = np.random.default_rng(args.seed)
+        wals_fvs = list(rng.choice(wals_fvs, min(smoke_limit, len(wals_fvs)),
+                                    replace=False))
+
+    candidates: list[dict[str, Any]] = []
+    for wals_fv in wals_fvs:
+        top5_b = {r["grambank"]: r for r in b_data[wals_fv][:5]}
+        top5_c = {r["grambank"]: r for r in c_data[wals_fv][:5]}
+        intersection = set(top5_b.keys()) & set(top5_c.keys())
+
+        for gb_fv in intersection:
+            rank_b = top5_b[gb_fv]["rank"]
+            sim_b  = top5_b[gb_fv]["sim"]
+            rank_c = top5_c[gb_fv]["rank"]
+            sim_c  = top5_c[gb_fv]["sim"]
+            mean_rank = (rank_b + rank_c) / 2.0
+            chapter = _wals_chapter(wals_fv)
+            candidates.append({
+                "wals": wals_fv,
+                "grambank": gb_fv,
+                "rank_b": rank_b,
+                "rank_c": rank_c,
+                "sim_b": round(sim_b, 4),
+                "sim_c": round(sim_c, 4),
+                "mean_rank": mean_rank,
+                "wals_chapter": chapter,
+                "domain": _domain_label(chapter),
+                "tier": 1,
+            })
+
+    candidates.sort(key=lambda x: x["mean_rank"])
+    top50 = candidates[:50]
+
+    json_path = out / "novel_correspondences_tier1.json"
+    json_path.write_text(
+        json.dumps({"tier": 1, "method": "B∩C",
+                    "candidates": top50,
+                    "total_candidates": len(candidates)},
+                   indent=2, ensure_ascii=False)
+    )
+
+    n_queried = len(wals_fvs)
+    n_with = len({c["wals"] for c in candidates})
+    print(f"  [Tier 1 B∩C] WALS queried: {n_queried}  "
+          f"with intersection: {n_with}  total pairs: {len(candidates)}")
+
+    _write_two_tier_md(out)
+
+    return {
+        "mode": "discover_bc",
+        "tier": 1,
+        "method": "B∩C",
+        "n_queried_wals_fvs": n_queried,
+        "n_with_intersection": n_with,
+        "total_candidates": len(candidates),
+        "top50": top50,
+        "smoke": args.smoke,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Tier-2 discovery: pure-B top-5
+# ---------------------------------------------------------------------------
+
+def run_discover_b(args: argparse.Namespace) -> dict[str, Any]:
+    """
+    Tier-2 discovery: WALS featvalues absent from the gold standard with at
+    least one hit in Approach B's top-5.  Uses only Approach B (the headline
+    language-profile method) without requiring a second method to agree.
+    Broader coverage than Tier 1, lower confidence — suitable for exploratory
+    hypothesis generation.
+
+    Outputs novel_correspondences_tier2.json and updates the two-tier
+    novel_correspondences.md (combined with Tier-1 from discover_bc.json).
+    """
+    out = Path(args.output_dir)
+
+    fpath = out / "approach_b.json"
+    if not fpath.exists():
+        print(f"[ERROR] {fpath} not found. Run --mode approach_b first.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    b_data = json.loads(fpath.read_text())["results"]
+
+    vp = json.loads(Path(_VALIDATION_PAIRS_FILE).read_text())
+    known_wals = {p["wals"] for p in vp["pairs"]}
+
+    smoke_limit = 30 if args.smoke else None
+    wals_fvs = [w for w in b_data if w not in known_wals]
+    if smoke_limit:
+        rng = np.random.default_rng(args.seed)
+        wals_fvs = list(rng.choice(wals_fvs, min(smoke_limit, len(wals_fvs)),
+                                    replace=False))
+
+    candidates: list[dict[str, Any]] = []
+    for wals_fv in wals_fvs:
+        top5_b = b_data[wals_fv][:5]
+        for entry in top5_b:
+            chapter = _wals_chapter(wals_fv)
+            candidates.append({
+                "wals": wals_fv,
+                "grambank": entry["grambank"],
+                "rank_b": entry["rank"],
+                "sim_b": round(entry["sim"], 4),
+                "mean_rank": float(entry["rank"]),
+                "wals_chapter": chapter,
+                "domain": _domain_label(chapter),
+                "tier": 2,
+            })
+
+    candidates.sort(key=lambda x: (x["mean_rank"], -x["sim_b"]))
+    top50 = candidates[:50]
+
+    json_path = out / "novel_correspondences_tier2.json"
+    json_path.write_text(
+        json.dumps({"tier": 2, "method": "pure-B",
+                    "candidates": top50,
+                    "total_candidates": len(candidates)},
+                   indent=2, ensure_ascii=False)
+    )
+
+    n_queried = len(wals_fvs)
+    print(f"  [Tier 2 pure-B] WALS queried: {n_queried}  "
+          f"total top-5 entries: {len(candidates)}")
+
+    _write_two_tier_md(out)
+
+    return {
+        "mode": "discover_b",
+        "tier": 2,
+        "method": "pure-B",
+        "n_queried_wals_fvs": n_queried,
+        "total_candidates": len(candidates),
+        "top50": top50,
+        "smoke": args.smoke,
+    }
+
+
+def _write_two_tier_md(out: Path) -> None:
+    """
+    Write a fresh two-tier novel_correspondences.md combining Tier-1 (B∩C)
+    and Tier-2 (pure-B).  Both tier JSON files must exist; missing tiers are
+    silently skipped so each discover mode can call this independently.
+    """
+    from collections import defaultdict
+
+    def _tier_section(title: str, candidates: list[dict], tier: int) -> list[str]:
+        top20 = candidates[:20]
+        by_domain: dict[str, list] = defaultdict(list)
+        for c in top20:
+            by_domain[c["domain"]].append(c)
+
+        lines = [f"## {title}", ""]
+        rank_counter = 1
+        for domain in sorted(by_domain.keys()):
+            items = sorted(by_domain[domain], key=lambda x: x["mean_rank"])
+            lines.append(f"### {domain.replace('-', ' ').title()}")
+            lines.append("")
+            if tier == 1:
+                lines.append("| # | WALS | Grambank | rank_B | rank_C | sim_B | sim_C |")
+                lines.append("|---|------|----------|--------|--------|-------|-------|")
+            else:
+                lines.append("| # | WALS | Grambank | rank_B | sim_B |")
+                lines.append("|---|------|----------|--------|-------|")
+            for c in items:
+                if tier == 1:
+                    row = (f"| {rank_counter} | `{c['wals']}` | `{c['grambank']}` | "
+                           f"{c.get('rank_b','—')} | {c.get('rank_c','—')} | "
+                           f"{c.get('sim_b',0.0):.3f} | {c.get('sim_c',0.0):.3f} |")
+                else:
+                    row = (f"| {rank_counter} | `{c['wals']}` | `{c['grambank']}` | "
+                           f"{c.get('rank_b','—')} | {c.get('sim_b',0.0):.3f} |")
+                lines.append(row)
+                rank_counter += 1
+            lines.append("")
+        return lines
+
+    md = [
+        "# Novel WALS ↔ Grambank Correspondences — Two-Tier Discovery",
+        "",
+        "Candidates are WALS feature-values **absent from the gold standard** "
+        "that appear in the top-5 of one or more alignment approaches.",
+        "",
+        "**Tier 1 (B∩C, higher confidence):** Both the language-profile method "
+        "(Approach B) and the CCA-projection method (Approach C) independently "
+        "place the same Grambank feature-value in their top-5 lists.  "
+        "The two methods use different mathematical machinery, so agreement "
+        "between them raises confidence.",
+        "",
+        "**Tier 2 (pure-B, exploratory):** Only Approach B (headline method) "
+        "lists the Grambank feature-value in its top-5.  Broader coverage "
+        "than Tier 1; requires expert validation before use as research claims.",
+        "",
+        "_All candidates require expert validation before use as research claims._",
+        "",
+    ]
+
+    t1_path = out / "novel_correspondences_tier1.json"
+    t2_path = out / "novel_correspondences_tier2.json"
+
+    if t1_path.exists():
+        t1 = json.loads(t1_path.read_text())
+        md += _tier_section("Tier 1 — B∩C Agreement (Top 20)", t1["candidates"], 1)
+
+    if t2_path.exists():
+        t2 = json.loads(t2_path.read_text())
+        md += _tier_section("Tier 2 — Pure-B Exploratory (Top 20)", t2["candidates"], 2)
+
+    md_path = out / "novel_correspondences.md"
+    md_path.write_text("\n".join(md), encoding="utf-8")
+    print(f"  Written two-tier novel_correspondences.md")
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -980,6 +1227,8 @@ _MODES = {
     "approach_c": run_approach_c,
     "validate": run_validate,
     "discover": run_discover,
+    "discover_bc": run_discover_bc,
+    "discover_b": run_discover_b,
 }
 
 
