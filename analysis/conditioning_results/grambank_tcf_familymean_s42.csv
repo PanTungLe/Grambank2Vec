@@ -1,0 +1,3 @@
+database,architecture,imputation,seed,branch,macroarea,in_branch_frac,repeat,model_type,f1
+grambank,tcf,familymean,42,Austronesian,Papunesia,0.0,0,baseline,0.5668493150684931
+grambank,tcf,familymean,42,Austronesian,Papunesia,0.0,0,conditioned,0.7293150684931506
