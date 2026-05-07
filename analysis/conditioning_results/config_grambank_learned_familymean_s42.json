@@ -4,19 +4,20 @@
   "imputation": "familymean",
   "seed": 42,
   "embed_dim": 64,
-  "n_epochs": 1,
+  "n_epochs": 5,
   "patience": 10,
   "batch_size": 64,
   "lr": 0.001,
   "l2_coef": 0.1,
-  "n_branches": 1,
+  "n_branches": 2,
   "in_branch_fracs": [
-    0.0
+    0.0,
+    0.1
   ],
   "n_repeats": 1,
   "min_branch_size": 5,
   "smoke": true,
   "uriel_coverage_pct": 100.0,
-  "n_result_rows": 2,
-  "elapsed_s": 48.8
+  "n_result_rows": 8,
+  "elapsed_s": 1397.6
 }
