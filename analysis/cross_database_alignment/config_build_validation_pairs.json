@@ -1,0 +1,8 @@
+{
+  "grambank_dir": "/tmp/grambank",
+  "output_dir": "/home/user/Grambank2Vec/analysis/cross_database_alignment",
+  "smoke": true,
+  "full": false,
+  "resume": false,
+  "seed": 42
+}

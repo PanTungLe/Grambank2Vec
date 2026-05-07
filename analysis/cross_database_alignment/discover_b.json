@@ -1,0 +1,511 @@
+{
+  "mode": "discover_b",
+  "tier": 2,
+  "method": "pure-B",
+  "n_queried_wals_fvs": 621,
+  "total_candidates": 3105,
+  "top50": [
+    {
+      "wals": "21B=monoexponential TAM",
+      "grambank": "GB020=0",
+      "rank_b": 1,
+      "sim_b": 0.9936,
+      "mean_rank": 1.0,
+      "wals_chapter": "morphology",
+      "domain": "morphology",
+      "tier": 2
+    },
+    {
+      "wals": "79B=None (= no suppletive imperatives reported in the reference material)",
+      "grambank": "GB304=0",
+      "rank_b": 1,
+      "sim_b": 0.9933,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "25B=Non-zero marking",
+      "grambank": "GB250=0",
+      "rank_b": 1,
+      "sim_b": 0.9931,
+      "mean_rank": 1.0,
+      "wals_chapter": "morphology",
+      "domain": "morphology",
+      "tier": 2
+    },
+    {
+      "wals": "73A=Inflectional optative absent",
+      "grambank": "GB250=1",
+      "rank_b": 1,
+      "sim_b": 0.9929,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "136A=No M-T pronouns",
+      "grambank": "GB204=0",
+      "rank_b": 1,
+      "sim_b": 0.9925,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "22A=6-7 categories per word",
+      "grambank": "GB273=0",
+      "rank_b": 1,
+      "sim_b": 0.9925,
+      "mean_rank": 1.0,
+      "wals_chapter": "morphology",
+      "domain": "morphology",
+      "tier": 2
+    },
+    {
+      "wals": "130A=Different",
+      "grambank": "GB204=1",
+      "rank_b": 1,
+      "sim_b": 0.9921,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "41A=Two-way contrast",
+      "grambank": "GB059=0",
+      "rank_b": 1,
+      "sim_b": 0.9919,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "58A=Absent",
+      "grambank": "GB140=1",
+      "rank_b": 1,
+      "sim_b": 0.9917,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-syntax",
+      "domain": "nominal-syntax",
+      "tier": 2
+    },
+    {
+      "wals": "10A=Contrast absent",
+      "grambank": "GB250=0",
+      "rank_b": 1,
+      "sim_b": 0.991,
+      "mean_rank": 1.0,
+      "wals_chapter": "tone",
+      "domain": "tone",
+      "tier": 2
+    },
+    {
+      "wals": "115A=Predicate negation also present",
+      "grambank": "GB093=0",
+      "rank_b": 1,
+      "sim_b": 0.9903,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "90C=Noun-Relative clause (NRel) dominant",
+      "grambank": "GB123=0",
+      "rank_b": 1,
+      "sim_b": 0.9897,
+      "mean_rank": 1.0,
+      "wals_chapter": "word-order",
+      "domain": "word-order",
+      "tier": 2
+    },
+    {
+      "wals": "144L=SV&OV&[V-Neg]",
+      "grambank": "GB047=1",
+      "rank_b": 1,
+      "sim_b": 0.9893,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "114A=A/Fin",
+      "grambank": "GB257=0",
+      "rank_b": 1,
+      "sim_b": 0.9892,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "18A=All present",
+      "grambank": "GB140=1",
+      "rank_b": 1,
+      "sim_b": 0.9891,
+      "mean_rank": 1.0,
+      "wals_chapter": "morphology",
+      "domain": "morphology",
+      "tier": 2
+    },
+    {
+      "wals": "65A=No grammatical marking",
+      "grambank": "GB187=0",
+      "rank_b": 1,
+      "sim_b": 0.989,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-syntax",
+      "domain": "nominal-syntax",
+      "tier": 2
+    },
+    {
+      "wals": "56A=Formally similar, without interrogative",
+      "grambank": "GB266=0",
+      "rank_b": 1,
+      "sim_b": 0.9885,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-syntax",
+      "domain": "nominal-syntax",
+      "tier": 2
+    },
+    {
+      "wals": "137A=No N-M pronouns",
+      "grambank": "GB140=1",
+      "rank_b": 1,
+      "sim_b": 0.9884,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "111A=Morphological but no compound",
+      "grambank": "GB204=1",
+      "rank_b": 1,
+      "sim_b": 0.9878,
+      "mean_rank": 1.0,
+      "wals_chapter": "complex-sentences",
+      "domain": "complex-sentences",
+      "tier": 2
+    },
+    {
+      "wals": "43A=Related to remote demonstratives",
+      "grambank": "GB204=1",
+      "rank_b": 1,
+      "sim_b": 0.9877,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "128A=Balanced",
+      "grambank": "GB187=0",
+      "rank_b": 1,
+      "sim_b": 0.9876,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "137B=No m in second person singular",
+      "grambank": "GB140=1",
+      "rank_b": 1,
+      "sim_b": 0.9876,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "35A=Person-number stem + pronominal plural affix",
+      "grambank": "GB299=1",
+      "rank_b": 1,
+      "sim_b": 0.9876,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "41A=Three-way contrast",
+      "grambank": "GB059=1",
+      "rank_b": 1,
+      "sim_b": 0.9875,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "117A='Have'",
+      "grambank": "GB304=1",
+      "rank_b": 1,
+      "sim_b": 0.9873,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "108B=no antipassive",
+      "grambank": "GB266=0",
+      "rank_b": 1,
+      "sim_b": 0.9871,
+      "mean_rank": 1.0,
+      "wals_chapter": "complex-sentences",
+      "domain": "complex-sentences",
+      "tier": 2
+    },
+    {
+      "wals": "144H=No NegSVO",
+      "grambank": "GB323=0",
+      "rank_b": 1,
+      "sim_b": 0.9871,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "79A=Tense",
+      "grambank": "GB304=0",
+      "rank_b": 1,
+      "sim_b": 0.987,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "72A=Maximal system",
+      "grambank": "GB250=0",
+      "rank_b": 1,
+      "sim_b": 0.9868,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "144P=No NegSOV",
+      "grambank": "GB137=1",
+      "rank_b": 1,
+      "sim_b": 0.9863,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "43A=Related for non-human reference",
+      "grambank": "GB250=0",
+      "rank_b": 1,
+      "sim_b": 0.9863,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "136B=No m in first person singular",
+      "grambank": "GB254=1",
+      "rank_b": 1,
+      "sim_b": 0.9862,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "76A=Overlap for either possibility or necessity",
+      "grambank": "GB323=0",
+      "rank_b": 1,
+      "sim_b": 0.986,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "39A=No inclusive/exclusive",
+      "grambank": "GB035=0",
+      "rank_b": 1,
+      "sim_b": 0.9856,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "108A=No antipassive",
+      "grambank": "GB146=0",
+      "rank_b": 1,
+      "sim_b": 0.9855,
+      "mean_rank": 1.0,
+      "wals_chapter": "complex-sentences",
+      "domain": "complex-sentences",
+      "tier": 2
+    },
+    {
+      "wals": "22A=4-5 categories per word",
+      "grambank": "GB035=1",
+      "rank_b": 1,
+      "sim_b": 0.9855,
+      "mean_rank": 1.0,
+      "wals_chapter": "morphology",
+      "domain": "morphology",
+      "tier": 2
+    },
+    {
+      "wals": "61A=Without marking",
+      "grambank": "GB250=0",
+      "rank_b": 1,
+      "sim_b": 0.9852,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-syntax",
+      "domain": "nominal-syntax",
+      "tier": 2
+    },
+    {
+      "wals": "55A=Absent",
+      "grambank": "GB519=0",
+      "rank_b": 1,
+      "sim_b": 0.985,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "37A=Demonstrative word used as definite article",
+      "grambank": "GB020=0",
+      "rank_b": 1,
+      "sim_b": 0.9849,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "43A=Related to non-remote demonstratives",
+      "grambank": "GB140=0",
+      "rank_b": 1,
+      "sim_b": 0.9842,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "75A=Other",
+      "grambank": "GB299=1",
+      "rank_b": 1,
+      "sim_b": 0.9842,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "49A=2 cases",
+      "grambank": "GB408=1",
+      "rank_b": 1,
+      "sim_b": 0.9839,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-categories",
+      "domain": "nominal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "131A=Decimal",
+      "grambank": "GB333=1",
+      "rank_b": 1,
+      "sim_b": 0.9835,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "144D=OptNeg",
+      "grambank": "GB146=1",
+      "rank_b": 1,
+      "sim_b": 0.9835,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "144L=OptDoubleNeg",
+      "grambank": "GB408=0",
+      "rank_b": 1,
+      "sim_b": 0.9835,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "65A=Grammatical marking",
+      "grambank": "GB048=1",
+      "rank_b": 1,
+      "sim_b": 0.9835,
+      "mean_rank": 1.0,
+      "wals_chapter": "nominal-syntax",
+      "domain": "nominal-syntax",
+      "tier": 2
+    },
+    {
+      "wals": "134A=Green/blue",
+      "grambank": "GB421=0",
+      "rank_b": 1,
+      "sim_b": 0.9831,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    },
+    {
+      "wals": "72A=Neither type of system",
+      "grambank": "GB204=1",
+      "rank_b": 1,
+      "sim_b": 0.9829,
+      "mean_rank": 1.0,
+      "wals_chapter": "verbal-categories",
+      "domain": "verbal-categories",
+      "tier": 2
+    },
+    {
+      "wals": "103A=Zero in all 3sg forms",
+      "grambank": "GB136=0",
+      "rank_b": 1,
+      "sim_b": 0.9828,
+      "mean_rank": 1.0,
+      "wals_chapter": "complex-sentences",
+      "domain": "complex-sentences",
+      "tier": 2
+    },
+    {
+      "wals": "122A=Gap",
+      "grambank": "GB123=0",
+      "rank_b": 1,
+      "sim_b": 0.9826,
+      "mean_rank": 1.0,
+      "wals_chapter": "lexicon",
+      "domain": "lexicon",
+      "tier": 2
+    }
+  ],
+  "smoke": false,
+  "elapsed_seconds": 0.082
+}

@@ -1,0 +1,184 @@
+{
+  "pairs": [
+    {
+      "wals": "81A=SOV",
+      "grambank": [
+        "GB133=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "verb-final transitive"
+    },
+    {
+      "wals": "81A=VSO",
+      "grambank": [
+        "GB131=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "verb-initial transitive"
+    },
+    {
+      "wals": "81A=VOS",
+      "grambank": [
+        "GB131=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "medium",
+      "note": "verb-initial subset; VOS is a subtype of verb-initial order"
+    },
+    {
+      "wals": "81A=SVO",
+      "grambank": [
+        "GB132=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "verb-medial transitive"
+    },
+    {
+      "wals": "85A=Prepositions",
+      "grambank": [
+        "GB074=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "prepositions present"
+    },
+    {
+      "wals": "85A=Postpositions",
+      "grambank": [
+        "GB075=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "postpositions present"
+    },
+    {
+      "wals": "86A=Genitive-Noun",
+      "grambank": [
+        "GB065=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "possessor precedes possessed (=genitive-noun); corrected from seed GB089"
+    },
+    {
+      "wals": "86A=Noun-Genitive",
+      "grambank": [
+        "GB065=2"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "possessed precedes possessor (=noun-genitive); corrected from seed GB089"
+    },
+    {
+      "wals": "87A=Adjective-Noun",
+      "grambank": [
+        "GB193=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "ANM-N (adnominal property word precedes noun)"
+    },
+    {
+      "wals": "87A=Noun-Adjective",
+      "grambank": [
+        "GB193=2"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "N-ANM (noun precedes adnominal property word)"
+    },
+    {
+      "wals": "88A=Demonstrative-Noun",
+      "grambank": [
+        "GB025=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "Dem-N order; corrected from missing GB202 to GB025"
+    },
+    {
+      "wals": "88A=Noun-Demonstrative",
+      "grambank": [
+        "GB025=2"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "N-Dem order; corrected from missing GB202 to GB025"
+    },
+    {
+      "wals": "89A=Numeral-Noun",
+      "grambank": [
+        "GB203=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "UQ-N quantifier order; best Grambank proxy for numeral-noun (no dedicated GB feature)"
+    },
+    {
+      "wals": "89A=Noun-Numeral",
+      "grambank": [
+        "GB203=2"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "N-UQ quantifier order; best Grambank proxy for noun-numeral"
+    },
+    {
+      "wals": "90A=Relative clause-Noun",
+      "grambank": [
+        "GB328=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "low",
+      "note": "RC can precede noun; CORRECTED — original seed had GB327/GB328 inverted"
+    },
+    {
+      "wals": "90A=Noun-Relative clause",
+      "grambank": [
+        "GB327=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "low",
+      "note": "RC can follow noun; CORRECTED — original seed had GB327/GB328 inverted"
+    },
+    {
+      "wals": "37A=Definite word distinct from demonstrative",
+      "grambank": [
+        "GB020=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "definite/specific article present"
+    },
+    {
+      "wals": "38A=Indefinite word distinct from 'one'",
+      "grambank": [
+        "GB021=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "high",
+      "note": "indefinite article present"
+    },
+    {
+      "wals": "27A=Productive full and partial reduplication",
+      "grambank": [
+        "GB320=1"
+      ],
+      "source": "hand_curated",
+      "confidence": "low",
+      "note": "FLAGGED: GB320 is paucal free-element marking, not reduplication; pair is semantically unrelated but included as a hard negative"
+    }
+  ],
+  "n_high": 15,
+  "n_medium": 1,
+  "n_low": 3,
+  "total": 19,
+  "dropped": [],
+  "build_date": "2026-05-07",
+  "grambank_commit": "37f73da55cf8b426c82383f46a972bc59ce6cf76",
+  "smoke": true,
+  "seed": 42
+}

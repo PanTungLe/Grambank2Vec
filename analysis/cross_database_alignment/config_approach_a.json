@@ -1,0 +1,11 @@
+{
+  "mode": "approach_a",
+  "smoke": false,
+  "full": true,
+  "resume": false,
+  "seed": 42,
+  "checkpoint_wals": "/home/user/Grambank2Vec/checkpoints/wals_learned_s42",
+  "checkpoint_grambank": "/home/user/Grambank2Vec/checkpoints/grambank_learned_s42",
+  "output_dir": "/home/user/Grambank2Vec/analysis/cross_database_alignment",
+  "elapsed_seconds": 0.254
+}
