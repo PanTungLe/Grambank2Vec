@@ -83,6 +83,13 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
+# Maps --conditioning_variants token → cond_mode string accepted by the models.
+_VARIANT_TO_COND_MODE = {
+    "geo":   "geo_only",
+    "phylo": "phylo_only",
+    "both":  "both",
+}
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CLI
@@ -152,7 +159,18 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
     p.add_argument(
         "--resume", action="store_true",
-        help="Skip already-completed (branch, frac, repeat, model_type) rows.",
+        help="Skip already-completed (branch, frac, repeat, conditioning) rows.",
+    )
+    p.add_argument(
+        "--conditioning_variants",
+        nargs="+",
+        choices=["geo", "phylo", "both"],
+        default=["both"],
+        metavar="VARIANT",
+        help="Conditioning input modes to sweep per (branch, frac, repeat) combo. "
+             "'geo'=geo_only, 'phylo'=phylo_only, 'both'=both (default). "
+             "Each additional variant trains one extra conditioned model, "
+             "doubling the result rows for that combo.",
     )
     return p.parse_args(argv)
 
@@ -313,9 +331,10 @@ def _run_one(
     lr: float,
     l2_coef: float,
     device: str,
+    cond_mode: str = "both",
 ) -> Tuple[float, float]:
     """
-    Train baseline + conditioned models for one (branch, frac) split.
+    Train baseline + conditioned models for one (branch, frac, cond_mode) split.
 
     Returns (f1_baseline, f1_conditioned).
     """
@@ -348,7 +367,8 @@ def _run_one(
         # Conditioned
         cond = TypologicalMF_Conditioned(
             n_langs, n_total_values, feat_to_global_ids,
-            geo_matrix, phylo_matrix, embed_dim)
+            geo_matrix, phylo_matrix, embed_dim,
+            cond_mode=cond_mode)
         train_conditioned(
             cond, train_ds, n_epochs=n_epochs, batch_size=batch_size,
             lr=lr, l2_reg=l2_coef, device=device, patience=patience)
@@ -382,7 +402,8 @@ def _run_one(
 
         # Conditioned
         cond_tcf = TypologicalMF_TCF_Conditioned(
-            n_langs, n_binary, geo_matrix, phylo_matrix, embed_dim)
+            n_langs, n_binary, geo_matrix, phylo_matrix, embed_dim,
+            cond_mode=cond_mode)
         train_conditioned(
             cond_tcf, train_ds, n_epochs=n_epochs, batch_size=batch_size,
             lr=lr, l2_reg=l2_coef, device=device, patience=patience)
@@ -505,6 +526,9 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
             log.info("[smoke] Subset to %d languages.", len(df))
 
     # ── 4. Resume: load existing results ──
+    conditioning_variants: List[str] = getattr(
+        args, "conditioning_variants", ["both"])
+
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     run_id = (f"{args.database}_{args.architecture}"
@@ -517,82 +541,97 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
         existing_df = pd.read_csv(results_path)
         existing_rows = existing_df.to_dict("records")
         for row in existing_rows:
-            done_keys.add(
-                (row["branch"], row["in_branch_frac"], row["repeat"]))
+            # Backwards-compatible default for rows written before this column existed.
+            done_keys.add((
+                row["branch"],
+                row["in_branch_frac"],
+                row["repeat"],
+                row.get("conditioning", "both"),
+            ))
         log.info("[resume] Loaded %d existing rows (%d done combos).",
                  len(existing_rows), len(done_keys))
 
     # ── 5. Full factorial loop ──
     rows: List[dict] = list(existing_rows)
-    total_combos = len(qualifying) * len(in_branch_fracs) * n_repeats
+    total_combos = (len(qualifying) * len(in_branch_fracs)
+                    * n_repeats * len(conditioning_variants))
     combo_i = 0
 
     for branch in qualifying:
         macroarea = df.loc[df["genus"] == branch, "macroarea"].iloc[0]
         for frac in in_branch_fracs:
             for rep in range(n_repeats):
-                combo_i += 1
-                key = (branch, frac, rep)
+                for variant in conditioning_variants:
+                    combo_i += 1
+                    key = (branch, frac, rep, variant)
 
-                if key in done_keys:
-                    log.info("[%d/%d] Skip (done): branch=%s frac=%.2f rep=%d",
-                             combo_i, total_combos, branch, frac, rep)
-                    continue
+                    if key in done_keys:
+                        log.info(
+                            "[%d/%d] Skip (done): branch=%s frac=%.2f rep=%d variant=%s",
+                            combo_i, total_combos, branch, frac, rep, variant)
+                        continue
 
-                log.info("[%d/%d] branch=%-30s frac=%.2f rep=%d",
-                         combo_i, total_combos, branch, frac, rep)
+                    log.info("[%d/%d] branch=%-30s frac=%.2f rep=%d variant=%s",
+                             combo_i, total_combos, branch, frac, rep, variant)
 
-                rep_seed = args.seed * 10_000 + rep * 1_000 + hash(branch) % 1000
-                try:
-                    f1_base, f1_cond = _run_one(
+                    rep_seed = (args.seed * 10_000 + rep * 1_000
+                                + hash(branch) % 1000)
+                    cond_mode = _VARIANT_TO_COND_MODE[variant]
+                    try:
+                        f1_base, f1_cond = _run_one(
+                            architecture=args.architecture,
+                            df=df,
+                            data_dict=data_dict,
+                            lang2id_glot=lang2id_glot,
+                            geo_matrix=geo_matrix,
+                            phylo_matrix=phylo_matrix,
+                            target_branch=branch,
+                            in_branch_frac=frac,
+                            seed=rep_seed,
+                            embed_dim=args.embed_dim,
+                            n_epochs=args.n_epochs,
+                            patience=args.patience,
+                            batch_size=args.batch_size,
+                            lr=args.lr,
+                            l2_coef=args.l2_coef,
+                            device=args.device,
+                            cond_mode=cond_mode,
+                        )
+                    except Exception as exc:
+                        log.warning(
+                            "  ERROR branch=%s frac=%.2f rep=%d variant=%s: %s",
+                            branch, frac, rep, variant, exc)
+                        continue
+
+                    base_row = dict(
+                        database=args.database,
                         architecture=args.architecture,
-                        df=df,
-                        data_dict=data_dict,
-                        lang2id_glot=lang2id_glot,
-                        geo_matrix=geo_matrix,
-                        phylo_matrix=phylo_matrix,
-                        target_branch=branch,
+                        imputation=args.imputation,
+                        seed=args.seed,
+                        branch=branch,
+                        macroarea=macroarea,
                         in_branch_frac=frac,
-                        seed=rep_seed,
-                        embed_dim=args.embed_dim,
-                        n_epochs=args.n_epochs,
-                        patience=args.patience,
-                        batch_size=args.batch_size,
-                        lr=args.lr,
-                        l2_coef=args.l2_coef,
-                        device=args.device,
+                        repeat=rep,
+                        conditioning=variant,
+                        model_type="baseline",
+                        f1=f1_base,
                     )
-                except Exception as exc:
-                    log.warning("  ERROR branch=%s frac=%.2f rep=%d: %s",
-                                branch, frac, rep, exc)
-                    continue
+                    cond_row = {**base_row,
+                                "model_type": "conditioned",
+                                "f1": f1_cond}
 
-                base_row = dict(
-                    database=args.database,
-                    architecture=args.architecture,
-                    imputation=args.imputation,
-                    seed=args.seed,
-                    branch=branch,
-                    macroarea=macroarea,
-                    in_branch_frac=frac,
-                    repeat=rep,
-                    model_type="baseline",
-                    f1=f1_base,
-                )
-                cond_row = {**base_row,
-                            "model_type": "conditioned",
-                            "f1": f1_cond}
+                    rows.append(base_row)
+                    rows.append(cond_row)
 
-                rows.append(base_row)
-                rows.append(cond_row)
+                    log.info(
+                        "  → [%s] baseline F1=%.4f  conditioned F1=%.4f  delta=%+.4f",
+                        variant, f1_base, f1_cond,
+                        (f1_cond - f1_base)
+                        if np.isfinite(f1_base) and np.isfinite(f1_cond)
+                        else float("nan"))
 
-                log.info("  → baseline F1=%.4f  conditioned F1=%.4f  "
-                         "delta=%+.4f",
-                         f1_base, f1_cond,
-                         (f1_cond - f1_base) if np.isfinite(f1_base) and np.isfinite(f1_cond) else float("nan"))
-
-                # Checkpoint after every combo
-                pd.DataFrame(rows).to_csv(results_path, index=False)
+                    # Checkpoint after every combo
+                    pd.DataFrame(rows).to_csv(results_path, index=False)
 
     results_df = pd.DataFrame(rows)
     elapsed = time.time() - t0
@@ -615,6 +654,7 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
         "n_branches": len(qualifying),
         "in_branch_fracs": in_branch_fracs,
         "n_repeats": n_repeats,
+        "conditioning_variants": conditioning_variants,
         "min_branch_size": args.min_branch_size,
         "smoke": args.smoke,
         "uriel_coverage_pct": round(uriel_meta["pct_found"], 2),
