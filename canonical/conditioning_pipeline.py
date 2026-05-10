@@ -127,15 +127,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "--glottolog_repo", default=None,
         help="Path to cloned glottolog-cldf repo (Grambank genus only).")
     p.add_argument(
-        "--imputation",
-        required=True,
-        choices=["familymean", "knn", "softimpute"],
-        help="URIEL+ imputation method (determines which parquet to load).",
-    )
-    p.add_argument(
-        "--uriel_dir",
-        default="analysis/conditioning_uriel_plus",
-        help="Directory containing uriel_plus_vectors_<method>.parquet files.",
+        "--uriel_vectors_path",
+        default=str(_REPO_ROOT / "analysis" / "conditioning_uriel_plus"
+                    / "uriel_plus_vectors.parquet"),
+        help="Path to the URIEL+ vectors parquet produced by uriel_plus_loader.py.",
     )
     p.add_argument(
         "--baselines_dir",
@@ -426,15 +421,11 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     df, data_dict, lang2id_glot, lang2id_full = load_data(args)
 
     # ── 2. Load URIEL+ vectors ──
-    parquet_path = (
-        Path(args.uriel_dir)
-        / f"uriel_plus_vectors_{args.imputation}.parquet"
-    )
+    parquet_path = Path(args.uriel_vectors_path)
     if not parquet_path.exists():
         raise FileNotFoundError(
             f"URIEL+ parquet not found: {parquet_path}\n"
-            f"Run: python canonical/uriel_plus_loader.py "
-            f"--imputation {args.imputation} --full"
+            f"Run: python canonical/uriel_plus_loader.py --full"
         )
 
     n_langs = len(df)
@@ -508,8 +499,7 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    run_id = (f"{args.database}_{args.architecture}"
-              f"_{args.imputation}_s{args.seed}")
+    run_id = f"{args.database}_{args.architecture}_s{args.seed}"
     results_path = out_dir / f"{run_id}.csv"
 
     done_keys: set = set()
@@ -592,7 +582,6 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
                     base_row = dict(
                         database=args.database,
                         architecture=args.architecture,
-                        imputation=args.imputation,
                         seed=args.seed,
                         branch=branch,
                         macroarea=macroarea,
@@ -629,7 +618,7 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     cfg = {
         "database": args.database,
         "architecture": args.architecture,
-        "imputation": args.imputation,
+        "uriel_vectors_path": str(parquet_path),
         "seed": args.seed,
         "embed_dim": args.embed_dim,
         "n_epochs": args.n_epochs,
@@ -679,8 +668,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     # Summary statistics
     by_type = results.groupby("model_type")["f1"].agg(["mean", "std", "count"])
     print("\n" + "=" * 60)
-    print(f"  Run: {args.database} / {args.architecture} / "
-          f"{args.imputation} / seed={args.seed}")
+    print(f"  Run: {args.database} / {args.architecture} / seed={args.seed}")
     print("=" * 60)
     print(by_type.to_string())
     if "baseline" in by_type.index and "conditioned" in by_type.index:

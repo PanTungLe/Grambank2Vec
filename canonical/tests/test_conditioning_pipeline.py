@@ -75,20 +75,19 @@ def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
                None uses argparse default (['both'])
     """
     # Create a stub parquet so the existence check in run_pipeline passes.
-    uriel_dir = tmp_path / "uriel"
-    uriel_dir.mkdir(parents=True, exist_ok=True)
-    (uriel_dir / "uriel_plus_vectors_familymean.parquet").touch()
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    uriel_stub = tmp_path / "uriel_plus_vectors.parquet"
+    uriel_stub.touch()
 
     argv = [
-        "--database",       "grambank",
-        "--architecture",   "learned",
-        "--data_path",      str(tmp_path),
-        "--imputation",     "familymean",
-        "--uriel_dir",      str(uriel_dir),
-        "--out_dir",        str(tmp_path / "results"),
-        "--seed",           "42",
+        "--database",          "grambank",
+        "--architecture",      "learned",
+        "--data_path",         str(tmp_path),
+        "--uriel_vectors_path", str(uriel_stub),
+        "--out_dir",           str(tmp_path / "results"),
+        "--seed",              "42",
         "--smoke",
-        "--smoke_n_langs",  "0",   # skip language subsetting
+        "--smoke_n_langs",     "0",   # skip language subsetting
     ]
     if variants is not None:
         argv += ["--conditioning_variants"] + variants
