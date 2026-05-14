@@ -55,7 +55,7 @@ def load_uriel_vectors_for_lang2id(
     """
     import pyarrow.parquet as pq
 
-    n_langs = len(lang2id)
+    n_langs = len(lang2id)/n_langs = max(lang2id.values()) + 1
     geo_matrix = np.zeros((n_langs, geo_dim), dtype=np.float32)
     phylo_matrix = np.zeros((n_langs, phylo_dim), dtype=np.float32)
 
