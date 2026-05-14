@@ -50,6 +50,20 @@ def _fake_uriel_meta() -> dict:
     return {"pct_found": 100.0, "found": N_LANGS, "n_langs": N_LANGS}
 
 
+def _fake_baseline_lookup() -> dict:
+    """
+    Baseline lookup covering all (branch, frac, rep) combos used by smoke mode.
+    Smoke mode uses 1 branch (BranchA, first by value_counts order), frac=0.0,
+    rep=0.  BranchB is included for robustness.
+    """
+    lookup = {}
+    for branch in ("BranchA", "BranchB"):
+        for frac in (0.0,):
+            for rep in (0,):
+                lookup[(branch, round(frac, 6), rep)] = 0.5
+    return lookup
+
+
 def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
     """
     Build minimal args and call run_pipeline with all heavy ops patched out.
@@ -61,20 +75,19 @@ def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
                None uses argparse default (['both'])
     """
     # Create a stub parquet so the existence check in run_pipeline passes.
-    uriel_dir = tmp_path / "uriel"
-    uriel_dir.mkdir(parents=True, exist_ok=True)
-    (uriel_dir / "uriel_plus_vectors_familymean.parquet").touch()
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    uriel_stub = tmp_path / "uriel_plus_vectors.parquet"
+    uriel_stub.touch()
 
     argv = [
-        "--database",       "grambank",
-        "--architecture",   "learned",
-        "--data_path",      str(tmp_path),
-        "--imputation",     "familymean",
-        "--uriel_dir",      str(uriel_dir),
-        "--out_dir",        str(tmp_path / "results"),
-        "--seed",           "42",
+        "--database",          "grambank",
+        "--architecture",      "learned",
+        "--data_path",         str(tmp_path),
+        "--uriel_vectors_path", str(uriel_stub),
+        "--out_dir",           str(tmp_path / "results"),
+        "--seed",              "42",
         "--smoke",
-        "--smoke_n_langs",  "0",   # skip language subsetting
+        "--smoke_n_langs",     "0",   # skip language subsetting
     ]
     if variants is not None:
         argv += ["--conditioning_variants"] + variants
@@ -98,8 +111,12 @@ def _run_pipeline_patched(tmp_path: Path, variants=None) -> pd.DataFrame:
             ),
         ),
         patch(
-            "canonical.conditioning_pipeline._run_one",
-            return_value=(0.5, 0.6),
+            "canonical.conditioning_pipeline.load_baseline_lookup",
+            return_value=_fake_baseline_lookup(),
+        ),
+        patch(
+            "canonical.conditioning_pipeline._run_conditioned",
+            return_value=0.6,
         ),
     ):
         return run_pipeline(args)
@@ -147,3 +164,86 @@ class TestConditioningVariants:
         result_default  = _run_pipeline_patched(tmp_path / "a")
         result_explicit = _run_pipeline_patched(tmp_path / "b", variants=["both"])
         assert len(result_explicit) == len(result_default)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Spec-numbered tests (points 1-4) + TCF interface verification
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestConditioningVariantsSpec:
+    """
+    Explicit tests mirroring the four numbered spec assertions plus a check
+    that TypologicalMF_TCF_Conditioned exposes the same cond_mode interface.
+    """
+
+    def test_spec_1_default_no_flag_produces_n_rows(self, tmp_path):
+        """Spec 1 — Default (no flag) produces N rows (N > 0)."""
+        result = _run_pipeline_patched(tmp_path)
+        assert len(result) > 0, "Default run must produce at least one row"
+
+    def test_spec_2_explicit_both_produces_n_rows_with_both_column(self, tmp_path):
+        """Spec 2 — --conditioning_variants both produces N rows with conditioning='both'."""
+        result_default  = _run_pipeline_patched(tmp_path / "default")
+        result_explicit = _run_pipeline_patched(tmp_path / "explicit", variants=["both"])
+        assert len(result_explicit) == len(result_default), (
+            f"Explicit 'both' must produce same row count as default: "
+            f"{len(result_explicit)} vs {len(result_default)}"
+        )
+        assert "conditioning" in result_explicit.columns
+        assert (result_explicit["conditioning"] == "both").all(), (
+            "Every row must carry conditioning='both' when only 'both' is requested"
+        )
+
+    def test_spec_3_geo_phylo_both_produces_3n_rows_one_per_variant(self, tmp_path):
+        """Spec 3 — --conditioning_variants geo phylo both produces 3N rows, one per variant."""
+        n_result     = _run_pipeline_patched(tmp_path / "n",  variants=["both"])
+        tri_result   = _run_pipeline_patched(tmp_path / "3n", variants=["geo", "phylo", "both"])
+        n = len(n_result)
+        assert len(tri_result) == 3 * n, (
+            f"Expected 3×{n}={3*n} rows, got {len(tri_result)}"
+        )
+        # Each variant accounts for exactly N rows
+        for v in ("geo", "phylo", "both"):
+            n_v = len(tri_result[tri_result["conditioning"] == v])
+            assert n_v == n, (
+                f"Expected {n} rows for conditioning={v!r}, got {n_v}"
+            )
+
+    def test_spec_4_conditioning_column_matches_variant_used(self, tmp_path):
+        """Spec 4 — The 'conditioning' column value matches the variant used."""
+        cases = [
+            (["geo"],                  {"geo"}),
+            (["phylo"],                {"phylo"}),
+            (["both"],                 {"both"}),
+            (["geo", "phylo", "both"], {"geo", "phylo", "both"}),
+        ]
+        for i, (variants, expected) in enumerate(cases):
+            result = _run_pipeline_patched(tmp_path / f"case{i}", variants=variants)
+            got = set(result["conditioning"].unique())
+            assert got == expected, (
+                f"variants={variants}: expected conditioning values {expected}, got {got}"
+            )
+
+    def test_tcf_conditioned_class_exposes_cond_mode(self):
+        """
+        TypologicalMF_TCF_Conditioned must accept the same cond_mode kwarg as
+        TypologicalMF_Conditioned, even though the pipeline's Tier-1 runs use
+        the Learned architecture.
+        """
+        import inspect
+        from canonical.conditioning_model import TypologicalMF_TCF_Conditioned
+
+        sig = inspect.signature(TypologicalMF_TCF_Conditioned.__init__)
+        assert "cond_mode" in sig.parameters, (
+            "TypologicalMF_TCF_Conditioned.__init__ must accept a 'cond_mode' kwarg"
+        )
+
+        # All four valid mode strings must be accepted without raising.
+        geo   = np.zeros((4, GEO_DIM),   dtype=np.float32)
+        phylo = np.zeros((4, PHYLO_DIM), dtype=np.float32)
+        for mode in ("both", "geo_only", "phylo_only", "init_only"):
+            m = TypologicalMF_TCF_Conditioned(4, 3, geo, phylo,
+                                              embed_dim=8, cond_mode=mode)
+            assert m.cond_mode == mode, (
+                f"Expected m.cond_mode={mode!r}, got {m.cond_mode!r}"
+            )

@@ -43,7 +43,9 @@ def load_uriel_vectors_for_lang2id(
     Load URIEL+ geo and phylo vectors from parquet and align to lang2id order.
 
     Languages absent from the parquet receive zero vectors (no conditioning
-    signal). The returned arrays are indexed identically to lang2id.
+    signal). If the parquet has a has_geo column (new single-file format),
+    coverage is reported based on that flag; otherwise it is inferred from
+    parquet membership. The returned arrays are indexed identically to lang2id.
 
     Returns
     -------
@@ -62,6 +64,13 @@ def load_uriel_vectors_for_lang2id(
     geo_rows = table.column("geo_vec").to_pylist()
     phylo_rows = table.column("phylo_vec").to_pylist()
 
+    # Read has_geo flag if present (new single-file parquet format).
+    if "has_geo" in table.schema.names:
+        has_geo_flags = table.column("has_geo").to_pylist()
+        gc_to_has_geo: Dict[str, bool] = dict(zip(glottocodes, has_geo_flags))
+    else:
+        gc_to_has_geo = {}
+
     gc_to_row: Dict[str, int] = {gc: i for i, gc in enumerate(glottocodes)}
 
     found, missing = 0, 0
@@ -70,7 +79,11 @@ def load_uriel_vectors_for_lang2id(
             row_i = gc_to_row[gc]
             geo_matrix[lang_idx] = geo_rows[row_i]
             phylo_matrix[lang_idx] = phylo_rows[row_i]
-            found += 1
+            # Count as "found" only if has_geo=True (or no flag column present)
+            if gc_to_has_geo.get(gc, True):
+                found += 1
+            else:
+                missing += 1
         else:
             missing += 1
 
@@ -84,7 +97,7 @@ def load_uriel_vectors_for_lang2id(
         "parquet_path": str(parquet_path),
     }
     log.info(
-        "URIEL+ alignment: %d/%d (%.1f%%) found in parquet; "
+        "URIEL+ alignment: %d/%d (%.1f%%) with real data; "
         "%d get zero vectors.",
         found, n_langs, meta["pct_found"], missing,
     )
