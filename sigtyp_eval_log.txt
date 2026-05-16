@@ -1,0 +1,422 @@
+======================================================================
+SIGTYP 2020 Evaluation — Grambank2Vec (Learned + TCF) + Frequency
+======================================================================
+
+[Part 1] Loading SIGTYP data ...
+  Train: 1125 languages, 185 feature columns
+  Dev:   83 languages, 182 feature columns
+  Test:  149 languages
+  Train+Dev: 1208 languages, 185 feature columns
+
+[Part 2] Building shared vocabulary ...
+Categorical matrix: 1208 langs × 185 features, 1012 total unique values across all features
+  Kept 185 features after filtering (≥2 unique values)
+  Total unique (feature, value) pairs: 1012
+Binarised matrix: 1208 langs × 996 binary features
+  Binary columns: 996
+
+[Part 3] Building training datasets ...
+  Learned dataset: 45944 observed (lang, feat, val) triples
+  TCF dataset: 240270 observed (lang, col, 0/1) triples
+
+[Part 4] Training models on device: cpu
+
+  Training Learned model (150 epochs) ...
+  Epoch 1/150  NLL=1.3971
+  Epoch 2/150  NLL=1.1197
+  Epoch 3/150  NLL=1.0549
+  Epoch 4/150  NLL=1.0234
+  Epoch 5/150  NLL=1.0005
+  Epoch 6/150  NLL=0.9825
+  Epoch 7/150  NLL=0.9681
+  Epoch 8/150  NLL=0.9538
+  Epoch 9/150  NLL=0.9404
+  Epoch 10/150  NLL=0.9272
+  Epoch 11/150  NLL=0.9142
+  Epoch 12/150  NLL=0.9019
+  Epoch 13/150  NLL=0.8919
+  Epoch 14/150  NLL=0.8823
+  Epoch 15/150  NLL=0.8742
+  Epoch 16/150  NLL=0.8671
+  Epoch 17/150  NLL=0.8619
+  Epoch 18/150  NLL=0.8552
+  Epoch 19/150  NLL=0.8501
+  Epoch 20/150  NLL=0.8455
+  Epoch 21/150  NLL=0.8413
+  Epoch 22/150  NLL=0.8365
+  Epoch 23/150  NLL=0.8340
+  Epoch 24/150  NLL=0.8303
+  Epoch 25/150  NLL=0.8265
+  Epoch 26/150  NLL=0.8236
+  Epoch 27/150  NLL=0.8203
+  Epoch 28/150  NLL=0.8178
+  Epoch 29/150  NLL=0.8154
+  Epoch 30/150  NLL=0.8130
+  Epoch 31/150  NLL=0.8111
+  Epoch 32/150  NLL=0.8086
+  Epoch 33/150  NLL=0.8068
+  Epoch 34/150  NLL=0.8046
+  Epoch 35/150  NLL=0.8035
+  Epoch 36/150  NLL=0.8019
+  Epoch 37/150  NLL=0.7996
+  Epoch 38/150  NLL=0.7984
+  Epoch 39/150  NLL=0.7972
+  Epoch 40/150  NLL=0.7959
+  Epoch 41/150  NLL=0.7952
+  Epoch 42/150  NLL=0.7940
+  Epoch 43/150  NLL=0.7933
+  Epoch 44/150  NLL=0.7921
+  Epoch 45/150  NLL=0.7912
+  Epoch 46/150  NLL=0.7903
+  Epoch 47/150  NLL=0.7901
+  Epoch 48/150  NLL=0.7886
+  Epoch 49/150  NLL=0.7878
+  Epoch 50/150  NLL=0.7874
+  Epoch 51/150  NLL=0.7866
+  Epoch 52/150  NLL=0.7858
+  Epoch 53/150  NLL=0.7853
+  Epoch 54/150  NLL=0.7843
+  Epoch 55/150  NLL=0.7847
+  Epoch 56/150  NLL=0.7838
+  Epoch 57/150  NLL=0.7833
+  Epoch 58/150  NLL=0.7833
+  Epoch 59/150  NLL=0.7823
+  Epoch 60/150  NLL=0.7818
+  Epoch 61/150  NLL=0.7819
+  Epoch 62/150  NLL=0.7811
+  Epoch 63/150  NLL=0.7814
+  Epoch 64/150  NLL=0.7808
+  Epoch 65/150  NLL=0.7802
+  Epoch 66/150  NLL=0.7796
+  Epoch 67/150  NLL=0.7799
+  Epoch 68/150  NLL=0.7795
+  Epoch 69/150  NLL=0.7792
+  Epoch 70/150  NLL=0.7789
+  Epoch 71/150  NLL=0.7782
+  Epoch 72/150  NLL=0.7782
+  Epoch 73/150  NLL=0.7782
+  Epoch 74/150  NLL=0.7772
+  Epoch 75/150  NLL=0.7781
+  Epoch 76/150  NLL=0.7764
+  Epoch 77/150  NLL=0.7772
+  Epoch 78/150  NLL=0.7772
+  Epoch 79/150  NLL=0.7767
+  Epoch 80/150  NLL=0.7763
+  Epoch 81/150  NLL=0.7765
+  Epoch 82/150  NLL=0.7765
+  Epoch 83/150  NLL=0.7759
+  Epoch 84/150  NLL=0.7757
+  Epoch 85/150  NLL=0.7760
+  Epoch 86/150  NLL=0.7754
+  Epoch 87/150  NLL=0.7748
+  Epoch 88/150  NLL=0.7754
+  Epoch 89/150  NLL=0.7753
+  Epoch 90/150  NLL=0.7750
+  Epoch 91/150  NLL=0.7746
+  Epoch 92/150  NLL=0.7739
+  Epoch 93/150  NLL=0.7746
+  Epoch 94/150  NLL=0.7736
+  Epoch 95/150  NLL=0.7738
+  Epoch 96/150  NLL=0.7735
+  Epoch 97/150  NLL=0.7734
+  Epoch 98/150  NLL=0.7735
+  Epoch 99/150  NLL=0.7735
+  Epoch 100/150  NLL=0.7739
+  Epoch 101/150  NLL=0.7734
+  Epoch 102/150  NLL=0.7729
+  Epoch 103/150  NLL=0.7729
+  Epoch 104/150  NLL=0.7734
+  Epoch 105/150  NLL=0.7729
+  Epoch 106/150  NLL=0.7723
+  Epoch 107/150  NLL=0.7723
+  Epoch 108/150  NLL=0.7730
+  Epoch 109/150  NLL=0.7727
+  Epoch 110/150  NLL=0.7726
+  Epoch 111/150  NLL=0.7725
+  Epoch 112/150  NLL=0.7723
+  Epoch 113/150  NLL=0.7723
+  Epoch 114/150  NLL=0.7726
+  Epoch 115/150  NLL=0.7721
+  Epoch 116/150  NLL=0.7718
+  Epoch 117/150  NLL=0.7717
+  Epoch 118/150  NLL=0.7722
+  Epoch 119/150  NLL=0.7721
+  Epoch 120/150  NLL=0.7719
+  Epoch 121/150  NLL=0.7712
+  Epoch 122/150  NLL=0.7719
+  Epoch 123/150  NLL=0.7715
+  Epoch 124/150  NLL=0.7714
+  Epoch 125/150  NLL=0.7711
+  Epoch 126/150  NLL=0.7711
+  Epoch 127/150  NLL=0.7717
+  Epoch 128/150  NLL=0.7711
+  Epoch 129/150  NLL=0.7713
+  Epoch 130/150  NLL=0.7718
+  Epoch 131/150  NLL=0.7709
+  Epoch 132/150  NLL=0.7709
+  Epoch 133/150  NLL=0.7713
+  Epoch 134/150  NLL=0.7712
+  Epoch 135/150  NLL=0.7706
+  Epoch 136/150  NLL=0.7711
+  Epoch 137/150  NLL=0.7712
+  Epoch 138/150  NLL=0.7711
+  Epoch 139/150  NLL=0.7703
+  Epoch 140/150  NLL=0.7705
+  Epoch 141/150  NLL=0.7702
+  Epoch 142/150  NLL=0.7707
+  Epoch 143/150  NLL=0.7706
+  Epoch 144/150  NLL=0.7710
+  Epoch 145/150  NLL=0.7710
+  Epoch 146/150  NLL=0.7705
+  Epoch 147/150  NLL=0.7711
+  Epoch 148/150  NLL=0.7701
+  Epoch 149/150  NLL=0.7698
+  Epoch 150/150  NLL=0.7707
+  Learned training done in 218.1s  (final loss=0.7707)
+
+  Training TCF model (150 epochs) ...
+  Epoch 1/150  loss=0.4491
+  Epoch 2/150  loss=0.3926
+  Epoch 3/150  loss=0.3906
+  Epoch 4/150  loss=0.3886
+  Epoch 5/150  loss=0.3866
+  Epoch 6/150  loss=0.3849
+  Epoch 7/150  loss=0.3845
+  Epoch 8/150  loss=0.3842
+  Epoch 9/150  loss=0.3840
+  Epoch 10/150  loss=0.3837
+  Epoch 11/150  loss=0.3840
+  Epoch 12/150  loss=0.3837
+  Epoch 13/150  loss=0.3836
+  Epoch 14/150  loss=0.3836
+  Epoch 15/150  loss=0.3833
+  Epoch 16/150  loss=0.3837
+  Epoch 17/150  loss=0.3833
+  Epoch 18/150  loss=0.3836
+  Epoch 19/150  loss=0.3834
+  Epoch 20/150  loss=0.3834
+  Epoch 21/150  loss=0.3834
+  Epoch 22/150  loss=0.3833
+  Epoch 23/150  loss=0.3834
+  Epoch 24/150  loss=0.3834
+  Epoch 25/150  loss=0.3832
+  Epoch 26/150  loss=0.3832
+  Epoch 27/150  loss=0.3831
+  Epoch 28/150  loss=0.3831
+  Epoch 29/150  loss=0.3831
+  Epoch 30/150  loss=0.3829
+  Epoch 31/150  loss=0.3832
+  Epoch 32/150  loss=0.3828
+  Epoch 33/150  loss=0.3829
+  Epoch 34/150  loss=0.3830
+  Epoch 35/150  loss=0.3828
+  Epoch 36/150  loss=0.3830
+  Epoch 37/150  loss=0.3829
+  Epoch 38/150  loss=0.3828
+  Epoch 39/150  loss=0.3827
+  Epoch 40/150  loss=0.3827
+  Epoch 41/150  loss=0.3826
+  Epoch 42/150  loss=0.3826
+  Epoch 43/150  loss=0.3826
+  Epoch 44/150  loss=0.3826
+  Epoch 45/150  loss=0.3825
+  Epoch 46/150  loss=0.3823
+  Epoch 47/150  loss=0.3827
+  Epoch 48/150  loss=0.3823
+  Epoch 49/150  loss=0.3823
+  Epoch 50/150  loss=0.3822
+  Epoch 51/150  loss=0.3823
+  Epoch 52/150  loss=0.3822
+  Epoch 53/150  loss=0.3820
+  Epoch 54/150  loss=0.3820
+  Epoch 55/150  loss=0.3818
+  Epoch 56/150  loss=0.3819
+  Epoch 57/150  loss=0.3818
+  Epoch 58/150  loss=0.3818
+  Epoch 59/150  loss=0.3817
+  Epoch 60/150  loss=0.3818
+  Epoch 61/150  loss=0.3817
+  Epoch 62/150  loss=0.3817
+  Epoch 63/150  loss=0.3818
+  Epoch 64/150  loss=0.3817
+  Epoch 65/150  loss=0.3815
+  Epoch 66/150  loss=0.3816
+  Epoch 67/150  loss=0.3816
+  Epoch 68/150  loss=0.3816
+  Epoch 69/150  loss=0.3815
+  Epoch 70/150  loss=0.3817
+  Epoch 71/150  loss=0.3813
+  Epoch 72/150  loss=0.3814
+  Epoch 73/150  loss=0.3814
+  Epoch 74/150  loss=0.3814
+  Epoch 75/150  loss=0.3815
+  Epoch 76/150  loss=0.3814
+  Epoch 77/150  loss=0.3815
+  Epoch 78/150  loss=0.3814
+  Epoch 79/150  loss=0.3813
+  Epoch 80/150  loss=0.3813
+  Epoch 81/150  loss=0.3813
+  Epoch 82/150  loss=0.3811
+  Epoch 83/150  loss=0.3811
+  Epoch 84/150  loss=0.3813
+  Epoch 85/150  loss=0.3811
+  Epoch 86/150  loss=0.3810
+  Epoch 87/150  loss=0.3812
+  Epoch 88/150  loss=0.3811
+  Epoch 89/150  loss=0.3811
+  Epoch 90/150  loss=0.3811
+  Epoch 91/150  loss=0.3811
+  Epoch 92/150  loss=0.3809
+  Epoch 93/150  loss=0.3814
+  Epoch 94/150  loss=0.3811
+  Epoch 95/150  loss=0.3809
+  Epoch 96/150  loss=0.3810
+  Epoch 97/150  loss=0.3809
+  Epoch 98/150  loss=0.3809
+  Epoch 99/150  loss=0.3809
+  Epoch 100/150  loss=0.3810
+  Epoch 101/150  loss=0.3809
+  Epoch 102/150  loss=0.3811
+  Epoch 103/150  loss=0.3808
+  Epoch 104/150  loss=0.3807
+  Epoch 105/150  loss=0.3807
+  Epoch 106/150  loss=0.3807
+  Epoch 107/150  loss=0.3809
+  Epoch 108/150  loss=0.3804
+  Epoch 109/150  loss=0.3808
+  Epoch 110/150  loss=0.3808
+  Epoch 111/150  loss=0.3807
+  Epoch 112/150  loss=0.3805
+  Epoch 113/150  loss=0.3807
+  Epoch 114/150  loss=0.3807
+  Epoch 115/150  loss=0.3806
+  Epoch 116/150  loss=0.3805
+  Epoch 117/150  loss=0.3808
+  Epoch 118/150  loss=0.3807
+  Epoch 119/150  loss=0.3807
+  Epoch 120/150  loss=0.3805
+  Epoch 121/150  loss=0.3807
+  Epoch 122/150  loss=0.3808
+  Epoch 123/150  loss=0.3805
+  Epoch 124/150  loss=0.3805
+  Epoch 125/150  loss=0.3807
+  Epoch 126/150  loss=0.3806
+  Epoch 127/150  loss=0.3805
+  Epoch 128/150  loss=0.3807
+  Epoch 129/150  loss=0.3804
+  Epoch 130/150  loss=0.3807
+  Epoch 131/150  loss=0.3806
+  Epoch 132/150  loss=0.3807
+  Epoch 133/150  loss=0.3805
+  Epoch 134/150  loss=0.3805
+  Epoch 135/150  loss=0.3806
+  Epoch 136/150  loss=0.3804
+  Epoch 137/150  loss=0.3804
+  Epoch 138/150  loss=0.3805
+  Epoch 139/150  loss=0.3803
+  Epoch 140/150  loss=0.3807
+  Epoch 141/150  loss=0.3804
+  Epoch 142/150  loss=0.3804
+  Epoch 143/150  loss=0.3803
+  Epoch 144/150  loss=0.3801
+  Epoch 145/150  loss=0.3801
+  Epoch 146/150  loss=0.3802
+  Epoch 147/150  loss=0.3804
+  Epoch 148/150  loss=0.3801
+  Epoch 149/150  loss=0.3800
+  Epoch 150/150  loss=0.3802
+  TCF training done in 804.3s  (final loss=0.3802)
+
+[Part 5] Transductive fine-tuning for test languages ...
+  Running inference for 149 test languages ...
+    25/149 languages processed  (last: kmh, obs_in_vocab=24)
+    50/149 languages processed  (last: nwd, obs_in_vocab=8)
+    75/149 languages processed  (last: uhi, obs_in_vocab=10)
+    100/149 languages processed  (last: xia, obs_in_vocab=9)
+    125/149 languages processed  (last: ykt, obs_in_vocab=7)
+    149/149 languages processed  (last: zun, obs_in_vocab=59)
+
+[Part 6] Writing submission files ...
+  Wrote /home/user/Grambank2Vec/sigtyp_submission_learned.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_submission_tcf.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_submission_freq.tsv
+
+[Part 7] Running official scorer ...
+
+# Averaging: micro 
+
+submission	Madang	Mahakiranti	Mayan	Nilotic	Northern Pama-Nyungan	Tucanoan	other genera
+number of languages	9	13	17	15	24	8	63
+sigtyp_submission_learned	0.6284153005464481	0.6576923076923077	0.6238532110091743	0.6404833836858006	0.5741626794258373	0.6126760563380281	0.6478439425051334
+sigtyp_submission_tcf	0.546448087431694	0.6307692307692307	0.6055045871559633	0.6042296072507553	0.5574162679425837	0.6338028169014085	0.6129363449691991
+sigtyp_submission_freq	0.5081967213114754	0.3923076923076923	0.6238532110091743	0.5770392749244713	0.5454545454545454	0.43661971830985913	0.5677618069815195
+
+overall:
+sigtyp_submission_learned	0.6305337194869673
+sigtyp_submission_tcf	0.5999172527927182
+sigtyp_submission_freq	0.5366156392221763
+
+# Averaging: macro 
+
+submission	Madang	Mahakiranti	Mayan	Nilotic	Northern Pama-Nyungan	Tucanoan	other genera
+number of languages	9	13	17	15	24	8	63
+sigtyp_submission_learned	0.7266754013433331	0.6564748603827285	0.6875350140056024	0.6622326926964609	0.6011977133838148	0.6729242979242979	0.6541396239804457
+sigtyp_submission_tcf	0.5665813278716504	0.6177312150265071	0.6166199813258636	0.6208996807639067	0.6189766321907465	0.6730960012210012	0.6087507494004055
+sigtyp_submission_freq	0.5345707458610683	0.36657804723300613	0.6424369747899159	0.5914693460338006	0.5967647439632334	0.5102258852258852	0.5461047861175913
+
+overall:
+sigtyp_submission_learned	0.6558306928924941
+sigtyp_submission_tcf	0.6142099129849613
+sigtyp_submission_freq	0.5515361245036726
+
+# Errors
+
+
+
+[Part 8] Comparison table ...
+
+| System                           | Tucanoan |  Madang | Mahakiranti | Nilotic |   Mayan | N.Pama-Nyungan |   Other | Overall |
+|----------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| Grambank2Vec Learned (micro)     |    0.61 |    0.63 |    0.66 |    0.64 |    0.62 |    0.57 |    0.65 |    0.63 |
+| Grambank2Vec TCF (micro)         |    0.63 |    0.55 |    0.63 |    0.60 |    0.61 |    0.56 |    0.61 |    0.60 |
+| Grambank2Vec Freq (micro)        |    0.44 |    0.51 |    0.39 |    0.58 |    0.62 |    0.55 |    0.57 |    0.54 |
+| Grambank2Vec Learned (macro)     |    0.67 |    0.73 |    0.66 |    0.66 |    0.69 |    0.60 |    0.65 |    0.66 |
+| Grambank2Vec TCF (macro)         |    0.67 |    0.57 |    0.62 |    0.62 |    0.62 |    0.62 |    0.61 |    0.61 |
+| Grambank2Vec Freq (macro)        |    0.51 |    0.53 |    0.37 |    0.59 |    0.64 |    0.60 |    0.55 |    0.55 |
+|----------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| --- SIGTYP 2020 paper (MACRO, reference) --- |         |         |         |         |         |         |         |         |
+|----------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| UFAL (best constrained)          |    0.73 |    0.78 |    0.74 |    0.71 |    0.80 |    0.76 |    0.76 |    0.75 |
+| NEMO system2                     |    0.71 |    0.72 |    0.72 |    0.76 |    0.76 |    0.67 |    0.69 |    0.69 |
+| CrossLingference (unconstrained) |    0.71 |    0.73 |    0.67 |    0.68 |    0.57 |    0.60 |    0.65 |    0.65 |
+| Baseline_frequency               |    0.51 |    0.53 |    0.37 |    0.49 |    0.41 |    0.58 |    0.53 |    0.49 |
+| Baseline_knn-imputation          |    0.48 |    0.57 |    0.46 |    0.48 |    0.32 |    0.52 |    0.51 |    0.48 |
+| NUIG (lowest)                    |    0.51 |    0.56 |    0.35 |    0.45 |    0.32 |    0.45 |    0.48 |    0.45 |
+
+Notes:
+  - Paper results are MACRO-averaged over genera; our rows show both MICRO and MACRO.
+  - Constrained setting: SIGTYP train+dev only (no external data), same as paper.
+  - Transductive fine-tuning: up to 300 gradient steps on each test language's
+    observed features (analogous to kNN's nearest-neighbour lookup at inference time).
+  - Genus/geographic information NOT used during fine-tuning (unlike NEMO/CrossLingference).
+  - Features in test_blinded absent from train+dev vocabulary → frequency fallback.
+
+[Part 9] Diagnostics
+  Training time — Learned: 218.1s   TCF: 804.3s
+  Transductive inference: mean=0.69s  min=0.22s  max=3.02s  total=102.1s
+  Vocabulary: 185 features, 1012 total values, 996 binary columns
+
+  Test languages with ≥5 vocab-observed features per controlled genus:
+    Tucanoan                      : 7/8 languages
+    Madang                        : 7/9 languages
+    Mahakiranti                   : 12/13 languages
+    Nilotic                       : 14/15 languages
+    Mayan                         : 11/17 languages
+    Northern Pama-Nyungan         : 17/24 languages
+
+  Vocabulary-miss blanked features (per model, same count):
+    learned: 0 features fell back to freq baseline
+    tcf: 0 features fell back to freq baseline
+    freq: 0 features fell back to freq baseline
+
+[Done]
