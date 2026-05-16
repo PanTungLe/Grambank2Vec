@@ -428,3 +428,61 @@ Binarised matrix: 1208 langs × 996 binary features
   Done in 1.5s  (599 conditioning (feat,val) pairs with entries)
 
 [Part 7] Running inference configs A, B, C, D ...
+  25/149 processed  (last: kmh, obs_in_vocab=24)
+  50/149 processed  (last: nwd, obs_in_vocab=8)
+  75/149 processed  (last: uhi, obs_in_vocab=10)
+  100/149 processed  (last: xia, obs_in_vocab=9)
+  125/149 processed  (last: ykt, obs_in_vocab=7)
+  149/149 processed  (last: zun, obs_in_vocab=59)
+
+[Part 7b] Writing submission files ...
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_A_learned.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_A_tcf.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_B_learned.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_B_tcf.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_C_learned.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_C_tcf.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_D_learned.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_D_tcf.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v2_freq.tsv
+
+[Part 8] Scoring submissions ...
+
+[Part 8] Ablation table (MACRO accuracy per genus):
+
+Traceback (most recent call last):
+  File "/home/user/Grambank2Vec/sigtyp_eval_v2.py", line 1087, in <module>
+    _print_ablation_table(ABLATION_ROWS, results)
+  File "/home/user/Grambank2Vec/sigtyp_eval_v2.py", line 691, in _print_ablation_table
+    pr(["System"] + TABLE_HEADER)
+  File "/home/user/Grambank2Vec/sigtyp_eval_v2.py", line 685, in pr
+    parts = [str(c).ljust(COL_W[0])] + [str(c).rjust(7) for c in cells[1:]]
+                 ^
+NameError: name 'c' is not defined
+========================================================================
+SIGTYP 2020 v2 — masked pretraining + kNN + iterative + prior
+========================================================================
+
+[Part 1] Loading SIGTYP data ...
+  Train: 1125 languages, 185 feature columns
+  Dev:   83 languages, 182 feature columns
+  Test:  149 languages
+  Train+Dev: 1208 languages, 185 feature columns
+
+[Part 2] Building shared vocabulary ...
+Categorical matrix: 1208 langs × 185 features, 1012 total unique values across all features
+  Kept 185 features after filtering (≥2 unique values)
+  Total unique (feature, value) pairs: 1012
+Binarised matrix: 1208 langs × 996 binary features
+  Binary columns: 996
+
+[Part 3] Masked-reconstruction pretraining ...
+  Device: cpu
+  Loading Learned model from /home/user/Grambank2Vec/sigtyp_v2_learned.pt
+  Loading TCF model from /home/user/Grambank2Vec/sigtyp_v2_tcf.pt
+
+[Part 6] Building feature correlation prior ...
+  Done in 1.6s  (599 conditioning (feat,val) pairs with entries)
+
+[Part 7] Running inference configs A, B, C, D ...
+  25/149 processed  (last: kmh, obs_in_vocab=24)

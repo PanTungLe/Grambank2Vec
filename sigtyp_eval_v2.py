@@ -682,7 +682,7 @@ def _print_ablation_table(rows, results):
     COL_W = [38] + [7] * 8
 
     def pr(cells):
-        parts = [str(c).ljust(COL_W[0])] + [str(c).rjust(7) for c in cells[1:]]
+        parts = [str(cells[0]).ljust(COL_W[0])] + [str(c).rjust(7) for c in cells[1:]]
         print("| " + " | ".join(parts) + " |")
 
     def sep():
