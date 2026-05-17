@@ -400,18 +400,25 @@ def predict_test_language(model, model_type, new_emb, kept_feature_names,
 # ===========================================================================
 
 def _lat_zone(lat):
-    if lat < -60:   return "lat_N"
-    elif lat < -23: return "lat_S"
-    elif lat < 23:  return "lat_T"
-    elif lat < 60:  return "lat_M"
-    else:           return "lat_A"
+    # Perl @lat = (90, 60, 35, 10, -10, -90) → 5 zones north→south
+    if   lat > 60:  return "lat_0"   # Arctic/Subarctic
+    elif lat > 35:  return "lat_1"   # Northern temperate
+    elif lat > 10:  return "lat_2"   # Northern subtropical
+    elif lat > -10: return "lat_3"   # Equatorial
+    else:           return "lat_4"   # Southern hemisphere
 
+
+# Perl @lon = (160, -140, -115, -95, -60, -25, 35, 70, 95, 118, 130, 160)
+# 11 zones; zone 0 wraps over the International Date Line (lon ≥ 160 or lon < -140).
+_LON_UPPER = [-140, -115, -95, -60, -25, 35, 70, 95, 118, 130, 160]
 
 def _lon_zone(lon):
-    # 11 zones, 33° increments from -180
-    idx = int((lon + 180) / 33)
-    idx = max(0, min(10, idx))
-    return f"lon_{idx}"
+    if lon >= 160 or lon < -140:
+        return "lon_0"
+    for i, upper in enumerate(_LON_UPPER):
+        if lon < upper:
+            return f"lon_{i + 1}"
+    return "lon_0"  # fallback
 
 
 def _latlon_zone(lat, lon):
@@ -435,15 +442,13 @@ def _get_source_features(meta_row, obs_feat_dict, feat_name_to_idx):
         sources[("meta", "genus")] = genus
     if family:
         sources[("meta", "family")] = family
-    # Exclude countrycodes='US' as per UFAL (treated as unknown/unreliable)
-    if cc and cc != "US":
-        sources[("meta", "latzone")]  = _lat_zone(lat)
-        sources[("meta", "lonzone")]  = _lon_zone(lon)
-        sources[("meta", "latlon")]   = _latlon_zone(lat, lon)
-    else:
-        sources[("meta", "latzone")]  = _lat_zone(lat)
-        sources[("meta", "lonzone")]  = _lon_zone(lon)
-        sources[("meta", "latlon")]   = _latlon_zone(lat, lon)
+    # lat/lon zones always included; countrycodes not used as a source feature
+    # (UFAL default config{countrycodes}='' means US codes are not excluded,
+    # but we omit countrycodes entirely as a feature since the task specifies
+    # treating US as unknown/unreliable)
+    sources[("meta", "latzone")] = _lat_zone(lat)
+    sources[("meta", "lonzone")] = _lon_zone(lon)
+    sources[("meta", "latlon")]  = _latlon_zone(lat, lon)
 
     return sources
 
@@ -453,7 +458,7 @@ def _build_cooccurrence(all_lang_sources, all_lang_targets, feat_names_idx):
     Build co-occurrence tables for probabilistic model.
     Returns:
       joint_counts[(src_key, src_val, tgt_feat, tgt_val)] = count
-      src_counts[(src_key, src_val)] = count
+      src_counts[(src_key, src_val)] = count of LANGUAGES with that source value
       tgt_marginal[tgt_feat][tgt_val] = count
     """
     joint_counts  = defaultdict(int)
@@ -461,23 +466,85 @@ def _build_cooccurrence(all_lang_sources, all_lang_targets, feat_names_idx):
     tgt_marginal  = defaultdict(lambda: defaultdict(int))
 
     for lang_src, lang_tgt in zip(all_lang_sources, all_lang_targets):
+        # Count source features once per language (not once per target feature).
+        # P(tj=y|si=x) = c(si=x, tj=y) / c(si=x) where c(si=x) counts all
+        # languages with si=x, regardless of whether tj is observed.
+        for src_key, src_val in lang_src.items():
+            src_counts[(src_key, src_val)] += 1
+
+        # Joint counts and target marginals
         for tgt_feat, tgt_val in lang_tgt.items():
             tgt_marginal[tgt_feat][tgt_val] += 1
             for src_key, src_val in lang_src.items():
-                src_counts[(src_key, src_val)] += 1
                 joint_counts[(src_key, src_val, tgt_feat, tgt_val)] += 1
 
     return joint_counts, src_counts, tgt_marginal
 
 
-def _plogcinf_score(src_key, src_val, tgt_feat, tgt_val,
-                    joint_counts, src_counts, tgt_marginal):
+def _entropy(counts_dict):
+    """Shannon entropy of a distribution given as {value: count}."""
+    total = sum(counts_dict.values())
+    if total == 0:
+        return 0.0
+    h = 0.0
+    for c in counts_dict.values():
+        if c > 0:
+            p = c / total
+            h -= p * np.log(p)
+    return h
+
+
+def _compute_pairwise_information(joint_counts):
     """
-    score = P(tj=y | si=x) × log(c(si=x, tj=y)) × I(si, tj)
+    Compute information[(src_key, tgt_feat)] over all co-observed pairs.
+
+    Perl formula: information{f}{g} = fgventropy{f}{g} - centropy{f}{g}
+      = H(g | f present) - H(g | f value)
+      = entropy of target g over languages where source f is present (any value)
+        minus the conditional entropy of g given f's specific value.
+
+    Both quantities are computed only over languages where BOTH f and g are
+    observed (i.e., from the joint counts). This measures how much knowing f's
+    specific value (vs. just knowing it is observed) reduces uncertainty about g.
+    """
+    # For each (src_key, tgt_feat): collect marginal tgt distribution (over all
+    # src_val) and per-src_val distributions.
+    present_tgt = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    per_val     = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
+
+    for (src_key, src_val, tgt_feat, tgt_val), count in joint_counts.items():
+        present_tgt[src_key][tgt_feat][tgt_val]         += count
+        per_val[src_key][src_val][tgt_feat][tgt_val]    += count
+
+    information = {}
+    for src_key in present_tgt:
+        for tgt_feat in present_tgt[src_key]:
+            h_present = _entropy(present_tgt[src_key][tgt_feat])
+
+            total_present = sum(present_tgt[src_key][tgt_feat].values())
+            h_cond = 0.0
+            if total_present > 0:
+                for src_val in per_val[src_key]:
+                    if tgt_feat not in per_val[src_key][src_val]:
+                        continue
+                    tgt_c   = per_val[src_key][src_val][tgt_feat]
+                    total_v = sum(tgt_c.values())
+                    h_cond += (total_v / total_present) * _entropy(tgt_c)
+
+            information[(src_key, tgt_feat)] = max(0.0, h_present - h_cond)
+
+    return information
+
+
+def _plogcinf_score(src_key, src_val, tgt_feat, tgt_val,
+                    joint_counts, src_counts, information):
+    """
+    Perl formula: plogcinf = plogc × information(si, tj)
+      plogc = P(tj=y | si=x) × log(c(si=x, tj=y))
+      information(si, tj) = H(tj | si present) - H(tj | si value)
 
     P(tj=y|si=x) = c(si=x, tj=y) / c(si=x)
-    log factor   = log(c(si=x, tj=y))  if c>0 else 0
-    I indicator  = 1 if c(si=x, tj=y) > 0 else 0
+    c(si=x) = number of languages with si=x (regardless of whether tj is observed).
     """
     c_joint = joint_counts.get((src_key, src_val, tgt_feat, tgt_val), 0)
     if c_joint == 0:
@@ -485,8 +552,11 @@ def _plogcinf_score(src_key, src_val, tgt_feat, tgt_val,
     c_src = src_counts.get((src_key, src_val), 0)
     if c_src == 0:
         return 0.0
+    info = information.get((src_key, tgt_feat), 0.0)
+    if info == 0.0:
+        return 0.0
     p_cond = c_joint / c_src
-    return p_cond * np.log(c_joint)
+    return p_cond * np.log(c_joint) * info
 
 
 def run_ufal_probabilistic(train_meta, train_feat_df, dev_meta, dev_feat_df,
@@ -548,6 +618,11 @@ def run_ufal_probabilistic(train_meta, train_feat_df, dev_meta, dev_feat_df,
     joint_counts, src_counts, tgt_marginal = _build_cooccurrence(
         all_sources, all_targets, feat_name_to_idx)
 
+    # Compute pairwise information scores: H(tgt|src_present) - H(tgt|src_value)
+    print("  Computing pairwise information scores ...")
+    information = _compute_pairwise_information(joint_counts)
+    print(f"  {len(information)} (src_feat, tgt_feat) information pairs computed.")
+
     # Predict for each test language
     preds = {}
     for i, row in test_meta.iterrows():
@@ -565,17 +640,19 @@ def run_ufal_probabilistic(train_meta, train_feat_df, dev_meta, dev_feat_df,
             if fi is None:
                 continue
             tgt_values = feat_to_value_names[fi]
-            K = len(tgt_values)
+            tgt_feat   = ("wals", tgt_fname)
 
-            # Find single BEST source feature (strongest model)
-            best_src_key = None
-            best_src_val = None
-            best_max_score = -1.0
+            # Find single BEST source feature (strongest model):
+            # best source = the one whose best-scoring target value has the
+            # highest plogcinf score.
+            best_src_key    = None
+            best_src_val    = None
+            best_max_score  = -1.0
 
             for src_key, src_val in test_sources.items():
                 max_score_for_src = max(
-                    _plogcinf_score(src_key, src_val, ("wals", tgt_fname), tv,
-                                    joint_counts, src_counts, tgt_marginal)
+                    _plogcinf_score(src_key, src_val, tgt_feat, tv,
+                                    joint_counts, src_counts, information)
                     for tv in tgt_values
                 )
                 if max_score_for_src > best_max_score:
@@ -584,17 +661,15 @@ def run_ufal_probabilistic(train_meta, train_feat_df, dev_meta, dev_feat_df,
                     best_src_val   = src_val
 
             if best_src_key is not None and best_max_score > 0.0:
-                # Predict using that single source
                 scores = [
-                    _plogcinf_score(best_src_key, best_src_val,
-                                    ("wals", tgt_fname), tv,
-                                    joint_counts, src_counts, tgt_marginal)
+                    _plogcinf_score(best_src_key, best_src_val, tgt_feat, tv,
+                                    joint_counts, src_counts, information)
                     for tv in tgt_values
                 ]
                 pred_val = tgt_values[int(np.argmax(scores))]
             else:
-                # Fallback: marginal mode
-                tgt_cnt = tgt_marginal.get(("wals", tgt_fname), {})
+                # Fallback: marginal mode (Perl leaves '?', we must output something)
+                tgt_cnt = tgt_marginal.get(tgt_feat, {})
                 if tgt_cnt:
                     pred_val = max(tgt_cnt, key=tgt_cnt.get)
                 else:
