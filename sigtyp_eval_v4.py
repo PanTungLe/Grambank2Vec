@@ -363,7 +363,21 @@ def build_pmi_stats(cat_matrix_train, feat_to_value_names, min_count=3):
     obs_per_feat = (cat_matrix_train >= 0).sum(axis=0).astype(float)
     idf_weights  = np.log(n_langs / (1.0 + obs_per_feat))
 
-    return marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights
+    # Normalized Mutual Information matrix: NMI(fi,fj) = MI / (H_fi + H_fj)
+    feat_entropy = np.zeros(n_feats)
+    for fi in range(n_feats):
+        p = marginals[fi]
+        feat_entropy[fi] = -float(np.sum(p * np.log(p + 1e-300)))
+
+    nmi_matrix = np.zeros((n_feats, n_feats), dtype=float)
+    for fi in range(n_feats):
+        for fj in range(fi + 1, n_feats):
+            denom = feat_entropy[fi] + feat_entropy[fj]
+            if denom > 1e-10:
+                nmi_matrix[fi, fj] = mi_matrix[fi, fj] / denom
+                nmi_matrix[fj, fi] = nmi_matrix[fi, fj]
+
+    return marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights, nmi_matrix
 
 
 # ===========================================================================
@@ -424,19 +438,22 @@ def p_idf_knn(obs_feat_dict, fj, cat_matrix_train, feat_name_to_idx,
 def _compute_corr_scores(obs_feat_dict, fj, feat_name_to_idx,
                          feat_to_value_names, marginals,
                          raw_cocounts, marginal_counts,
-                         mi_matrix, min_count, alpha):
+                         mi_matrix, min_count, alpha,
+                         nmi_matrix, K_topk):
     """
-    Core PMI/MI computation. Returns (s_corr, weights_dict, vi_locals_dict).
-    s_corr     : np.array(K_fj,) raw MI-weighted PMI scores (unnormalized)
-    weights_dict: {fi_idx: mi_weight_normalized}
-    vi_locals  : {fi_idx: vi_local}
+    Core NMI-weighted PPMI computation.
+    Returns (s_corr, weights_dict, vi_locals_dict).
+    s_corr      : np.array(K_fj,) NMI-weighted PPMI scores (unnormalized)
+    weights_dict: {fi_idx: nmi_weight_normalized}
+    vi_locals   : {fi_idx: vi_local}
     Returns (zeros, {}, {}) if no usable context.
     """
-    K_fj = len(feat_to_value_names[fj])
+    K_fj          = len(feat_to_value_names[fj])
+    pmi_min_joint = 2   # skip co-occurrence triples with <2 joint observations
 
-    # Collect usable context observations
+    # Collect usable context observations (min_count filter)
     usable = {}   # fi_idx -> vi_local
-    mi_raw = {}   # fi_idx -> I(fi; fj)
+    mi_raw = {}   # fi_idx -> NMI(fi; fj)
 
     for feat_name, val_str in obs_feat_dict.items():
         fi = feat_name_to_idx.get(feat_name)
@@ -450,12 +467,19 @@ def _compute_corr_scores(obs_feat_dict, fj, feat_name_to_idx,
         if cnt_fi_vi < min_count:
             continue
         usable[fi] = vi_local
-        mi_raw[fi] = mi_matrix[fi, fj]
+        mi_raw[fi] = nmi_matrix[fi, fj]   # BUG4 fix: NMI instead of raw MI
 
     if not usable:
         return np.zeros(K_fj), {}, {}
 
-    # Normalize MI weights
+    # BUG2 fix: top-K MI filtering — keep only K_topk highest-NMI features
+    if K_topk is not None and len(usable) > K_topk:
+        sorted_fi = sorted(usable.keys(), key=lambda fi: mi_raw[fi], reverse=True)
+        keep   = set(sorted_fi[:K_topk])
+        usable = {fi: usable[fi] for fi in keep}
+        mi_raw = {fi: mi_raw[fi] for fi in keep}
+
+    # Normalize NMI weights
     total_mi = sum(mi_raw.values())
     if total_mi < 1e-10:
         n = len(usable)
@@ -463,20 +487,24 @@ def _compute_corr_scores(obs_feat_dict, fj, feat_name_to_idx,
     else:
         weights = {fi: mi_raw[fi] / total_mi for fi in usable}
 
-    # Accumulate weighted PMI scores
+    # Accumulate NMI-weighted PPMI scores
     s_corr = np.zeros(K_fj)
     p_fj   = marginals[fj]
 
     for fi, vi_local in usable.items():
         w       = weights[fi]
-        cnt     = marginal_counts[fi][vi_local]
         key     = (fi, vi_local, fj)
         cocount = raw_cocounts.get(key, np.zeros(K_fj))
         if len(cocount) != K_fj:
             cocount = np.zeros(K_fj)
+        # BUG3 fix: skip triples with too few total joint observations
+        if cocount.sum() < pmi_min_joint:
+            continue
+        cnt    = marginal_counts[fi][vi_local]
         denom  = cnt + alpha
         p_cond = (cocount + alpha * p_fj) / denom
         pmi    = np.log(p_cond / (p_fj + 1e-10) + 1e-10)
+        pmi    = np.maximum(pmi, 0.0)   # BUG1 fix: PPMI — zero out negative associations
         s_corr += w * pmi
 
     return s_corr, weights, usable
@@ -490,17 +518,22 @@ def _softmax_np(x):
 
 def p_corr(obs_feat_dict, fj, feat_name_to_idx, feat_to_value_names,
            marginals, raw_cocounts, marginal_counts, mi_matrix,
-           min_count, alpha, T_corr):
+           min_count, alpha, T_corr, nmi_matrix, K_topk):
     """
-    MI-weighted PMI expert. Returns (probs, s_corr, weights_dict, vi_locals).
+    NMI-weighted PPMI expert. Returns (probs, s_corr, weights_dict, vi_locals).
     Falls back to marginals[fj] if no usable context.
     """
     s_corr, weights, vi_locals = _compute_corr_scores(
         obs_feat_dict, fj, feat_name_to_idx, feat_to_value_names,
-        marginals, raw_cocounts, marginal_counts, mi_matrix, min_count, alpha)
+        marginals, raw_cocounts, marginal_counts, mi_matrix, min_count, alpha,
+        nmi_matrix, K_topk)
 
     if not weights:
         return marginals[fj].copy(), s_corr, {}, {}
+
+    # If pmi_min_joint filtered all triples, s_corr is all-zeros → fall back to marginals
+    if s_corr.sum() < 1e-10:
+        return marginals[fj].copy(), s_corr, weights, vi_locals
 
     return _softmax_np(s_corr / T_corr), s_corr, weights, vi_locals
 
@@ -619,33 +652,45 @@ def _build_dev_examples(cat_matrix_dev, feat_to_global_ids,
 def tune_corr_params_nomodel(dev_examples, kept_feature_names, feat_name_to_idx,
                               feat_to_value_names, marginals, raw_cocounts,
                               marginal_counts, mi_matrix,
-                              alpha_grid, mincount_grid, Tcorr_grid):
-    """Stage 1 without model: tune (alpha, min_count, T_corr) for Config F."""
-    best_acc, best_params = -1.0, (0.5, 3, 1.0)
+                              alpha_grid, mincount_grid, Tcorr_grid,
+                              nmi_matrix, K_topk_grid):
+    """Stage 1 without model: tune (alpha, min_count, T_corr, K_topk) for Config F."""
+    best_acc, best_params = -1.0, (0.5, 3, 1.0, 10)
+
+    # Collect per-K_topk best acc for ablation reporting
+    ktopk_best_acc = {}
 
     for alpha in alpha_grid:
         for min_count in mincount_grid:
             for T_corr in Tcorr_grid:
-                total, correct = 0, 0
-                for _, _, obs_fd, tgt_feats, true_vals in dev_examples:
-                    for fi in tgt_feats:
-                        fn = kept_feature_names[fi]
-                        tv = true_vals[fn]
-                        probs, _, _, _ = p_corr(
-                            obs_fd, fi, feat_name_to_idx, feat_to_value_names,
-                            marginals, raw_cocounts, marginal_counts, mi_matrix,
-                            min_count, alpha, T_corr)
-                        pred = feat_to_value_names[fi][int(probs.argmax())]
-                        correct += int(pred == tv)
-                        total   += 1
-                acc = correct / max(total, 1)
-                if acc > best_acc:
-                    best_acc    = acc
-                    best_params = (alpha, min_count, T_corr)
+                for K_topk in K_topk_grid:
+                    total, correct = 0, 0
+                    for _, _, obs_fd, tgt_feats, true_vals in dev_examples:
+                        for fi in tgt_feats:
+                            fn = kept_feature_names[fi]
+                            tv = true_vals[fn]
+                            probs, _, _, _ = p_corr(
+                                obs_fd, fi, feat_name_to_idx, feat_to_value_names,
+                                marginals, raw_cocounts, marginal_counts, mi_matrix,
+                                min_count, alpha, T_corr, nmi_matrix, K_topk)
+                            pred = feat_to_value_names[fi][int(probs.argmax())]
+                            correct += int(pred == tv)
+                            total   += 1
+                    acc = correct / max(total, 1)
+                    k_key = K_topk if K_topk is not None else "all"
+                    if acc > ktopk_best_acc.get(k_key, -1.0):
+                        ktopk_best_acc[k_key] = acc
+                    if acc > best_acc:
+                        best_acc    = acc
+                        best_params = (alpha, min_count, T_corr, K_topk)
 
     print(f"  Config F corr params: alpha={best_params[0]}, "
           f"min_count={best_params[1]}, T_corr={best_params[2]}, "
-          f"dev_acc={best_acc:.4f}")
+          f"K_topk={best_params[3]}, dev_acc={best_acc:.4f}")
+    print("  Top-K ablation (best acc per K_topk):")
+    for k_key in sorted(ktopk_best_acc.keys(),
+                        key=lambda x: (x == "all", x if x != "all" else 0)):
+        print(f"    K_topk={k_key}: {ktopk_best_acc[k_key]:.4f}")
     return best_params
 
 
@@ -657,39 +702,41 @@ def tune_hyperparams_on_dev(dev_examples, kept_feature_names, feat_name_to_idx,
                              alpha_grid, mincount_grid, Tcorr_grid,
                              rho_grid, k_grid,
                              lam_set_grid, lam_corr_grid,
-                             lam_knn_grid, lam_freq_grid):
+                             lam_knn_grid, lam_freq_grid,
+                             nmi_matrix, K_topk_grid):
     """
     3-stage grid search on dev.
-    Stage 1: tune (alpha, min_count, T_corr) maximising p_corr accuracy.
+    Stage 1: tune (alpha, min_count, T_corr, K_topk) maximising p_corr accuracy.
     Stage 2: tune (rho, k) with equal-weight ensemble.
     Stage 3: tune lambdas (lam_set, lam_corr, lam_knn, lam_freq).
     """
     # ------- Stage 1 -------
     print("  Stage 1: tuning corr params ...")
-    best_acc1, best_p1 = -1.0, (0.5, 3, 1.0)
+    best_acc1, best_p1 = -1.0, (0.5, 3, 1.0, 10)
     for alpha in alpha_grid:
         for min_count in mincount_grid:
             for T_corr in Tcorr_grid:
-                total, correct = 0, 0
-                for _, _, obs_fd, tgt_feats, true_vals in dev_examples:
-                    for fi in tgt_feats:
-                        fn = kept_feature_names[fi]
-                        tv = true_vals[fn]
-                        probs, _, _, _ = p_corr(
-                            obs_fd, fi, feat_name_to_idx, feat_to_value_names,
-                            marginals, raw_cocounts, marginal_counts, mi_matrix,
-                            min_count, alpha, T_corr)
-                        pred = feat_to_value_names[fi][int(probs.argmax())]
-                        correct += int(pred == tv)
-                        total   += 1
-                acc = correct / max(total, 1)
-                if acc > best_acc1:
-                    best_acc1 = acc
-                    best_p1   = (alpha, min_count, T_corr)
+                for K_topk in K_topk_grid:
+                    total, correct = 0, 0
+                    for _, _, obs_fd, tgt_feats, true_vals in dev_examples:
+                        for fi in tgt_feats:
+                            fn = kept_feature_names[fi]
+                            tv = true_vals[fn]
+                            probs, _, _, _ = p_corr(
+                                obs_fd, fi, feat_name_to_idx, feat_to_value_names,
+                                marginals, raw_cocounts, marginal_counts, mi_matrix,
+                                min_count, alpha, T_corr, nmi_matrix, K_topk)
+                            pred = feat_to_value_names[fi][int(probs.argmax())]
+                            correct += int(pred == tv)
+                            total   += 1
+                    acc = correct / max(total, 1)
+                    if acc > best_acc1:
+                        best_acc1 = acc
+                        best_p1   = (alpha, min_count, T_corr, K_topk)
 
-    best_alpha, best_min_count, best_T_corr = best_p1
+    best_alpha, best_min_count, best_T_corr, best_K_topk = best_p1
     print(f"  Stage 1 best: alpha={best_alpha}, min_count={best_min_count}, "
-          f"T_corr={best_T_corr}, acc={best_acc1:.4f}")
+          f"T_corr={best_T_corr}, K_topk={best_K_topk}, acc={best_acc1:.4f}")
 
     # ------- Stage 2 -------
     print("  Stage 2: tuning rho and k ...")
@@ -708,7 +755,7 @@ def tune_hyperparams_on_dev(dev_examples, kept_feature_names, feat_name_to_idx,
             probs_c, s_c, w_c, vi_c = p_corr(
                 obs_fd, fi, feat_name_to_idx, feat_to_value_names,
                 marginals, raw_cocounts, marginal_counts, mi_matrix,
-                best_min_count, best_alpha, best_T_corr)
+                best_min_count, best_alpha, best_T_corr, nmi_matrix, best_K_topk)
             lp_freq = np.log(marginals[fi] + 1e-300)
             per_fi[fi] = {
                 "fn": fn, "tv": true_vals[fn],
@@ -790,7 +837,8 @@ def tune_hyperparams_on_dev(dev_examples, kept_feature_names, feat_name_to_idx,
 
     return {
         "alpha": best_alpha, "min_count": best_min_count,
-        "T_corr": best_T_corr, "rho": best_rho, "k": best_k,
+        "T_corr": best_T_corr, "K_topk": best_K_topk,
+        "rho": best_rho, "k": best_k,
         "lam_set": best_ls, "lam_corr": best_lc,
         "lam_knn": best_lk, "lam_freq": best_lf,
     }
@@ -805,7 +853,8 @@ def infer_all_experts(obs_feat_dict, blanked_feats, model,
                       feat_to_value_names, feat_to_global_ids,
                       cat_matrix_train, marginals, raw_cocounts,
                       marginal_counts, mi_matrix, idf_weights,
-                      device, T_set, params, val_emb_w):
+                      device, T_set, params, val_emb_w,
+                      nmi_matrix):
     """
     Returns per-feature dicts for each blanked feature:
       lp_set, lp_corr, s_corr, weights_dict, vi_locals,
@@ -827,6 +876,7 @@ def infer_all_experts(obs_feat_dict, blanked_feats, model,
     alpha     = params["alpha"]
     min_count = params["min_count"]
     T_corr    = params["T_corr"]
+    K_topk    = params["K_topk"]
     rho       = params["rho"]
     k         = params["k"]
 
@@ -847,7 +897,7 @@ def infer_all_experts(obs_feat_dict, blanked_feats, model,
             probs_c, s_c, w_c, vi_c = p_corr(
                 obs_feat_dict, fi, feat_name_to_idx, feat_to_value_names,
                 marginals, raw_cocounts, marginal_counts, mi_matrix,
-                min_count, alpha, T_corr)
+                min_count, alpha, T_corr, nmi_matrix, K_topk)
             lp_corr = np.log(probs_c + 1e-300)
 
             # IDF-kNN
@@ -1044,19 +1094,29 @@ def main(args):
     # PMI statistics (cached)
     # -----------------------------------------------------------------------
     print("\n[Part 3] PMI statistics ...")
+    need_rebuild = True
     if os.path.exists(pmi_cache) and not args.force_retrain:
         print(f"  Loading from cache: {pmi_cache}")
-        with open(pmi_cache, "rb") as fh:
-            marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights = \
-                pickle.load(fh)
-    else:
+        try:
+            with open(pmi_cache, "rb") as fh:
+                loaded = pickle.load(fh)
+            if len(loaded) != 6:
+                raise ValueError(f"Outdated cache ({len(loaded)}-tuple); rebuilding")
+            marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights, nmi_matrix = loaded
+            need_rebuild = False
+        except Exception as e:
+            print(f"  Cache invalid ({e}), rebuilding ...")
+            if os.path.exists(pmi_cache):
+                os.remove(pmi_cache)
+
+    if need_rebuild:
         t0 = time.time()
-        marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights = \
+        marginals, raw_cocounts, marginal_counts, mi_matrix, idf_weights, nmi_matrix = \
             build_pmi_stats(cat_matrix_train, feat_to_value_names, min_count=3)
         print(f"  Built in {time.time()-t0:.1f}s. Saving to {pmi_cache} ...")
         with open(pmi_cache, "wb") as fh:
             pickle.dump((marginals, raw_cocounts, marginal_counts,
-                         mi_matrix, idf_weights), fh)
+                         mi_matrix, idf_weights, nmi_matrix), fh)
 
     # -----------------------------------------------------------------------
     # Config F: PMI expert only (deterministic, once)
@@ -1067,13 +1127,15 @@ def main(args):
         kept_feature_names)
 
     alpha_grid    = [0.1, 0.5, 1.0, 2.0, 5.0]
-    mincount_grid = [1, 3, 5, 10]
+    mincount_grid = [3, 5, 10, 20]
     Tcorr_grid    = [0.5, 1.0, 1.5, 2.0, 3.0]
+    K_topk_grid   = [3, 5, 10, 20, None]
 
-    F_alpha, F_min_count, F_T_corr = tune_corr_params_nomodel(
+    F_alpha, F_min_count, F_T_corr, F_K_topk = tune_corr_params_nomodel(
         dev_examples, kept_feature_names, feat_name_to_idx,
         feat_to_value_names, marginals, raw_cocounts, marginal_counts,
-        mi_matrix, alpha_grid, mincount_grid, Tcorr_grid)
+        mi_matrix, alpha_grid, mincount_grid, Tcorr_grid,
+        nmi_matrix, K_topk_grid)
 
     print("  Running Config F inference ...")
     F_preds = {}
@@ -1092,13 +1154,25 @@ def main(args):
             probs, _, _, _ = p_corr(obs, fi, feat_name_to_idx,
                                      feat_to_value_names, marginals,
                                      raw_cocounts, marginal_counts, mi_matrix,
-                                     F_min_count, F_alpha, F_T_corr)
+                                     F_min_count, F_alpha, F_T_corr,
+                                     nmi_matrix, F_K_topk)
             preds_f[feat_name] = feat_to_value_names[fi][int(probs.argmax())]
         F_preds[wc] = preds_f
 
     F_path = f"{out_dir}/sigtyp_v4_F.tsv"
     _write_submission(F_path, test_meta, test_blank, test_obs, F_preds, freq_fallback)
     print(f"  Wrote {F_path}")
+
+    # Config F vs freq agreement rate
+    F_agree_total, F_agree_count = 0, 0
+    for wc, preds_f in F_preds.items():
+        for fn, pred in preds_f.items():
+            F_agree_total += 1
+            if pred == freq_fallback.get(fn):
+                F_agree_count += 1
+    if F_agree_total > 0:
+        print(f"  Config F vs freq agreement: "
+              f"{F_agree_count/F_agree_total:.3f} ({F_agree_count}/{F_agree_total})")
 
     # -----------------------------------------------------------------------
     # Seed loop: CrossAttentionSetEncoder
@@ -1187,7 +1261,8 @@ def main(args):
             model, args.device, T_set,
             alpha_grid, mincount_grid, Tcorr_grid,
             rho_grid, k_grid,
-            lam_set_grid, lam_corr_grid, lam_knn_grid, lam_freq_grid)
+            lam_set_grid, lam_corr_grid, lam_knn_grid, lam_freq_grid,
+            nmi_matrix, K_topk_grid)
         seed_params[seed] = params
 
         # Inference
@@ -1206,7 +1281,8 @@ def main(args):
                 obs_fd, blanked, model, kept_feature_names, feat_name_to_idx,
                 feat_to_value_names, feat_to_global_ids,
                 cat_matrix_train, marginals, raw_cocounts, marginal_counts,
-                mi_matrix, idf_weights, args.device, T_set, params, val_emb_w)
+                mi_matrix, idf_weights, args.device, T_set, params, val_emb_w,
+                nmi_matrix)
 
             cfgs = predict_configs(wc, blanked, expert_results,
                                     feat_to_value_names, feat_to_global_ids,
@@ -1406,7 +1482,7 @@ def main(args):
     # 5. Best hyperparameters
     if seed_params:
         print("\nBest hyperparameters (per seed, then mean):")
-        keys = ["alpha", "min_count", "T_corr", "rho", "k",
+        keys = ["alpha", "min_count", "T_corr", "K_topk", "rho", "k",
                 "lam_set", "lam_corr", "lam_knn", "lam_freq"]
         for k in keys:
             vals = [seed_params[s][k] for s in args.seeds if s in seed_params]
@@ -1460,6 +1536,38 @@ def main(args):
         print(f"\nMean ensemble weights: "
               f"λ_set={ls:.3f}  λ_corr={lc:.3f}  "
               f"λ_knn={lk:.3f}  λ_freq={lf:.3f}")
+
+    # 9. PMI per-obs-bucket diagnostic (Config F accuracy by #observed features)
+    print("\n[PMI diagnostic] Config F accuracy by number of observed features:")
+    try:
+        gold_meta3, _, _, gold_obs3 = parse_sigtyp(test_gold)
+        buckets = defaultdict(lambda: [0, 0])   # n_obs_bucket -> [correct, total]
+        for _, row in test_meta.iterrows():
+            wc      = row["wals_code"]
+            obs     = {k: _strip_to_id(v)
+                       for k, v in test_obs.get(wc, {}).items()
+                       if k in feat_name_to_idx}
+            n_obs   = len(obs)
+            bkt     = min(n_obs, 10)   # cap at 10+
+            preds_f = F_preds.get(wc, {})
+            gold    = gold_obs3.get(wc, {})
+            for fn in test_blank.get(wc, set()):
+                if fn not in feat_name_to_idx:
+                    continue
+                gv_raw = gold.get(fn)
+                pv     = preds_f.get(fn)
+                if gv_raw is None:
+                    continue
+                gv = _strip_to_id(gv_raw)
+                buckets[bkt][1] += 1
+                if pv == gv:
+                    buckets[bkt][0] += 1
+        for bkt in sorted(buckets.keys()):
+            c, t = buckets[bkt]
+            label = f"n_obs={bkt}" if bkt < 10 else "n_obs≥10"
+            print(f"  {label}: {c/max(t,1):.3f}  ({c}/{t})")
+    except Exception as e:
+        print(f"  PMI diagnostic failed: {e}")
 
     print("\nDone.")
 
