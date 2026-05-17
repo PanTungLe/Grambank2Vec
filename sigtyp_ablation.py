@@ -699,10 +699,13 @@ def _compute_per_lang_acc(preds_by_lang, test_meta, test_blank,
         for fn in blanked:
             if fn not in feat_name_to_idx:
                 continue
-            gv = gold.get(fn)
-            pv = pred.get(fn)
-            if gv is None:
+            gv_raw = gold.get(fn)
+            if gv_raw is None:
                 continue
+            # gold_obs from parse_sigtyp contains full strings e.g. "5 SOV";
+            # model predictions use stripped IDs e.g. "5" from feat_to_value_names.
+            gv = _strip_to_id(gv_raw)
+            pv = pred.get(fn)
             total   += 1
             if pv is not None and pv == gv:
                 correct += 1
@@ -835,10 +838,11 @@ def blanking_ratio_pearson(preds_by_lang, test_meta, test_blank,
         for fn in blanked:
             if fn not in feat_name_to_idx:
                 continue
-            gv = gold.get(fn)
-            pv = pred.get(fn)
-            if gv is None:
+            gv_raw = gold.get(fn)
+            if gv_raw is None:
                 continue
+            gv = _strip_to_id(gv_raw)
+            pv = pred.get(fn)
             total   += 1
             if pv is not None and pv == gv:
                 correct += 1
