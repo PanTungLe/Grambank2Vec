@@ -1,0 +1,87 @@
+========================================================================
+SIGTYP 2020 v4 — CrossAttentionSetEncoder + PMI/MI expert
+========================================================================
+
+[Part 1] Loading SIGTYP data ...
+  Train: 1125 languages, Dev: 83, Test: 149
+
+[Part 2] Building vocabulary ...
+Categorical matrix: 1208 langs × 185 features, 1012 total unique values across all features
+  185 features, 1012 total value IDs
+
+[Part 3] PMI statistics ...
+  Building PMI stats from 1125 langs × 185 feats ...
+  Computing MI matrix ...
+  Built in 2.5s. Saving to /home/user/Grambank2Vec/pmi_stats.pkl ...
+
+[Config F] Tuning corr params for PMI-only expert ...
+  Config F corr params: alpha=0.1, min_count=1, T_corr=0.5, dev_acc=0.6535
+  Running Config F inference ...
+  Wrote /home/user/Grambank2Vec/sigtyp_v4_F.tsv
+
+[Seed 13] CrossAttentionSetEncoder ...
+  --skip-training set, no valid checkpoint; skipping seed 13
+
+[Seed 21] CrossAttentionSetEncoder ...
+  --skip-training set, no valid checkpoint; skipping seed 21
+
+[Seed 42] CrossAttentionSetEncoder ...
+  --skip-training set, no valid checkpoint; skipping seed 42
+
+[Seed 87] CrossAttentionSetEncoder ...
+  --skip-training set, no valid checkpoint; skipping seed 87
+
+[Seed 100] CrossAttentionSetEncoder ...
+  --skip-training set, no valid checkpoint; skipping seed 100
+
+[Scoring] Running score.py ...
+
+========================================================================
+ABLATION TABLE  (macro accuracy per genus)
+========================================================================
+| System                                     |    Tuc |    Mad |    Mah |    Nil |    May |    NPY |  Other | Overall |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| --- v3 non-neural baselines (reference) --- |        |        |        |        |        |        |        |        |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Freq                                       |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| Genus majority                             |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| kNN k=5                                    |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| IDF-kNN k=5                                |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| Cond. prob                                 |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| --- v3 SetEncoder (reference) ---          |        |        |        |        |        |        |        |        |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| [A] SetEncoder v3 (seed13 reported)        |    .72 |    .77 |    .70 |    .63 |    .74 |    .63 |    .67 |    .67 |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| --- v4 CrossAttentionSetEncoder ---        |        |        |        |        |        |        |        |        |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| [E] Cross-attn only      (mean±std)        |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| [F] PMI/MI expert only   (single run)      |   0.60 |   0.63 |   0.67 |   0.62 |   0.61 |   0.59 |   0.55 |   0.59 |
+| [G] Cross-attn + PMI     (mean±std)        |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| [H] + IDF-kNN + freq     (mean±std)        |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+| [I] + emb-aware corr     (mean±std)        |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |    n/a |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| --- v1/v2 (reference) ---                  |        |        |        |        |        |        |        |        |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| [v1] Learned (transductive)                |    .67 |    .73 |    .66 |    .66 |    .69 |    .60 |    .65 |    .66 |
+| [v2D] Full system                          |    .67 |    .77 |    .64 |    .67 |    .68 |    .65 |    .64 |    .66 |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| --- SIGTYP 2020 paper (macro) ---          |        |        |        |        |        |        |        |        |
+|--------------------------------------------|--------|--------|--------|--------|--------|--------|--------|--------|
+| UFAL (best constrained)                    |    .73 |    .78 |    .74 |    .71 |    .80 |    .76 |    .76 |    .75 |
+| NEMO system2                               |    .71 |    .72 |    .72 |    .76 |    .76 |    .67 |    .69 |    .69 |
+| CrossLingference (unconstr.)               |    .71 |    .73 |    .67 |    .68 |    .57 |    .60 |    .65 |    .65 |
+| Baseline_frequency (paper)                 |    .51 |    .53 |    .37 |    .49 |    .41 |    .58 |    .53 |    .49 |
+
+Per-seed Config I overall macro:
+  seed=13: n/a
+  seed=21: n/a
+  seed=42: n/a
+  seed=87: n/a
+  seed=100: n/a
+
+Calibrated temperatures:
+
+Examples where PMI expert changed Config E prediction:
+
+Done.
