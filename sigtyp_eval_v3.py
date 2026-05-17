@@ -139,6 +139,11 @@ def parse_sigtyp(path):
     return meta_df, feat_df, blanked, obs_strings
 
 
+def _strip_to_id(full_val_str):
+    """'5 SOV' -> '5'.  Already-stripped strings pass through."""
+    return full_val_str.split()[0] if full_val_str.strip() else full_val_str
+
+
 # ===========================================================================
 # PART 0: Argparse CLI
 # ===========================================================================
@@ -1008,7 +1013,8 @@ def main(args):
 
     for _, row in test_meta.iterrows():
         wc  = row["wals_code"]
-        obs = {k: v for k, v in test_obs.get(wc, {}).items()
+        obs = {k: _strip_to_id(v)
+               for k, v in test_obs.get(wc, {}).items()
                if k in feat_name_to_idx}
 
         freq_by_lang[wc]   = freq_preds
@@ -1130,7 +1136,8 @@ def main(args):
         for i, (_, row) in enumerate(test_meta.iterrows()):
             wc          = row["wals_code"]
             blanked_set = test_blank.get(wc, set())
-            obs_fd      = {k: v for k, v in test_obs.get(wc, {}).items()
+            obs_fd      = {k: _strip_to_id(v)
+                           for k, v in test_obs.get(wc, {}).items()
                            if k in feat_name_to_idx}
             obs_in_vocab = len(obs_fd)
 
@@ -1315,7 +1322,6 @@ def main(args):
     if best_D_preds is not None:
         print("\n[Bootstrap] Testing best config D vs v1 Learned (0.66) ...")
         try:
-            _, _, gold_obs = parse_sigtyp(test_gold)[2:]  # blanked, obs_strings
             gold_meta2, _, gold_blank2, gold_obs2 = parse_sigtyp(test_gold)
             obs_macro, (ci_lo, ci_hi), p_val = bootstrap_test(
                 best_D_preds, test_meta, test_blank, gold_obs2,
