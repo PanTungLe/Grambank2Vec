@@ -1,0 +1,78 @@
+========================================================================
+SIGTYP 2020 v3 — SetEncoder + non-neural baselines
+========================================================================
+
+[Part 1] Loading SIGTYP data ...
+  Train: 1125 languages, 185 feature columns
+  Dev:   83 languages, 182 feature columns
+  Test:  149 languages
+  Train+Dev: 1208 languages, 185 feature columns
+
+[Part 2] Building shared vocabulary ...
+Categorical matrix: 1208 langs × 185 features, 1012 total unique values across all features
+  Kept 185 features (≥2 unique values)
+  Total unique (feature, value) pairs: 1012
+
+[Part 3] Non-neural baselines ...
+  Building co-occurrence tables ...
+  Done in 2.0s
+  Wrote /home/user/Grambank2Vec/sigtyp_v3_freq.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v3_genus.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v3_knn.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v3_idfknn.tsv
+  Wrote /home/user/Grambank2Vec/sigtyp_v3_condprob.tsv
+  Scoring baselines ...
+
+[Seed 13] SetEncoder ...
+  --skip-training set and no valid checkpoint; skipping seed 13
+
+[Seed 21] SetEncoder ...
+  --skip-training set and no valid checkpoint; skipping seed 21
+
+[Seed 42] SetEncoder ...
+  --skip-training set and no valid checkpoint; skipping seed 42
+
+[Seed 87] SetEncoder ...
+  --skip-training set and no valid checkpoint; skipping seed 87
+
+[Seed 100] SetEncoder ...
+  --skip-training set and no valid checkpoint; skipping seed 100
+
+========================================================================
+ABLATION TABLE  (macro accuracy per genus)
+========================================================================
+| System                                   | Tucanoan |  Madang | Mahakiranti | Nilotic |   Mayan | N.Pama-Nyungan |   Other | Overall |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| --- Non-neural baselines ---             |         |         |         |         |         |         |         |         |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| Freq (global)                            |    0.51 |    0.53 |    0.37 |    0.58 |    0.64 |    0.58 |    0.56 |    0.55 |    0.55 |
+| Genus majority                           |    0.51 |    0.53 |    0.37 |    0.58 |    0.64 |    0.58 |    0.68 |    0.60 |    0.60 |
+| kNN (k=5)                                |    0.71 |    0.62 |    0.68 |    0.60 |    0.64 |    0.59 |    0.64 |    0.64 |    0.64 |
+| IDF-kNN (k=5)                            |    0.65 |    0.55 |    0.62 |    0.59 |    0.64 |    0.66 |    0.64 |    0.63 |    0.63 |
+| Cond. prob (UFAL-style)                  |    0.67 |    0.67 |    0.62 |    0.64 |    0.64 |    0.66 |    0.62 |    0.64 |    0.64 |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| --- SetEncoder (mean ± std across seeds) --- |         |         |         |         |         |         |         |         |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| [A] SetEncoder only                      |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |
+| [B] SetEncoder + self-train              |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |
+| [C] SetEncoder + prior                   |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |
+| [D] SetEncoder (full)                    |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |     n/a |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| --- Prior results (hardcoded) ---        |         |         |         |         |         |         |         |         |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| [v1] Learned (transductive)              |     .67 |     .73 |     .66 |     .66 |     .69 |     .60 |     .65 |     .66 |
+| [v1] TCF                                 |     .67 |     .57 |     .62 |     .62 |     .62 |     .62 |     .61 |     .61 |
+| [v2D] Full system                        |     .67 |     .77 |     .64 |     .67 |     .68 |     .65 |     .64 |     .66 |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| --- SIGTYP 2020 paper (macro) ---        |         |         |         |         |         |         |         |         |
+|------------------------------------------|---------|---------|---------|---------|---------|---------|---------|---------|
+| UFAL (best constrained)                  |     .73 |     .78 |     .74 |     .71 |     .80 |     .76 |     .76 |     .75 |
+| NEMO system2                             |     .71 |     .72 |     .72 |     .76 |     .76 |     .67 |     .69 |     .69 |
+| CrossLingference (unconstrained)         |     .71 |     .73 |     .67 |     .68 |     .57 |     .60 |     .65 |     .65 |
+| Baseline_frequency (paper)               |     .51 |     .53 |     .37 |     .49 |     .41 |     .58 |     .53 |     .49 |
+| Baseline_knn (paper)                     |     .48 |     .57 |     .46 |     .48 |     .32 |     .52 |     .51 |     .48 |
+
+
+  No D predictions available for bootstrap test.
+
+Done.
