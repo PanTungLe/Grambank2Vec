@@ -38,7 +38,11 @@ from data_preparation import (
     align_embeddings,
 )
 from char_lm import train_charlm
-from evaluation_pipeline import run_experiments, summarise_results
+from evaluation_pipeline import (
+    run_experiments,
+    summarise_results,
+    summarise_results_weighted,
+)
 
 
 def clone_repo(url: str, target_dir: str) -> str:
@@ -336,10 +340,13 @@ def main():
     print(f"Detailed results saved to {results_csv}")
 
     summary = summarise_results(results)
+    weighted_summary = summarise_results_weighted(results)
     print("\n" + "=" * 60)
     print("AGGREGATE RESULTS (cf. Table 1 in the paper)")
     print("=" * 60)
     print(summary.to_string(index=False))
+    print("\nWeighted by held-out original feature items (diagnostic):")
+    print(weighted_summary.to_string(index=False))
 
     # Also save summary
     summary_csv = os.path.join(args.output_dir, "summary.csv")
