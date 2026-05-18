@@ -27,6 +27,7 @@ import torch.nn.functional as F
 sys.path.insert(0, "/home/user/Grambank2Vec")
 from model_ufal import (UFALNeural, CategoricalNeural, CategoricalGeomNeural,
                          build_ufal_vocab, build_training_data_ufal,
+                         build_training_data_wals_only,
                          train_ufal_model, train_categorical_model,
                          transductive_finetune_emb)
 from model_learned import prepare_categorical

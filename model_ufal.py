@@ -283,6 +283,23 @@ def build_training_data_ufal(cat_matrix, train_meta_df, feat_to_fv_ids,
     return positives
 
 
+def build_training_data_wals_only(cat_matrix, feat_to_global_ids):
+    """
+    Build positive (lang_idx, global_val_id) pairs using the WALS-only vocab
+    from prepare_categorical (feat_to_global_ids). No metadata features.
+    Use with UFALNeural(n_total_values, ...) for the binary+WALS-only
+    factorial condition.
+    """
+    positives = []
+    n_langs, n_feats = cat_matrix.shape
+    for li in range(n_langs):
+        for fi in range(n_feats):
+            v = int(cat_matrix[li, fi])
+            if v >= 0:
+                positives.append((li, feat_to_global_ids[fi][v]))
+    return positives
+
+
 # ===========================================================================
 # Training functions
 # ===========================================================================
