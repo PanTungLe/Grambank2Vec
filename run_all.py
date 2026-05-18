@@ -156,9 +156,8 @@ def main():
     parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=6.4,
-                        help="L2 coeff. Default 6.4 = 0.1 * batch_size(64) to match "
-                             "Bjerva et al. weight_decay=0.1 effective magnitude.")
+    parser.add_argument("--l2_reg", type=float, default=0.1,
+                        help="AdamW weight_decay. Default 0.1 matches Bjerva et al.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5)
     parser.add_argument("--freeze_lang", action="store_true",

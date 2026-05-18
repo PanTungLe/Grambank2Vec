@@ -245,17 +245,14 @@ def train_model(
     loader = DataLoader(train_dataset, batch_size=batch_size,
                         shuffle=True, drop_last=False)
 
-    # Do NOT use weight_decay in Adam for sparse embeddings.
-    # Adam + global weight_decay applies decay to every embedding at
-    # every step.  For embeddings absent from the batch, the only
-    # gradient signal is the decay.  Adam's adaptive denominator turns
-    # this into sign-gradient descent toward zero — a constant-rate
-    # collapse that overwhelms the sparse data signal.
-    # Instead, model.forward() returns a per-batch L2 penalty computed
-    # only over the embeddings actually looked up in the batch.
+    # Use AdamW so weight decay is applied multiplicatively (decoupled from
+    # gradient normalization).  Plain Adam adds l2_reg to the gradient, which
+    # Adam then normalizes to ±lr — cancelling the BCE signal at equal strength
+    # regardless of l2_reg magnitude.  AdamW applies the decay after the Adam
+    # step, preserving the correct magnitude relationship.
     # Filter to trainable parameters only (skips frozen pretrained embeddings)
     trainable_params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(trainable_params, lr=lr, weight_decay=0)
+    optimizer = optim.AdamW(trainable_params, lr=lr, weight_decay=l2_reg)
     criterion = nn.BCELoss()
 
     losses = []
@@ -272,12 +269,11 @@ def train_model(
             feat_idx = feat_idx.to(device)
             vals = vals.to(device)
 
-            preds, batch_l2 = model(lang_idx, feat_idx)
+            preds, _batch_l2 = model(lang_idx, feat_idx)
             bce = criterion(preds, vals)
-            loss = bce + (l2_reg / 2.0) * batch_l2
 
             optimizer.zero_grad()
-            loss.backward()
+            bce.backward()
             optimizer.step()
 
             epoch_loss += bce.item()
