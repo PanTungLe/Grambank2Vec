@@ -213,12 +213,13 @@ class TypologicalMF_SemiSup(nn.Module):
 def train_model(
     model: nn.Module,
     train_dataset: WALSDataset,
-    n_epochs: int = 10,
+    n_epochs: int = 30,
     batch_size: int = 64,
     lr: float = 1e-3,
     l2_reg: float = 0.1,       # corresponds to Gaussian prior σ²=10
     device: str = "cpu",
-) -> list:
+    patience: int = 5,
+) -> Tuple[list, int]:
     """
     Train the matrix factorisation model.
 
@@ -231,10 +232,14 @@ def train_model(
     lr : float – learning rate for Adam
     l2_reg : float – L2 regularisation weight (= 1/σ² from the prior)
     device : str
+    patience : int – early stopping: stop if loss does not improve by >0.001
+                     for this many consecutive epochs
 
     Returns
     -------
     losses : list of float – average BCE loss per epoch
+    epochs_run : int – number of epochs actually run (may be < n_epochs
+                 if early stopping was triggered)
     """
     model = model.to(device)
     loader = DataLoader(train_dataset, batch_size=batch_size,
@@ -254,6 +259,10 @@ def train_model(
     criterion = nn.BCELoss()
 
     losses = []
+    best_loss = float('inf')
+    epochs_no_improve = 0
+    epochs_run = 0
+
     for epoch in range(n_epochs):
         epoch_loss = 0.0
         n_batches = 0
@@ -276,9 +285,19 @@ def train_model(
 
         avg = epoch_loss / n_batches
         losses.append(avg)
+        epochs_run = epoch + 1
         print(f"  Epoch {epoch+1}/{n_epochs}  loss={avg:.4f}")
 
-    return losses
+        if avg < best_loss - 0.001:
+            best_loss = avg
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+        if epochs_no_improve >= patience:
+            print(f"  Early stopping at epoch {epoch+1}")
+            break
+
+    return losses, epochs_run
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +319,7 @@ if __name__ == "__main__":
     ds = WALSDataset(langs, feats, vals)
     model = TypologicalMF(N_LANG, N_FEAT, embed_dim=16)
     print("=== Training core model ===")
-    train_model(model, ds, n_epochs=5, batch_size=32)
+    losses, epochs_run = train_model(model, ds, n_epochs=5, batch_size=32)
 
     # Predict full matrix
     with torch.no_grad():
@@ -319,5 +338,5 @@ if __name__ == "__main__":
     model_ss = TypologicalMF_SemiSup(fake_pretrained, N_FEAT,
                                       embed_dim=16, freeze_lang=False)
     print("\n=== Training semi-supervised model ===")
-    train_model(model_ss, ds, n_epochs=5, batch_size=32)
+    losses, epochs_run = train_model(model_ss, ds, n_epochs=5, batch_size=32)
     print("\nSmoke test passed ✓")

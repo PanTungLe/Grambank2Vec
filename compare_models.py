@@ -13,6 +13,7 @@ where 'model' is one of: "Freq", "T-CF" (binary baseline), "Learned".
 """
 
 import argparse
+from typing import Optional
 import numpy as np
 import pandas as pd
 
@@ -35,13 +36,15 @@ def run_comparison(
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
-    n_epochs: int = 10,
+    n_epochs: int = 30,
     batch_size: int = 64,
     lr: float = 1e-3,
-    l2_reg: float = 0.1,
+    l2_reg: float = 6.4,
     device: str = "cpu",
     min_branch_size: int = 5,
     only_branches: list = None,
+    pretrained_embs: Optional[np.ndarray] = None,
+    bible_lang_mask: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Run both models on the same data and same splits.
@@ -58,6 +61,24 @@ def run_comparison(
             raise ValueError("Either (df, feature_cols) or wals_repo_dir "
                              "must be provided")
         df, feature_cols = load_wals_cldf(wals_repo_dir)
+
+    # Bible ∩ WALS filter (Fix 1)
+    bible_filtered = False
+    if bible_lang_mask or pretrained_embs is not None:
+        if bible_lang_mask:
+            has_bible = np.load(bible_lang_mask).astype(bool)
+        else:
+            has_bible = np.any(pretrained_embs != 0, axis=1)
+        n_before = len(df)
+        df = df[has_bible].reset_index(drop=True)
+        if pretrained_embs is not None:
+            pretrained_embs = pretrained_embs[has_bible]
+        print(f"Bible ∩ WALS filter: {n_before} → {len(df)} languages")
+        bible_filtered = True
+    else:
+        print("WARNING: No Bible filter applied — results not comparable "
+              "to Bjerva et al. Table 1. "
+              "Labelling as 'full WALS (no Bible filter)'.")
 
     # Binary representation (Bjerva et al. baseline)
     binary_matrix, bin_names, feature_groups, feature_value_names = \
@@ -80,6 +101,8 @@ def run_comparison(
         qualifying = [b for b in qualifying if b in only_branches]
     print(f"\nQualifying branches (≥{min_branch_size} languages): "
           f"{len(qualifying)}")
+    branch_list = sorted(qualifying)
+    branch_to_int = {b: i for i, b in enumerate(branch_list)}
     print(f"Binary features: {n_bfeat}")
     print(f"Categorical features: {cat_matrix.shape[1]}, "
           f"total values: {n_total_values}")
@@ -97,8 +120,8 @@ def run_comparison(
 
         for frac in in_branch_fracs:
             for rep in range(n_repeats):
-                # Same seed for both models → same split
-                seed = rep * 1000 + hash(branch) % 10000
+                # Same seed for both models → same split (deterministic, PYTHONHASHSEED-independent)
+                seed = rep * 1000 + branch_to_int[branch] * 37
                 rng_bin = np.random.default_rng(seed=seed)
                 rng_cat = np.random.default_rng(seed=seed)
 
@@ -129,9 +152,9 @@ def run_comparison(
                 model_bin = TypologicalMF(n_langs, n_bfeat, embed_dim)
                 print(f"\n  [T-CF] branch={branch}, frac={frac}, "
                       f"rep={rep+1}")
-                train_model(model_bin, train_ds_bin, n_epochs=n_epochs,
-                            batch_size=batch_size, lr=lr,
-                            l2_reg=l2_reg, device=device)
+                _losses, _epochs = train_model(model_bin, train_ds_bin, n_epochs=n_epochs,
+                                               batch_size=batch_size, lr=lr,
+                                               l2_reg=l2_reg, device=device)
 
                 f1_tcf = decode_and_evaluate(
                     model_bin, eval_l_bin, eval_f_bin, eval_v_bin,
@@ -176,7 +199,10 @@ def run_comparison(
                 })
                 print(f"    → Learned F1 = {f1_lrn:.4f}")
 
-    return pd.DataFrame(rows)
+    result_df = pd.DataFrame(rows)
+    result_df["filter_label"] = ("Bible∩WALS" if bible_filtered
+                                  else "full WALS (no Bible filter)")
+    return result_df
 
 
 def summarise(results_df: pd.DataFrame) -> pd.DataFrame:
@@ -210,14 +236,19 @@ if __name__ == "__main__":
                         choices=["glottolog", "family"],
                         help="Genus source for Grambank (default: glottolog)")
     parser.add_argument("--embed_dim", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=0.1)
+    parser.add_argument("--l2_reg", type=float, default=6.4,
+                        help="L2 coeff. Default 6.4 = 0.1 * batch_size(64) to match "
+                             "Bjerva et al. weight_decay=0.1 effective magnitude.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5)
     parser.add_argument("--branches", type=str, nargs="+", default=None,
                         help="Only evaluate specific branches")
+    parser.add_argument("--bible_lang_mask", type=str, default=None,
+                        help="Path to .npy boolean mask for Bible ∩ WALS "
+                             "filtering. If not provided, runs on full WALS.")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str,
                         default="comparison_results.csv")
@@ -249,6 +280,7 @@ if __name__ == "__main__":
         device=args.device,
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
+        bible_lang_mask=args.bible_lang_mask,
     )
 
     results.to_csv(args.output_csv, index=False)
