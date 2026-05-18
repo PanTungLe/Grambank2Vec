@@ -38,8 +38,6 @@ from evaluation_pipeline import (
     knn_baseline,
     run_experiments,
     summarise_results,
-    summarise_results_weighted,
-    count_eval_items,
 )
 
 
@@ -119,7 +117,7 @@ class TestModels:
         model = TypologicalMF(50, 30, embed_dim=16)
         lang_idx = torch.tensor([0, 1, 2])
         feat_idx = torch.tensor([5, 10, 15])
-        probs, batch_l2 = model(lang_idx, feat_idx)
+        probs = model(lang_idx, feat_idx)
         assert probs.shape == (3,)
         assert (probs >= 0).all() and (probs <= 1).all()
 
@@ -135,7 +133,7 @@ class TestModels:
         model = TypologicalMF_SemiSup(embs, 20, embed_dim=16)
         lang_idx = torch.tensor([0, 1])
         feat_idx = torch.tensor([5, 10])
-        probs, batch_l2 = model(lang_idx, feat_idx)
+        probs = model(lang_idx, feat_idx)
         assert probs.shape == (2,)
 
     def test_semisup_predict_all(self):
@@ -175,7 +173,7 @@ class TestModels:
 class TestDataPreparation:
     def test_binarise_wals(self):
         df, feature_cols = make_synthetic_wals(n_langs=20, n_features=3)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         assert bmat.shape[0] == len(df)
         assert bmat.shape[1] == len(names)
@@ -186,7 +184,7 @@ class TestDataPreparation:
 
     def test_binarise_feature_groups(self):
         df, feature_cols = make_synthetic_wals(n_langs=20, n_features=3)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         # Each feature should have at least 2 binary columns
         for feat, indices in groups.items():
@@ -429,7 +427,7 @@ class TestCharLM:
 class TestEvaluation:
     def test_split_by_branch(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -449,7 +447,7 @@ class TestEvaluation:
     def test_split_fraction_uses_total_observed(self):
         """Bug 1 fix: in_branch_train_frac should apply to n_obs, not pool size."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=8)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         # With frac=0.10, each in-branch language should get ~10% of its
         # observed features for training (not 10% of the tiny 20% pool).
@@ -473,7 +471,7 @@ class TestEvaluation:
     def test_split_no_leakage(self):
         """Verify no feature-level information leaks between train and eval."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -505,7 +503,7 @@ class TestEvaluation:
 
     def test_decode_and_evaluate(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -518,12 +516,12 @@ class TestEvaluation:
 
         f1 = decode_and_evaluate(
             model, eval_langs, eval_feats, eval_vals,
-            groups, value_names, df, "Romance")
+            groups, df, "Romance")
         assert 0.0 <= f1 <= 1.0
 
     def test_majority_baseline(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
             df, bmat, groups,
@@ -533,12 +531,12 @@ class TestEvaluation:
 
         f1 = majority_baseline(
             train_ds, eval_langs, eval_feats, eval_vals,
-            groups, value_names, bmat.shape[1])
+            groups, bmat.shape[1])
         assert 0.0 <= f1 <= 1.0
 
     def test_knn_baseline(self):
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
         embs = np.random.randn(len(df), 16).astype(np.float32)
 
         train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
@@ -549,40 +547,16 @@ class TestEvaluation:
 
         f1 = knn_baseline(
             embs, train_ds, eval_langs, eval_feats, eval_vals,
-            groups, value_names, df, "Romance", bmat.shape[1], k=1)
+            groups, df, "Romance", bmat.shape[1], k=1)
         assert 0.0 <= f1 <= 1.0
-
-    def test_count_eval_items_counts_original_features(self):
-        """Diagnostic weights should not over-count one-hot columns."""
-        feature_groups = {"feat_a": [0, 1, 2], "feat_b": [3]}
-        eval_langs = np.array([0, 0, 0, 0, 1])
-        eval_feats = np.array([0, 1, 2, 3, 3])
-
-        assert count_eval_items(eval_langs, eval_feats, feature_groups) == 3
-
-    def test_summarise_results_weighted_uses_original_items(self):
-        """Tiny branch-composition pilot: weighted and macro means can diverge."""
-        results = pd.DataFrame({
-            "in_branch_frac": [0.2, 0.2],
-            "model": ["T-CF", "T-CF"],
-            "f1": [0.9, 0.5],
-            "n_eval_items": [1, 9],
-        })
-
-        macro = summarise_results(results)
-        weighted = summarise_results_weighted(results)
-
-        assert macro.loc[0, "mean_f1"] == pytest.approx(0.7)
-        assert weighted.loc[0, "weighted_mean_f1"] == pytest.approx(0.54)
 
     def test_run_experiments_small(self):
         """Full experiment on small synthetic data."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         results = run_experiments(
             df, bmat, groups,
-            feature_value_names=value_names,
             in_branch_fracs=[0.0, 0.10],
             n_repeats=1,
             embed_dim=8,
@@ -603,12 +577,11 @@ class TestEvaluation:
     def test_run_experiments_with_pretrained(self):
         """Full experiment with pretrained embeddings."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
         embs = np.random.randn(len(df), 16).astype(np.float32)
 
         results = run_experiments(
             df, bmat, groups,
-            feature_value_names=value_names,
             in_branch_fracs=[0.0],
             n_repeats=1,
             embed_dim=8,
@@ -627,7 +600,7 @@ class TestEvaluation:
     def test_bible_wals_intersection_filter(self):
         """Bug 2 fix: only languages with Bible data should be kept."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         # Simulate pretrained embeddings where only first 30 langs have data
         embs = np.zeros((60, 16), dtype=np.float32)
@@ -641,7 +614,7 @@ class TestEvaluation:
         bmat_filtered = bmat[has_bible]
         embs_filtered = embs[has_bible]
 
-        bmat_filtered, _, groups_filtered, value_names_filtered = binarise_wals(
+        bmat_filtered, _, groups_filtered = binarise_wals(
             df_filtered, feature_cols)
 
         assert len(df_filtered) == 30
@@ -657,7 +630,7 @@ class TestIntegration:
     def test_full_pipeline_synthetic(self):
         """Test the full pipeline with synthetic data (no external deps)."""
         df, feature_cols = make_synthetic_wals(n_langs=60, n_features=5)
-        bmat, names, groups, value_names = binarise_wals(df, feature_cols)
+        bmat, names, groups = binarise_wals(df, feature_cols)
 
         # Create synthetic Bible texts matching some WALS languages
         bible_texts = {}
@@ -695,7 +668,6 @@ class TestIntegration:
             # Run experiments
             results = run_experiments(
                 df, bmat, groups,
-                feature_value_names=value_names,
                 in_branch_fracs=[0.0, 0.10],
                 n_repeats=1,
                 embed_dim=8,
