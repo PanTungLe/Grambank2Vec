@@ -406,7 +406,7 @@ def run_experiments(
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
-    n_epochs: int = 10,
+    n_epochs: int = 30,
     batch_size: int = 64,
     lr: float = 1e-3,
     l2_reg: float = 0.1,
@@ -414,7 +414,7 @@ def run_experiments(
     device: str = "cpu",
     min_branch_size: int = 5,
     only_branches: Optional[list] = None,
-    freeze_lang: bool = True,
+    freeze_lang: bool = False,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -447,6 +447,9 @@ def run_experiments(
     print(f"\nQualifying branches (≥{min_branch_size} languages): "
           f"{len(qualifying)}")
 
+    branch_list = sorted(qualifying)
+    branch_to_int = {b: i for i, b in enumerate(branch_list)}
+
     rows = []
 
     for branch in qualifying:
@@ -457,7 +460,7 @@ def run_experiments(
 
         for frac in in_branch_fracs:
             for rep in range(n_repeats):
-                rng = np.random.default_rng(seed=rep * 1000 + hash(branch) % 10000)
+                rng = np.random.default_rng(seed=rep * 1000 + branch_to_int[branch] * 37)
 
                 # --- Split ---
                 train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
@@ -498,9 +501,9 @@ def run_experiments(
                 # --- T-CF (core model) ---
                 model = TypologicalMF(n_langs, n_bfeat, embed_dim)
                 print(f"\n  [T-CF] branch={branch}, frac={frac}, rep={rep+1}")
-                train_model(model, train_ds, n_epochs=n_epochs,
-                            batch_size=batch_size, lr=lr,
-                            l2_reg=l2_reg, device=device)
+                _losses, _epochs = train_model(model, train_ds, n_epochs=n_epochs,
+                                               batch_size=batch_size, lr=lr,
+                                               l2_reg=l2_reg, device=device)
 
                 f1_tcf = decode_and_evaluate(
                     model, eval_langs, eval_feats, eval_vals,
@@ -519,9 +522,9 @@ def run_experiments(
                         embed_dim=embed_dim, freeze_lang=freeze_lang)
                     print(f"  [SemiSup] branch={branch}, frac={frac}, "
                           f"rep={rep+1}")
-                    train_model(model_ss, train_ds, n_epochs=n_epochs,
-                                batch_size=batch_size, lr=lr,
-                                l2_reg=l2_reg, device=device)
+                    _losses, _epochs = train_model(model_ss, train_ds, n_epochs=n_epochs,
+                                                   batch_size=batch_size, lr=lr,
+                                                   l2_reg=l2_reg, device=device)
 
                     f1_ss = decode_and_evaluate(
                         model_ss, eval_langs, eval_feats, eval_vals,
@@ -579,20 +582,21 @@ def main():
                              "filtering. If not provided and --pretrained_embs "
                              "is set, inferred from non-zero embedding rows.")
     parser.add_argument("--embed_dim", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=0.1)
+    parser.add_argument("--l2_reg", type=float, default=0.1,
+                        help="AdamW weight_decay. Default 0.1 matches Bjerva et al.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5,
                         help="Skip branches with fewer languages (paper: >4)")
     parser.add_argument("--branches", type=str, nargs="+", default=None,
                         help="Only evaluate these branches (e.g. --branches Oceanic Slavic)")
-    parser.add_argument("--no_freeze_lang", action="store_true",
-                        help="Allow pretrained language embeddings to be "
-                             "fine-tuned during training. Default is to "
-                             "freeze them, which preserves high-quality "
-                             "pretrained geometry (e.g. from Östling vectors).")
+    parser.add_argument("--freeze_lang", action="store_true",
+                        help="Freeze pretrained language embeddings during "
+                             "training. Default is to fine-tune them, as "
+                             "reported in Bjerva et al. (2019). Use "
+                             "--freeze_lang to freeze them.")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
@@ -632,7 +636,7 @@ def main():
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
 
     # 2b. Filter to Bible ∩ database intersection (paper §7.1)
-    if pretrained is not None:
+    if args.bible_lang_mask or pretrained is not None:
         if args.bible_lang_mask:
             has_bible = np.load(args.bible_lang_mask).astype(bool)
         else:
@@ -640,11 +644,15 @@ def main():
         n_before = len(df)
         df = df[has_bible].reset_index(drop=True)
         binary_matrix = binary_matrix[has_bible]
-        pretrained = pretrained[has_bible]
+        if pretrained is not None:
+            pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
         binary_matrix, bin_names, feature_groups, feature_value_names = \
             binarise_features(df, feature_cols)
         print(f"Bible ∩ database filter: {n_before} → {len(df)} languages")
+    else:
+        print("WARNING: No Bible filter applied — results not comparable "
+              "to Bjerva et al. Table 1")
 
     # 3. Run experiments
     results = run_experiments(
@@ -661,7 +669,7 @@ def main():
         device=args.device,
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
-        freeze_lang=not args.no_freeze_lang,
+        freeze_lang=args.freeze_lang,
     )
 
     # 4. Save and display results
