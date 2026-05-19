@@ -21,6 +21,7 @@ Usage
 """
 
 import argparse
+import hashlib
 import warnings
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
@@ -394,6 +395,32 @@ def knn_baseline(
     return f1_score(y_true, y_pred, average="micro")
 
 
+
+def count_eval_items(
+    eval_langs: np.ndarray,
+    eval_feats: np.ndarray,
+    feature_groups: dict,
+) -> int:
+    """
+    Count original feature-language items in an evaluation split.
+
+    ``eval_vals`` is expressed over binarised columns, so a single original
+    multi-valued WALS feature can contribute several binary cells.  Aggregate
+    diagnostics should therefore use this original-item count rather than the
+    raw binary-cell count when weighting branch-level F1 scores.
+    """
+    bin_to_orig = {
+        bi: orig_feat
+        for orig_feat, bin_indices in feature_groups.items()
+        for bi in bin_indices
+    }
+    items = {
+        (int(lang_idx), bin_to_orig[int(feat_idx)])
+        for lang_idx, feat_idx in zip(eval_langs, eval_feats)
+        if int(feat_idx) in bin_to_orig
+    }
+    return len(items)
+
 # ============================================================================
 # 4.  Full Experiment Runner
 # ============================================================================
@@ -436,7 +463,8 @@ def run_experiments(
     Returns
     -------
     results_df : pd.DataFrame with columns
-        [branch, macroarea, in_branch_frac, repeat, model, f1]
+        [branch, macroarea, in_branch_frac, repeat, model, f1,
+         n_train_cells, n_eval_cells, n_eval_items]
     """
     n_langs, n_bfeat = binary_matrix.shape
 
@@ -461,7 +489,13 @@ def run_experiments(
 
         for frac in in_branch_fracs:
             for rep in range(n_repeats):
-                rng = np.random.default_rng(seed=rep * 1000 + branch_to_int[branch] * 37)
+                branch_seed = int.from_bytes(
+                    hashlib.blake2b(
+                        branch.encode("utf-8"), digest_size=4
+                    ).digest(),
+                    "little",
+                )
+                rng = np.random.default_rng(seed=rep * 1000 + branch_seed)
 
                 # --- Split ---
                 train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
@@ -475,6 +509,8 @@ def run_experiments(
                     continue
 
                 n_bfeat_local = binary_matrix.shape[1]
+                n_eval_items = count_eval_items(
+                    eval_langs, eval_feats, feature_groups)
 
                 # --- Majority baseline ---
                 f1_freq = majority_baseline(
@@ -483,7 +519,10 @@ def run_experiments(
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
-                    "model": "Freq", "f1": f1_freq
+                    "model": "Freq", "f1": f1_freq,
+                    "n_train_cells": len(train_ds),
+                    "n_eval_cells": len(eval_vals),
+                    "n_eval_items": n_eval_items,
                 })
 
                 # --- KNN baseline (if pretrained embeddings provided) ---
@@ -496,7 +535,10 @@ def run_experiments(
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
-                        "model": "KNN", "f1": f1_knn
+                        "model": "KNN", "f1": f1_knn,
+                        "n_train_cells": len(train_ds),
+                        "n_eval_cells": len(eval_vals),
+                        "n_eval_items": n_eval_items,
                     })
 
                 # --- T-CF (core model) ---
@@ -512,7 +554,10 @@ def run_experiments(
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
-                    "model": "T-CF", "f1": f1_tcf
+                    "model": "T-CF", "f1": f1_tcf,
+                    "n_train_cells": len(train_ds),
+                    "n_eval_cells": len(eval_vals),
+                    "n_eval_items": n_eval_items,
                 })
                 print(f"    → F1 = {f1_tcf:.4f}")
                 if output_csv:
@@ -535,7 +580,10 @@ def run_experiments(
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
-                        "model": "SemiSup", "f1": f1_ss
+                        "model": "SemiSup", "f1": f1_ss,
+                        "n_train_cells": len(train_ds),
+                        "n_eval_cells": len(eval_vals),
+                        "n_eval_items": n_eval_items,
                     })
                     print(f"    → F1 = {f1_ss:.4f}")
 
@@ -554,6 +602,40 @@ def summarise_results(results_df: pd.DataFrame) -> pd.DataFrame:
                .reset_index())
     summary.columns = ["in_branch_frac", "model", "mean_f1", "std_f1"]
     return summary
+
+
+def summarise_results_weighted(
+    results_df: pd.DataFrame,
+    weight_col: str = "n_eval_items",
+) -> pd.DataFrame:
+    """
+    Summarise results with weighted means.
+
+    Useful for diagnosing branch-composition effects: if macro (unweighted)
+    and weighted summaries differ strongly, the aggregate score is highly
+    sensitive to which branches and branch sizes are present.  The default
+    weight is the number of original held-out feature-language items, not the
+    number of binarised cells, to avoid over-weighting multi-valued features.
+    """
+    if weight_col not in results_df.columns:
+        raise ValueError(f"Missing weight column '{weight_col}' in results_df")
+
+    rows = []
+    grouped = results_df.groupby(["in_branch_frac", "model"], as_index=False)
+    for _, group in grouped:
+        weights = group[weight_col].to_numpy(dtype=float)
+        scores = group["f1"].to_numpy(dtype=float)
+        if np.isclose(weights.sum(), 0.0):
+            weighted_mean = float(np.mean(scores))
+        else:
+            weighted_mean = float(np.average(scores, weights=weights))
+        rows.append({
+            "in_branch_frac": group["in_branch_frac"].iloc[0],
+            "model": group["model"].iloc[0],
+            "weighted_mean_f1": weighted_mean,
+            "n_runs": int(len(group)),
+        })
+    return pd.DataFrame(rows)
 
 
 # ============================================================================
@@ -681,10 +763,13 @@ def main():
     print(f"\nDetailed results saved to {args.output_csv}")
 
     summary = summarise_results(results)
+    weighted_summary = summarise_results_weighted(results)
     print("\n" + "=" * 60)
     print(f"AGGREGATE RESULTS — {args.database.upper()}")
     print("=" * 60)
     print(summary.to_string(index=False))
+    print("\nWeighted by held-out original feature items (diagnostic):")
+    print(weighted_summary.to_string(index=False))
 
 
 if __name__ == "__main__":
