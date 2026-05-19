@@ -415,6 +415,7 @@ def run_experiments(
     min_branch_size: int = 5,
     only_branches: Optional[list] = None,
     freeze_lang: bool = False,
+    output_csv: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -514,6 +515,8 @@ def run_experiments(
                     "model": "T-CF", "f1": f1_tcf
                 })
                 print(f"    → F1 = {f1_tcf:.4f}")
+                if output_csv:
+                    pd.DataFrame(rows).to_csv(output_csv, index=False)
 
                 # --- SemiSup (if pretrained embeddings provided) ---
                 if pretrained_embs is not None:
@@ -670,6 +673,7 @@ def main():
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
         freeze_lang=args.freeze_lang,
+        output_csv=args.output_csv,
     )
 
     # 4. Save and display results
