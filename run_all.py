@@ -183,6 +183,10 @@ def main():
         args.wals_repo = os.path.join(args.output_dir, "wals")
         clone_repo("https://github.com/cldf-datasets/wals.git",
                     args.wals_repo)
+        print("NOTE: Paper (Bjerva et al. 2019) used WALS 2013 website data.")
+        print("      For closest replication, use v2020.4:")
+        print("      git clone --branch v2020.4 https://github.com/cldf-datasets/wals")
+        print("      Current HEAD differs in feature distributions (Freq ~0.52 vs ~0.30).")
     print(f"WALS repo: {args.wals_repo}")
 
     # Bible corpora

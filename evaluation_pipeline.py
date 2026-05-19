@@ -567,7 +567,10 @@ def main():
                         choices=["wals", "grambank"],
                         help="Typological database to use (default: wals)")
     parser.add_argument("--wals_repo", type=str, default=None,
-                        help="Path to cloned cldf-datasets/wals repo")
+                        help="Path to cloned cldf-datasets/wals repo. "
+                             "For replication of Bjerva et al. (2019), "
+                             "use tag v2020.4 (closest available to paper's WALS 2013 data). "
+                             "Current HEAD produces Freq ~0.52 vs paper's ~0.30 due to data updates.")
     parser.add_argument("--grambank_repo", type=str, default=None,
                         help="Path to cloned glottobank/grambank repo")
     parser.add_argument("--glottolog_repo", type=str, default=None,
