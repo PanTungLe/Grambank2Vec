@@ -1,0 +1,34 @@
+{
+  "_annotation": "Silhouette is computed over featvalue embeddings, grouped by parent feature ID. Negative scores are expected (softmax/sigmoid push within-feature values apart while attracting cross-feature implicational pairs).",
+  "_architecture": "tcf",
+  "_database": "grambank",
+  "silhouette_global": -0.38292938470840454,
+  "n_used": 20,
+  "n_features_used": 6,
+  "per_feature": {
+    "GB024": {
+      "n_values": 3,
+      "mean_silhouette": -0.44549116492271423
+    },
+    "GB025": {
+      "n_values": 3,
+      "mean_silhouette": -0.44270059466362
+    },
+    "GB065": {
+      "n_values": 3,
+      "mean_silhouette": -0.354676216840744
+    },
+    "GB130": {
+      "n_values": 3,
+      "mean_silhouette": -0.5290433764457703
+    },
+    "GB193": {
+      "n_values": 4,
+      "mean_silhouette": -0.34703364968299866
+    },
+    "GB203": {
+      "n_values": 4,
+      "mean_silhouette": -0.2386799454689026
+    }
+  }
+}

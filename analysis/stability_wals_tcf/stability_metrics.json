@@ -1,0 +1,162 @@
+{
+  "database": "wals",
+  "architecture": "tcf",
+  "k_seeds": 5,
+  "checkpoints": [
+    "checkpoints/wals_tcf_s42",
+    "checkpoints/wals_tcf_s43",
+    "checkpoints/wals_tcf_s44",
+    "checkpoints/wals_tcf_s45",
+    "checkpoints/wals_tcf_s46"
+  ],
+  "probe_a_jaccard": {
+    "81A=SOV": {
+      "mean_jaccard": 0.42380952380952375,
+      "std_jaccard": 0.09147320339189784,
+      "n_pairs": 10
+    },
+    "81A=SVO": {
+      "mean_jaccard": 0.31071428571428567,
+      "std_jaccard": 0.0690989136234831,
+      "n_pairs": 10
+    },
+    "81A=VSO": {
+      "mean_jaccard": 0.13359993120055041,
+      "std_jaccard": 0.06448229618484091,
+      "n_pairs": 10
+    },
+    "81A=VOS": {
+      "mean_jaccard": 0.026900584795321637,
+      "std_jaccard": 0.03663265441723,
+      "n_pairs": 10
+    },
+    "81A=OVS": {
+      "mean_jaccard": 0.04853801169590643,
+      "std_jaccard": 0.03870708945818225,
+      "n_pairs": 10
+    },
+    "85A=Postpositions": {
+      "mean_jaccard": 0.3881598793363499,
+      "std_jaccard": 0.16514693790189194,
+      "n_pairs": 10
+    },
+    "85A=Prepositions": {
+      "mean_jaccard": 0.40265567765567756,
+      "std_jaccard": 0.07442306058446521,
+      "n_pairs": 10
+    },
+    "55A=Absent": {
+      "mean_jaccard": 0.2952380952380952,
+      "std_jaccard": 0.12682529749484558,
+      "n_pairs": 10
+    },
+    "55A=Obligatory": {
+      "mean_jaccard": 0.11219470244238046,
+      "std_jaccard": 0.09058871496091743,
+      "n_pairs": 10
+    },
+    "55A=Optional": {
+      "mean_jaccard": 0.08383212934296524,
+      "std_jaccard": 0.05526956799145587,
+      "n_pairs": 10
+    },
+    "13A=No tones": {
+      "mean_jaccard": 0.2875942684766214,
+      "std_jaccard": 0.13899949243845444,
+      "n_pairs": 10
+    },
+    "13A=Simple tone system": {
+      "mean_jaccard": 0.03343653250773994,
+      "std_jaccard": 0.05317151564341424,
+      "n_pairs": 10
+    },
+    "13A=Complex tone system": {
+      "mean_jaccard": 0.10356897144822841,
+      "std_jaccard": 0.07300007465095196,
+      "n_pairs": 10
+    }
+  },
+  "probe_b_silhouette": {
+    "mean": -0.7520671725273133,
+    "std": 0.0015806247592182632,
+    "min": -0.7545212507247925,
+    "max": -0.7499500513076782,
+    "per_seed": [
+      -0.753046452999115,
+      -0.7511245012283325,
+      -0.751693606376648,
+      -0.7545212507247925,
+      -0.7499500513076782
+    ]
+  },
+  "probe_c_greenberg": [
+    {
+      "name": "Greenberg-U4 (SOV/Post vs VSO/Prep)",
+      "n_seeds": 5,
+      "residual_mean": 1.4254453659057618,
+      "residual_std": 0.07130355726749384,
+      "p_value_mean": 0.658,
+      "p_value_std": 0.03822041339389201
+    },
+    {
+      "name": "Word-order/Adposition (SVO/Prep vs SOV/Post)",
+      "n_seeds": 5,
+      "residual_mean": 0.36333041191101073,
+      "residual_std": 0.0244523779331583,
+      "p_value_mean": 0.0988,
+      "p_value_std": 0.008352245207128442
+    },
+    {
+      "name": "Tone vs Classifier (SimpleTone/NoClass vs NoTone/ObligClass)",
+      "n_seeds": 5,
+      "residual_mean": 2.7110424518585203,
+      "residual_std": 0.22543179337658378,
+      "p_value_mean": 0.9571999999999999,
+      "p_value_std": 0.015829087149927482
+    }
+  ],
+  "procrustes_stability": {
+    "mean_disparity": 0.12560934887190375,
+    "std_disparity": 0.0049482290616708205,
+    "min_disparity": 0.11818168872105732,
+    "max_disparity": 0.13076580726263376,
+    "n_pairs": 10,
+    "disparity_matrix": [
+      [
+        0.0,
+        0.12650062897966016,
+        0.12917700357483142,
+        0.13076580726263376,
+        0.11818168872105732
+      ],
+      [
+        0.12650062897966016,
+        0.0,
+        0.13056295141153534,
+        0.13030108214660158,
+        0.12209167396886425
+      ],
+      [
+        0.12917700357483142,
+        0.13056295141153534,
+        0.0,
+        0.1295433537409043,
+        0.11921714845369812
+      ],
+      [
+        0.13076580726263376,
+        0.13030108214660158,
+        0.1295433537409043,
+        0.0,
+        0.11975215045925142
+      ],
+      [
+        0.11818168872105732,
+        0.12209167396886425,
+        0.11921714845369812,
+        0.11975215045925142,
+        0.0
+      ]
+    ]
+  }
+}

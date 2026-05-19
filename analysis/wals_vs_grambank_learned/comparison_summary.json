@@ -1,0 +1,59 @@
+{
+  "checkpoint_a": "checkpoints/wals_learned_s42",
+  "checkpoint_b": "checkpoints/grambank_learned_s42",
+  "database_a": "wals",
+  "database_b": "grambank",
+  "architecture_a": "learned",
+  "architecture_b": "learned",
+  "n_langs_a": 1641,
+  "n_langs_b": 2360,
+  "n_shared": 1015,
+  "shared_glottocodes_sample": [
+    "abau1245",
+    "abip1241",
+    "abkh1244",
+    "abua1245",
+    "abui1241",
+    "acha1249",
+    "acha1250",
+    "achi1257",
+    "achu1247",
+    "achu1248"
+  ],
+  "procrustes": {
+    "observed_disparity": 0.7124222676827376,
+    "null_mean": 0.9947366958243073,
+    "null_p5": 0.9929829810713926,
+    "null_p95": 0.9962029809224271,
+    "p_value": 0.0,
+    "n_perm": 500,
+    "interpretation": "Low p-value (< 0.05) means the two embedding spaces are more similar than chance — latent typological structure is shared across databases."
+  },
+  "cca": {
+    "n_components": 10,
+    "canonical_correlations": [
+      0.8987210402231106,
+      0.8340106231538184,
+      0.7241696301235002,
+      0.6892783620055304,
+      0.5528595637009587,
+      0.5214488617405392,
+      0.5031523772749614,
+      0.46517676020145926,
+      0.45294281908900513,
+      0.4302830368557221
+    ],
+    "mean_correlation": 0.6072043074368605
+  },
+  "family_probe": {
+    "n_valid_languages": 922,
+    "n_families": 84,
+    "score_a": 0.3006507592190889,
+    "score_b": 0.38167028199566155,
+    "baseline_mean": 0.053495661605206066,
+    "baseline_p95": 0.05845986984815618,
+    "p_value_a": 0.0,
+    "p_value_b": 0.0
+  },
+  "seed": 42
+}

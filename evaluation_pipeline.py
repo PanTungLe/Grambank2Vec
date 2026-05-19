@@ -32,7 +32,10 @@ import torch
 from sklearn.metrics import f1_score
 
 from model import TypologicalMF, TypologicalMF_SemiSup, WALSDataset, train_model
-from data_preparation import load_wals_cldf, binarise_wals, align_embeddings
+from data_preparation import (
+    load_wals_cldf, load_grambank_cldf, binarise_features, binarise_wals,
+    align_embeddings,
+)
 
 
 # ============================================================================
@@ -430,7 +433,7 @@ def run_experiments(
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
-    n_epochs: int = 10,
+    n_epochs: int = 30,
     batch_size: int = 64,
     lr: float = 1e-3,
     l2_reg: float = 0.1,
@@ -438,6 +441,8 @@ def run_experiments(
     device: str = "cpu",
     min_branch_size: int = 5,
     only_branches: Optional[list] = None,
+    freeze_lang: bool = False,
+    output_csv: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -470,6 +475,9 @@ def run_experiments(
         qualifying = [b for b in qualifying if b in only_branches]
     print(f"\nQualifying branches (≥{min_branch_size} languages): "
           f"{len(qualifying)}")
+
+    branch_list = sorted(qualifying)
+    branch_to_int = {b: i for i, b in enumerate(branch_list)}
 
     rows = []
 
@@ -536,9 +544,9 @@ def run_experiments(
                 # --- T-CF (core model) ---
                 model = TypologicalMF(n_langs, n_bfeat, embed_dim)
                 print(f"\n  [T-CF] branch={branch}, frac={frac}, rep={rep+1}")
-                train_model(model, train_ds, n_epochs=n_epochs,
-                            batch_size=batch_size, lr=lr,
-                            l2_reg=l2_reg, device=device)
+                _losses, _epochs = train_model(model, train_ds, n_epochs=n_epochs,
+                                               batch_size=batch_size, lr=lr,
+                                               l2_reg=l2_reg, device=device)
 
                 f1_tcf = decode_and_evaluate(
                     model, eval_langs, eval_feats, eval_vals,
@@ -552,17 +560,19 @@ def run_experiments(
                     "n_eval_items": n_eval_items,
                 })
                 print(f"    → F1 = {f1_tcf:.4f}")
+                if output_csv:
+                    pd.DataFrame(rows).to_csv(output_csv, index=False)
 
                 # --- SemiSup (if pretrained embeddings provided) ---
                 if pretrained_embs is not None:
                     model_ss = TypologicalMF_SemiSup(
                         pretrained_embs, n_bfeat,
-                        embed_dim=embed_dim, freeze_lang=False)
+                        embed_dim=embed_dim, freeze_lang=freeze_lang)
                     print(f"  [SemiSup] branch={branch}, frac={frac}, "
                           f"rep={rep+1}")
-                    train_model(model_ss, train_ds, n_epochs=n_epochs,
-                                batch_size=batch_size, lr=lr,
-                                l2_reg=l2_reg, device=device)
+                    _losses, _epochs = train_model(model_ss, train_ds, n_epochs=n_epochs,
+                                                   batch_size=batch_size, lr=lr,
+                                                   l2_reg=l2_reg, device=device)
 
                     f1_ss = decode_and_evaluate(
                         model_ss, eval_langs, eval_feats, eval_vals,
@@ -635,33 +645,63 @@ def summarise_results_weighted(
 def main():
     parser = argparse.ArgumentParser(
         description="Replicate typological collaborative filtering experiments")
-    parser.add_argument("--wals_repo", type=str, required=True,
+    parser.add_argument("--database", type=str, default="wals",
+                        choices=["wals", "grambank"],
+                        help="Typological database to use (default: wals)")
+    parser.add_argument("--wals_repo", type=str, default=None,
                         help="Path to cloned cldf-datasets/wals repo")
+    parser.add_argument("--grambank_repo", type=str, default=None,
+                        help="Path to cloned glottobank/grambank repo")
+    parser.add_argument("--glottolog_repo", type=str, default=None,
+                        help="Path to cloned glottolog-cldf repo "
+                             "(for Grambank genus mapping)")
+    parser.add_argument("--genus_source", type=str, default="glottolog",
+                        choices=["glottolog", "family"],
+                        help="Genus source for Grambank (default: glottolog)")
     parser.add_argument("--pretrained_embs", type=str, default=None,
                         help="Path to .npy file with pre-trained language "
                              "embeddings (n_langs × d). Row order must "
-                             "match the WALS languages after filtering.")
+                             "match the languages after filtering.")
     parser.add_argument("--bible_lang_mask", type=str, default=None,
-                        help="Path to .npy boolean mask for Bible ∩ WALS "
+                        help="Path to .npy boolean mask for Bible ∩ database "
                              "filtering. If not provided and --pretrained_embs "
                              "is set, inferred from non-zero embedding rows.")
     parser.add_argument("--embed_dim", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=0.1)
+    parser.add_argument("--l2_reg", type=float, default=0.1,
+                        help="AdamW weight_decay. Default 0.1 matches Bjerva et al.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5,
                         help="Skip branches with fewer languages (paper: >4)")
     parser.add_argument("--branches", type=str, nargs="+", default=None,
                         help="Only evaluate these branches (e.g. --branches Oceanic Slavic)")
+    parser.add_argument("--freeze_lang", action="store_true",
+                        help="Freeze pretrained language embeddings during "
+                             "training. Default is to fine-tune them, as "
+                             "reported in Bjerva et al. (2019). Use "
+                             "--freeze_lang to freeze them.")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
 
-    # 1. Load and binarise WALS from CLDF repo
-    df, feature_cols = load_wals_cldf(args.wals_repo)
-    binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(df, feature_cols)
+    # 1. Load and binarise typological data
+    if args.database == "grambank":
+        if args.grambank_repo is None:
+            parser.error("--grambank_repo is required when --database=grambank")
+        df, feature_cols = load_grambank_cldf(
+            args.grambank_repo,
+            genus_source=args.genus_source,
+            glottolog_repo_dir=args.glottolog_repo,
+        )
+    else:
+        if args.wals_repo is None:
+            parser.error("--wals_repo is required when --database=wals")
+        df, feature_cols = load_wals_cldf(args.wals_repo)
+
+    binary_matrix, bin_names, feature_groups, feature_value_names = \
+        binarise_features(df, feature_cols)
 
     # 2. Optionally load pre-trained language embeddings
     pretrained = None
@@ -669,10 +709,9 @@ def main():
         pretrained = np.load(args.pretrained_embs).astype(np.float32)
         if pretrained.shape[0] != len(df):
             print(f"WARNING: Pretrained embeddings have {pretrained.shape[0]} "
-                  f"rows but WALS has {len(df)} languages. "
+                  f"rows but database has {len(df)} languages. "
                   f"Assuming embeddings are already aligned or will be padded.")
             if pretrained.shape[0] < len(df):
-                # Pad with zeros
                 padded = np.zeros((len(df), pretrained.shape[1]),
                                   dtype=np.float32)
                 padded[:pretrained.shape[0]] = pretrained
@@ -681,8 +720,8 @@ def main():
                 pretrained = pretrained[:len(df)]
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
 
-    # 2b. Filter to Bible ∩ WALS intersection (paper §7.1)
-    if pretrained is not None:
+    # 2b. Filter to Bible ∩ database intersection (paper §7.1)
+    if args.bible_lang_mask or pretrained is not None:
         if args.bible_lang_mask:
             has_bible = np.load(args.bible_lang_mask).astype(bool)
         else:
@@ -690,11 +729,15 @@ def main():
         n_before = len(df)
         df = df[has_bible].reset_index(drop=True)
         binary_matrix = binary_matrix[has_bible]
-        pretrained = pretrained[has_bible]
+        if pretrained is not None:
+            pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
-        binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(
-            df, feature_cols)
-        print(f"Bible ∩ WALS filter: {n_before} → {len(df)} languages")
+        binary_matrix, bin_names, feature_groups, feature_value_names = \
+            binarise_features(df, feature_cols)
+        print(f"Bible ∩ database filter: {n_before} → {len(df)} languages")
+    else:
+        print("WARNING: No Bible filter applied — results not comparable "
+              "to Bjerva et al. Table 1")
 
     # 3. Run experiments
     results = run_experiments(
@@ -711,6 +754,8 @@ def main():
         device=args.device,
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
+        freeze_lang=args.freeze_lang,
+        output_csv=args.output_csv,
     )
 
     # 4. Save and display results
@@ -720,7 +765,7 @@ def main():
     summary = summarise_results(results)
     weighted_summary = summarise_results_weighted(results)
     print("\n" + "=" * 60)
-    print("AGGREGATE RESULTS (cf. Table 1 in the paper)")
+    print(f"AGGREGATE RESULTS — {args.database.upper()}")
     print("=" * 60)
     print(summary.to_string(index=False))
     print("\nWeighted by held-out original feature items (diagnostic):")

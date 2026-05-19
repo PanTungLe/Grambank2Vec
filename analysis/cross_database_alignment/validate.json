@@ -1,0 +1,270 @@
+{
+  "mode": "validate",
+  "results_by_approach": {
+    "A": {
+      "high": {
+        "n_pairs": 15,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0116
+      },
+      "medium": {
+        "n_pairs": 1,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0
+      },
+      "low": {
+        "n_pairs": 3,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0326
+      }
+    },
+    "B": {
+      "high": {
+        "n_pairs": 15,
+        "recall_at_1": 0.2,
+        "recall_at_3": 0.6,
+        "recall_at_5": 0.8,
+        "recall_at_10": 0.8667,
+        "mrr": 0.4466
+      },
+      "medium": {
+        "n_pairs": 1,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "mrr": 0.25
+      },
+      "low": {
+        "n_pairs": 3,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.3333,
+        "recall_at_10": 0.3333,
+        "mrr": 0.0985
+      }
+    },
+    "C": {
+      "high": {
+        "n_pairs": 15,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.1333,
+        "recall_at_5": 0.2,
+        "recall_at_10": 0.3333,
+        "mrr": 0.1198
+      },
+      "medium": {
+        "n_pairs": 1,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "mrr": 0.0116
+      },
+      "low": {
+        "n_pairs": 3,
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.3333,
+        "mrr": 0.0549
+      }
+    }
+  },
+  "acceptance": {
+    "criterion": "top-10 recall ≥ 0.5 on high-confidence pairs",
+    "best_top10_recall": 0.8667,
+    "passed": true
+  },
+  "n_high": 15,
+  "n_medium": 1,
+  "n_low": 3,
+  "smoke": false,
+  "elapsed_seconds": 0.203,
+  "per_pair_approach_b": [
+    {
+      "wals": "81A=SOV",
+      "grambank_targets": [
+        "GB133=1"
+      ],
+      "best_grambank_hit": "GB133=1",
+      "rank_B": 1,
+      "sim_B": 0.8916,
+      "hit_at_10": true,
+      "note": "verb-final transitive"
+    },
+    {
+      "wals": "81A=VSO",
+      "grambank_targets": [
+        "GB131=1"
+      ],
+      "best_grambank_hit": "GB131=1",
+      "rank_B": 2,
+      "sim_B": 0.8568,
+      "hit_at_10": true,
+      "note": "verb-initial transitive"
+    },
+    {
+      "wals": "81A=SVO",
+      "grambank_targets": [
+        "GB132=1"
+      ],
+      "best_grambank_hit": "GB132=1",
+      "rank_B": 2,
+      "sim_B": 0.8733,
+      "hit_at_10": true,
+      "note": "verb-medial transitive"
+    },
+    {
+      "wals": "85A=Prepositions",
+      "grambank_targets": [
+        "GB074=1"
+      ],
+      "best_grambank_hit": "GB074=1",
+      "rank_B": 1,
+      "sim_B": 0.9019,
+      "hit_at_10": true,
+      "note": "prepositions present"
+    },
+    {
+      "wals": "85A=Postpositions",
+      "grambank_targets": [
+        "GB075=1"
+      ],
+      "best_grambank_hit": "GB075=1",
+      "rank_B": 4,
+      "sim_B": 0.9143,
+      "hit_at_10": true,
+      "note": "postpositions present"
+    },
+    {
+      "wals": "86A=Genitive-Noun",
+      "grambank_targets": [
+        "GB065=1"
+      ],
+      "best_grambank_hit": "GB065=1",
+      "rank_B": 5,
+      "sim_B": 0.9402,
+      "hit_at_10": true,
+      "note": "possessor precedes possessed (=genitive-noun); corrected from seed GB089"
+    },
+    {
+      "wals": "86A=Noun-Genitive",
+      "grambank_targets": [
+        "GB065=2"
+      ],
+      "best_grambank_hit": "GB065=2",
+      "rank_B": 3,
+      "sim_B": 0.9043,
+      "hit_at_10": true,
+      "note": "possessed precedes possessor (=noun-genitive); corrected from seed GB089"
+    },
+    {
+      "wals": "87A=Adjective-Noun",
+      "grambank_targets": [
+        "GB193=1"
+      ],
+      "best_grambank_hit": "GB193=1",
+      "rank_B": 4,
+      "sim_B": 0.8671,
+      "hit_at_10": true,
+      "note": "ANM-N (adnominal property word precedes noun)"
+    },
+    {
+      "wals": "87A=Noun-Adjective",
+      "grambank_targets": [
+        "GB193=2"
+      ],
+      "best_grambank_hit": "GB193=2",
+      "rank_B": 8,
+      "sim_B": 0.9461,
+      "hit_at_10": true,
+      "note": "N-ANM (noun precedes adnominal property word)"
+    },
+    {
+      "wals": "88A=Demonstrative-Noun",
+      "grambank_targets": [
+        "GB025=1"
+      ],
+      "best_grambank_hit": "GB025=1",
+      "rank_B": 2,
+      "sim_B": 0.9234,
+      "hit_at_10": true,
+      "note": "Dem-N order; corrected from missing GB202 to GB025"
+    },
+    {
+      "wals": "88A=Noun-Demonstrative",
+      "grambank_targets": [
+        "GB025=2"
+      ],
+      "best_grambank_hit": "GB025=2",
+      "rank_B": 1,
+      "sim_B": 0.9232,
+      "hit_at_10": true,
+      "note": "N-Dem order; corrected from missing GB202 to GB025"
+    },
+    {
+      "wals": "89A=Numeral-Noun",
+      "grambank_targets": [
+        "GB203=1"
+      ],
+      "best_grambank_hit": "GB203=1",
+      "rank_B": 2,
+      "sim_B": 0.9061,
+      "hit_at_10": true,
+      "note": "UQ-N quantifier order; best Grambank proxy for numeral-noun (no dedicated GB feature)"
+    },
+    {
+      "wals": "89A=Noun-Numeral",
+      "grambank_targets": [
+        "GB203=2"
+      ],
+      "best_grambank_hit": "GB203=2",
+      "rank_B": 2,
+      "sim_B": 0.9254,
+      "hit_at_10": true,
+      "note": "N-UQ quantifier order; best Grambank proxy for noun-numeral"
+    },
+    {
+      "wals": "37A=Definite word distinct from demonstrative",
+      "grambank_targets": [
+        "GB020=1"
+      ],
+      "best_grambank_hit": "GB020=1",
+      "rank_B": 25,
+      "sim_B": 0.9511,
+      "hit_at_10": false,
+      "note": "definite/specific article present"
+    },
+    {
+      "wals": "38A=Indefinite word distinct from 'one'",
+      "grambank_targets": [
+        "GB021=1"
+      ],
+      "best_grambank_hit": null,
+      "rank_B": null,
+      "sim_B": null,
+      "hit_at_10": false,
+      "note": "indefinite article present"
+    }
+  ],
+  "missed_diagnostics": {
+    "37A=Definite word distinct from demonstrative": {
+      "rank_B": 25,
+      "diagnostic": "Domain: nominal-categories / definiteness. GB020=1 lands at rank 25 (sim=0.9511) — the signal is present but the WALS 37A language profile is dominated by a head-initial areal cluster (ranks 1–24 are all word-order and adposition features such as GB074=1, GB075=0, GB133=0), which drowns out the definiteness correspondence. The mismatch arises because definiteness marking co-occurs with head-initial word order areally (e.g. European languages), so the language-profile similarity peak falls on word-order features, not on Grambank's binary definiteness feature."
+    },
+    "38A=Indefinite word distinct from 'one'": {
+      "rank_B": null,
+      "diagnostic": "Domain: nominal-categories / indefiniteness. GB021=1 is absent from the top-100 entirely (Approach B) and only at rank 97 in Approach C (sim=0.097). The probable cause is critically sparse Grambank coverage of GB021 across the ~1015 shared WALS/Grambank languages: a near-zero profile vector produces essentially random cosine similarities. This is a documentation-gap failure — WALS 38A is well attested but Grambank does not code GB021 for most of the same languages, leaving insufficient shared signal for profile-based alignment."
+    }
+  }
+}

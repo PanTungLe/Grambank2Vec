@@ -1,7 +1,7 @@
 """
 Data Preparation for Typological Collaborative Filtering
 ==========================================================
-Handles loading from two specific sources:
+Handles loading from typological databases and Bible corpora:
 
 1. WALS: https://github.com/cldf-datasets/wals
    CLDF StructureDataset with files:
@@ -10,7 +10,13 @@ Handles loading from two specific sources:
      - cldf/codes.csv       (ID, Parameter_ID, Name)
      - cldf/parameters.csv  (ID, Name, ...)
 
-2. eBible: https://github.com/BibleNLP/ebible
+2. Grambank: https://github.com/glottobank/grambank
+   CLDF StructureDataset with ~2,400 languages and ~200 features.
+   Features are MOSTLY binary (0/1), but some have 3+ values.
+   Uses Glottocodes as language IDs. No genus column — genealogical
+   groupings come from Glottolog classification or the Family column.
+
+3. eBible: https://github.com/BibleNLP/ebible
    Multilingual parallel Bible corpus (~1079 translations).
    Verse-per-line format: each translation is a plain-text file with one
    verse per line (no verse reference prefix). A companion vref.txt provides
@@ -144,6 +150,402 @@ def load_wals_cldf(
     df = df.drop(columns=drop_feats)
 
     print(f"Loaded WALS: {len(df)} languages, {len(feature_cols)} features")
+    return df, feature_cols
+
+
+# ============================================================================
+# 1b.  Grambank Loading from CLDF
+# ============================================================================
+
+def _extract_glottolog_genus(
+    classification: str,
+    level: int = 2,
+) -> Optional[str]:
+    """
+    Extract a genus-level grouping from a Glottolog classification string.
+
+    Glottolog classification strings look like:
+        "Indo-European/Germanic/West Germanic/..."
+    We extract the node at `level` (0-indexed from root).
+
+    For level=1 this gives the top-level sub-family (e.g. "Germanic"),
+    which is closest to WALS's genus concept for most families.
+
+    Parameters
+    ----------
+    classification : str
+        Full classification path separated by "/".
+    level : int
+        Which node to extract (0 = family, 1 = first sub-group, etc.).
+
+    Returns
+    -------
+    genus : str or None if the classification doesn't have enough depth.
+    """
+    if not classification or pd.isna(classification):
+        return None
+    parts = [p.strip() for p in classification.split("/") if p.strip()]
+    if len(parts) > level:
+        return parts[level]
+    # Not deep enough — return the deepest available node
+    return parts[-1] if parts else None
+
+
+def load_glottolog_genus_map(
+    glottolog_repo_dir: str,
+    genus_level: int = 2,
+) -> Dict[str, str]:
+    """
+    Build a Glottocode → genus mapping from Glottolog's CLDF languages.csv.
+
+    The Glottolog CLDF dataset (https://github.com/glottolog/glottolog-cldf)
+    has a languages.csv with columns including Glottocode and
+    Classification (a "/" separated genealogical path).
+
+    Supports multiple Glottolog CLDF versions:
+    - Versions with a Classification / classification / Classification_Path /
+      classification_path column → parse the "/" separated path directly.
+    - Versions without a classification column but with Family_ID and
+      Parent_ID → reconstruct a shallow hierarchy from the parent chain.
+    - Falls back to Family column if neither approach works.
+
+    Parameters
+    ----------
+    glottolog_repo_dir : str
+        Path to the cloned glottolog-cldf repo.
+    genus_level : int
+        Which level of the classification tree to use as "genus".
+        Level 0 = family, 1 = first sub-group (closest to WALS genus), etc.
+
+    Returns
+    -------
+    genus_map : dict mapping Glottocode → genus string
+    """
+    import warnings
+
+    cldf_dir = os.path.join(glottolog_repo_dir, "cldf")
+    lang_csv = os.path.join(cldf_dir, "languages.csv")
+
+    if not os.path.exists(lang_csv):
+        raise FileNotFoundError(
+            f"Glottolog languages.csv not found at {lang_csv}. "
+            f"Please clone https://github.com/glottolog/glottolog-cldf")
+
+    gl_langs = pd.read_csv(lang_csv, low_memory=False)
+    gl_langs.columns = [c.strip() for c in gl_langs.columns]
+
+    # --- Identify the Glottocode column ---
+    glottocode_col = None
+    for c in gl_langs.columns:
+        cl = c.lower()
+        if cl in ("id", "glottocode", "language_id"):
+            glottocode_col = c
+            break
+    if glottocode_col is None:
+        raise ValueError("Cannot find Glottocode column in Glottolog CSV. "
+                         f"Available columns: {list(gl_langs.columns)}")
+
+    # --- Strategy 1: look for a classification path column ---
+    class_col = None
+    # Try exact and normalised column names across known Glottolog versions
+    candidates = ("Classification", "classification",
+                  "Classification_Path", "classification_path",
+                  "Classification_path", "classificationpath")
+    for c in gl_langs.columns:
+        if c in candidates or c.lower().replace("_", "").replace(" ", "") in (
+                "classification", "classificationpath"):
+            class_col = c
+            break
+
+    genus_map: Dict[str, str] = {}
+
+    if class_col is not None:
+        for _, row in gl_langs.iterrows():
+            gc = str(row[glottocode_col]).strip()
+            classification = str(row.get(class_col, ""))
+            genus = _extract_glottolog_genus(classification, genus_level)
+            if genus:
+                genus_map[gc] = genus
+        print(f"Loaded Glottolog genus map (classification column): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
+
+    # --- Strategy 2: reconstruct hierarchy from Family_ID + Parent_ID ---
+    family_id_col = None
+    parent_id_col = None
+    name_col = None
+    for c in gl_langs.columns:
+        cl = c.lower()
+        if cl in ("family_id", "familyid"):
+            family_id_col = c
+        elif cl in ("parent_id", "parentid"):
+            parent_id_col = c
+        elif cl == "name":
+            name_col = c
+
+    if family_id_col is not None and parent_id_col is not None:
+        print("No classification column found; reconstructing hierarchy "
+              "from Family_ID + Parent_ID ...")
+
+        # Build ID → name and ID → parent lookups
+        id_to_name: Dict[str, str] = {}
+        id_to_parent: Dict[str, str] = {}
+        for _, row in gl_langs.iterrows():
+            gid = str(row[glottocode_col]).strip()
+            parent = str(row.get(parent_id_col, "")).strip()
+            nm = str(row.get(name_col, gid)).strip() if name_col else gid
+            id_to_name[gid] = nm
+            if parent and parent != "nan" and parent != gid:
+                id_to_parent[gid] = parent
+
+        # Walk up the parent chain for each language to build a path,
+        # then extract the node at the desired genus_level
+        for _, row in gl_langs.iterrows():
+            gc = str(row[glottocode_col]).strip()
+            # Build ancestor chain (child → ... → root)
+            chain = []
+            cur = gc
+            seen = set()
+            while cur and cur not in seen:
+                seen.add(cur)
+                chain.append(id_to_name.get(cur, cur))
+                cur = id_to_parent.get(cur)
+            # chain is [self, parent, grandparent, ..., root]
+            # Reverse to get [root, ..., self] = classification path
+            chain.reverse()
+            genus = _extract_glottolog_genus("/".join(chain), genus_level)
+            if genus:
+                genus_map[gc] = genus
+
+        print(f"Loaded Glottolog genus map (Parent_ID hierarchy): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
+
+    # --- Strategy 3: fall back to Family column ---
+    family_col = None
+    for c in gl_langs.columns:
+        if c.lower() == "family":
+            family_col = c
+            break
+
+    if family_col is not None:
+        warnings.warn(
+            "Glottolog CSV has no Classification or Parent_ID column. "
+            "Falling back to Family column for genus mapping. "
+            "This is coarser than classification-based genus and results "
+            "may not be comparable to WALS genus-based evaluation.")
+        for _, row in gl_langs.iterrows():
+            gc = str(row[glottocode_col]).strip()
+            family = str(row.get(family_col, "")).strip()
+            if family and family != "nan":
+                genus_map[gc] = family
+        print(f"Loaded Glottolog genus map (Family fallback): "
+              f"{len(genus_map)} Glottocodes")
+        return genus_map
+
+    # --- Nothing worked ---
+    warnings.warn(
+        f"Could not extract genus information from Glottolog CSV at "
+        f"{lang_csv}. Available columns: {list(gl_langs.columns)}. "
+        f"Genus mapping will be empty; genus_source='family' will be "
+        f"used as fallback in load_grambank_cldf().")
+    return genus_map
+
+
+def load_grambank_cldf(
+    grambank_repo_dir: str,
+    min_lang_features: int = 10,
+    min_feature_value_langs: int = 10,
+    genus_source: str = "glottolog",
+    glottolog_repo_dir: Optional[str] = None,
+    glottolog_genus_level: int = 2,
+) -> Tuple[pd.DataFrame, list]:
+    """
+    Load Grambank directly from the glottobank/grambank repository.
+
+    Grambank features are MOSTLY binary (0/1), but some have 3+ values.
+    Values are treated as categorical string labels (via codes.csv),
+    NOT as numeric — this is critical for correct model behaviour.
+
+    For the "genus" equivalent needed by the branch-based evaluation:
+      - genus_source="glottolog": Uses Glottolog classification (most accurate,
+        requires glottolog_repo_dir to point at glottolog-cldf).
+      - genus_source="family": Uses Grambank's Family column directly. This is
+        coarser than WALS's genus and results may not be directly comparable.
+
+    Parameters
+    ----------
+    grambank_repo_dir : str
+        Path to the cloned grambank repo (containing a cldf/ subdirectory).
+    min_lang_features : int
+        Drop languages with fewer than this many observed features.
+    min_feature_value_langs : int
+        Drop feature values observed in fewer than this many languages.
+    genus_source : str
+        "glottolog" (default) or "family".
+    glottolog_repo_dir : str or None
+        Path to cloned glottolog-cldf repo. Required when genus_source="glottolog".
+    glottolog_genus_level : int
+        Classification tree level for genus extraction (default 2).
+        Level 0 = family root, 1 = major sub-group, 2 = sub-sub-group.
+
+    Returns
+    -------
+    df : pd.DataFrame  – one row per language, with columns:
+        glottocode, name, genus, family, macroarea, feat_GB020, ...
+    feature_cols : list of str
+    """
+    cldf_dir = os.path.join(grambank_repo_dir, "cldf")
+
+    # --- Load component CSVs ---
+    languages = pd.read_csv(os.path.join(cldf_dir, "languages.csv"))
+    values = pd.read_csv(os.path.join(cldf_dir, "values.csv"))
+    codes = pd.read_csv(os.path.join(cldf_dir, "codes.csv"))
+    parameters = pd.read_csv(os.path.join(cldf_dir, "parameters.csv"))
+
+    # Normalise column names
+    languages.columns = [c.strip() for c in languages.columns]
+    values.columns = [c.strip() for c in values.columns]
+    codes.columns = [c.strip() for c in codes.columns]
+    parameters.columns = [c.strip() for c in parameters.columns]
+
+    # --- Build human-readable value labels from codes.csv ---
+    # Grambank Code_IDs look like "GB020-1", "GB020-0", etc.
+    code_to_name = dict(zip(codes["ID"], codes["Name"]))
+
+    # --- Filter out missing/empty values ---
+    # Some Grambank entries have empty strings or special values for missing data
+    values = values[values["Value"].notna()].copy()
+    values = values[values["Value"].astype(str).str.strip() != ""].copy()
+    values = values[values["Value"].astype(str).str.strip() != "?"].copy()
+   
+    # --- Map values to human-readable labels ---
+    # Grambank Value column contains "0", "1", "2", "3" as strings.
+    # We use Code_ID → Name mapping for human-readable labels.
+    # If Code_ID is missing, fall back to "Value_<raw>" to keep them categorical.
+    values["Value_Label"] = values["Code_ID"].map(code_to_name)
+    values["Value_Label"] = values["Value_Label"].astype(object)
+
+    # Handle missing Code_IDs: use the raw Value with a prefix
+    mask_no_label = values["Value_Label"].isna()
+    if mask_no_label.any():
+        values.loc[mask_no_label, "Value_Label"] = (
+            "value_" + values.loc[mask_no_label, "Value"].astype(str))
+
+    # --- Filter out "?" values (uncertain/not determinable) ---
+    # Grambank uses "?" to mark uncertain or indeterminate observations.
+    # These must be removed BEFORE the pivot — otherwise they become
+    # spurious categorical values like "value_?" during training.
+    n_before_q = len(values)
+    # Remove rows where the raw Value is literally "?"
+    mask_q_raw = values["Value"].astype(str).str.strip() == "?"
+    # Safety net: also remove rows where the human-readable label indicates
+    # uncertainty, since some codes.csv entries may give "?" a descriptive name
+    uncertain_patterns = r"(?i)^(not\s+known|uncertain|not\s+applicable)$"
+    mask_q_label = values["Value_Label"].astype(str).str.strip().str.match(
+        uncertain_patterns, na=False)
+    values = values[~(mask_q_raw | mask_q_label)].copy()
+    n_filtered_q = n_before_q - len(values)
+    if n_filtered_q > 0:
+        print(f"Filtered {n_filtered_q} observations with Value=\"?\" "
+              f"(uncertain/not determinable)")
+
+    # --- Pivot: one row per language, one column per feature ---
+    values["feat_col"] = "feat_" + values["Parameter_ID"].astype(str)
+
+    wide = values.pivot_table(
+        index="Language_ID",
+        columns="feat_col",
+        values="Value_Label",
+        aggfunc="first",
+    )
+    wide = wide.reset_index().rename(columns={"Language_ID": "glottocode"})
+
+    # --- Merge with language metadata ---
+    # Find the Glottocode/ID column in languages.csv
+    lang_id_col = None
+    for c in languages.columns:
+        cl = c.lower()
+        if cl in ("id", "glottocode", "language_id"):
+            lang_id_col = c
+            break
+    if lang_id_col is None:
+        lang_id_col = languages.columns[0]
+
+    lang_meta = languages.rename(columns={lang_id_col: "glottocode"})
+
+    # Normalise metadata column names
+    col_map = {}
+    for c in lang_meta.columns:
+        cl = c.lower()
+        if cl == "name":
+            col_map[c] = "name"
+        elif cl in ("family", "family_name"):
+            col_map[c] = "family"
+        elif cl == "macroarea":
+            col_map[c] = "macroarea"
+    lang_meta = lang_meta.rename(columns=col_map)
+
+    keep_cols = ["glottocode"]
+    for col in ["name", "family", "macroarea"]:
+        if col in lang_meta.columns:
+            keep_cols.append(col)
+    lang_meta = lang_meta[keep_cols].drop_duplicates(subset="glottocode")
+
+    df = lang_meta.merge(wide, on="glottocode", how="inner")
+
+    # --- Identify feature columns ---
+    feature_cols = [c for c in df.columns if c.startswith("feat_")]
+
+    # --- Apply filters ---
+    # Filter languages with too few features
+    obs_counts = df[feature_cols].notna().sum(axis=1)
+    df = df[obs_counts >= min_lang_features].reset_index(drop=True)
+
+    # Filter feature values with too few languages
+    for col in feature_cols:
+        vc = df[col].value_counts()
+        rare_vals = vc[vc < min_feature_value_langs].index
+        df.loc[df[col].isin(rare_vals), col] = np.nan
+
+    # Drop features that are now entirely NaN
+    all_nan = df[feature_cols].isna().all()
+    drop_feats = all_nan[all_nan].index.tolist()
+    feature_cols = [c for c in feature_cols if c not in drop_feats]
+    df = df.drop(columns=drop_feats)
+
+    # --- Build genus column for branch-based evaluation ---
+    if genus_source == "glottolog" and glottolog_repo_dir is not None:
+        genus_map = load_glottolog_genus_map(
+            glottolog_repo_dir, genus_level=glottolog_genus_level)
+        df["genus"] = df["glottocode"].map(genus_map)
+        # Languages without a Glottolog genus: fall back to Family
+        if "family" in df.columns:
+            no_genus = df["genus"].isna()
+            df.loc[no_genus, "genus"] = df.loc[no_genus, "family"]
+        n_with_genus = df["genus"].notna().sum()
+        print(f"Genus from Glottolog: {n_with_genus}/{len(df)} languages "
+              f"have genus assignments")
+    elif genus_source == "glottolog" and glottolog_repo_dir is None:
+        import warnings
+        warnings.warn(
+            "genus_source='glottolog' but no glottolog_repo_dir provided. "
+            "Falling back to genus_source='family'. Results may not be "
+            "directly comparable to WALS genus-based evaluation.")
+        genus_source = "family"
+
+    if genus_source == "family":
+        if "family" in df.columns:
+            df["genus"] = df["family"]
+        else:
+            df["genus"] = "Unknown"
+        print(f"WARNING: Using Grambank Family as genus equivalent. "
+              f"This is coarser than WALS genus — results may differ.")
+
+    # Drop languages without a genus assignment
+    df = df[df["genus"].notna()].reset_index(drop=True)
+
+    print(f"Loaded Grambank: {len(df)} languages, {len(feature_cols)} features")
     return df, feature_cols
 
 
@@ -560,16 +962,27 @@ def match_wals_to_bible(
 
 
 # ============================================================================
-# 5.  Binarisation (same as before, but included here for completeness)
+# 5.  Binarisation (database-agnostic: works on WALS, Grambank, or any
+#     DataFrame with categorical feature columns)
 # ============================================================================
 
-def binarise_wals(
+def binarise_features(
     df: pd.DataFrame,
     feature_cols: list,
 ) -> Tuple[np.ndarray, list, dict, dict]:
     """
-    Binarise WALS features following the paper's protocol (Section 6):
+    Binarise typological features following the paper's protocol (Section 6).
 
+    Works on any DataFrame with categorical feature columns — WALS, Grambank,
+    or any other typological database.
+
+    For Grambank: most features are already binary (2-valued, 0/1), so
+    binarisation mostly produces single columns rather than one-hot expansions.
+    The binary matrix will be closer to the original data than for WALS.
+    Features with 3+ values (which exist in Grambank) get proper one-hot
+    treatment.
+
+    Protocol:
     - Features with exactly 2 values → single binary column
       (first value alphabetically → 0, second → 1).
     - Features with ≥ 3 values → one-hot encoded into n binary columns.
@@ -628,6 +1041,10 @@ def binarise_wals(
     print(f"Binarised matrix: {binary_matrix.shape[0]} langs × "
           f"{binary_matrix.shape[1]} binary features")
     return binary_matrix, binary_col_names, feature_groups, feature_value_names
+
+
+# Backwards compatibility alias
+binarise_wals = binarise_features
 
 
 # ============================================================================

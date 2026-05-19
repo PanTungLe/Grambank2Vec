@@ -1,0 +1,46 @@
+{
+  "_annotation": "Residual = ||(a_pos - a_neg) - (b_pos - b_neg)||. Low empirical p-value \u21d2 residual is unusually small \u21d2 analogy is supported.",
+  "_architecture": "learned",
+  "_database": "wals",
+  "results": [
+    {
+      "name": "Greenberg-U4 (SOV/Post vs VSO/Prep)",
+      "a_pos": "81A=SOV",
+      "a_neg": "85A=Postpositions",
+      "b_pos": "81A=VSO",
+      "b_neg": "85A=Prepositions",
+      "residual": 1.4216389656066895,
+      "baseline_mean": 1.806097391679883,
+      "baseline_p5": 0.995972391963005,
+      "baseline_median": 1.7542015314102173,
+      "empirical_p_value": 0.2515,
+      "n_baseline": 10000
+    },
+    {
+      "name": "Word-order/Adposition (SVO/Prep vs SOV/Post)",
+      "a_pos": "81A=SVO",
+      "a_neg": "85A=Prepositions",
+      "b_pos": "81A=SOV",
+      "b_neg": "85A=Postpositions",
+      "residual": 1.4687458276748657,
+      "baseline_mean": 1.8134851193293928,
+      "baseline_p5": 1.002576518058777,
+      "baseline_median": 1.759223997592926,
+      "empirical_p_value": 0.2772,
+      "n_baseline": 10000
+    },
+    {
+      "name": "Tone vs Classifier (SimpleTone/NoClass vs NoTone/ObligClass)",
+      "a_pos": "13A=Simple tone system",
+      "a_neg": "55A=Absent",
+      "b_pos": "13A=No tones",
+      "b_neg": "55A=Obligatory",
+      "residual": 2.8881537914276123,
+      "baseline_mean": 1.8010667771846056,
+      "baseline_p5": 1.0080840468406678,
+      "baseline_median": 1.7556536793708801,
+      "empirical_p_value": 0.9644,
+      "n_baseline": 10000
+    }
+  ]
+}

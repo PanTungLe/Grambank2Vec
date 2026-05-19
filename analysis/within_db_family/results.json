@@ -1,0 +1,258 @@
+{
+  "wals_learned": {
+    "setting": "wals_learned",
+    "n_seeds": 5,
+    "score_mean": 0.27722932078009416,
+    "score_std": 0.004073621197960321,
+    "score_min": 0.27202420981842634,
+    "score_max": 0.28110289172831204,
+    "baseline_mean": 0.04380984532616006,
+    "n_valid_languages": 1487,
+    "n_total_languages": 1641,
+    "n_families": 128,
+    "per_seed": [
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.27202420981842634,
+        "baseline_mean": 0.04375655682582381,
+        "baseline_p95": 0.04714189643577673,
+        "p_value": 0.0,
+        "seed": 42
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.280497646267653,
+        "baseline_mean": 0.043812642905178216,
+        "baseline_p95": 0.04721587088096839,
+        "p_value": 0.0,
+        "seed": 43
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.28110289172831204,
+        "baseline_mean": 0.043777000672494966,
+        "baseline_p95": 0.04734700739744452,
+        "p_value": 0.0,
+        "seed": 44
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.2786819098856758,
+        "baseline_mean": 0.043889307330195027,
+        "baseline_p95": 0.047350369872225954,
+        "p_value": 0.0,
+        "seed": 45
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.2738399462004035,
+        "baseline_mean": 0.04381371889710827,
+        "baseline_p95": 0.04701412239408204,
+        "p_value": 0.0,
+        "seed": 46
+      }
+    ]
+  },
+  "wals_tcf": {
+    "setting": "wals_tcf",
+    "n_seeds": 5,
+    "score_mean": 0.1249226630800269,
+    "score_std": 0.0048927416645566406,
+    "score_min": 0.11640887693342301,
+    "score_max": 0.12844653665097513,
+    "baseline_mean": 0.043863322125084064,
+    "n_valid_languages": 1487,
+    "n_total_languages": 1641,
+    "n_families": 128,
+    "per_seed": [
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.12757229320780095,
+        "baseline_mean": 0.04375332885003363,
+        "baseline_p95": 0.04748150638870208,
+        "p_value": 0.0,
+        "seed": 42
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.12844653665097513,
+        "baseline_mean": 0.04396435776731674,
+        "baseline_p95": 0.0474142568930733,
+        "p_value": 0.0,
+        "seed": 43
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.12683254875588434,
+        "baseline_mean": 0.043831741761936785,
+        "baseline_p95": 0.047276395427034296,
+        "p_value": 0.0,
+        "seed": 44
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.11640887693342301,
+        "baseline_mean": 0.04394660390047075,
+        "baseline_p95": 0.04754539340954943,
+        "p_value": 0.0,
+        "seed": 45
+      },
+      {
+        "n_valid_languages": 1487,
+        "n_total_languages": 1641,
+        "n_families": 128,
+        "score": 0.1253530598520511,
+        "baseline_mean": 0.043820578345662414,
+        "baseline_p95": 0.04734700739744452,
+        "p_value": 0.0,
+        "seed": 46
+      }
+    ]
+  },
+  "grambank_learned": {
+    "setting": "grambank_learned",
+    "n_seeds": 5,
+    "score_mean": 0.4483978873239437,
+    "score_std": 0.0034607219760358775,
+    "score_min": 0.4457746478873239,
+    "score_max": 0.45422535211267606,
+    "baseline_mean": 0.08476980633802816,
+    "n_valid_languages": 2272,
+    "n_total_languages": 2360,
+    "n_families": 129,
+    "per_seed": [
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.45422535211267606,
+        "baseline_mean": 0.08485836267605633,
+        "baseline_p95": 0.08891065140845071,
+        "p_value": 0.0,
+        "seed": 42
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.4457746478873239,
+        "baseline_mean": 0.08474674295774648,
+        "baseline_p95": 0.08856073943661973,
+        "p_value": 0.0,
+        "seed": 43
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.4477552816901409,
+        "baseline_mean": 0.08476232394366197,
+        "baseline_p95": 0.08882042253521127,
+        "p_value": 0.0,
+        "seed": 44
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.44841549295774646,
+        "baseline_mean": 0.0848343309859155,
+        "baseline_p95": 0.08877640845070423,
+        "p_value": 0.0,
+        "seed": 45
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.44581866197183095,
+        "baseline_mean": 0.08464727112676056,
+        "baseline_p95": 0.08860255281690141,
+        "p_value": 0.0,
+        "seed": 46
+      }
+    ]
+  },
+  "grambank_tcf": {
+    "setting": "grambank_tcf",
+    "n_seeds": 5,
+    "score_mean": 0.2302552816901408,
+    "score_std": 0.031133184637377617,
+    "score_min": 0.18970070422535215,
+    "score_max": 0.27275528169014085,
+    "baseline_mean": 0.08472014084507043,
+    "n_valid_languages": 2272,
+    "n_total_languages": 2360,
+    "n_families": 129,
+    "per_seed": [
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.27275528169014085,
+        "baseline_mean": 0.08485017605633803,
+        "baseline_p95": 0.0883824823943662,
+        "p_value": 0.0,
+        "seed": 42
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.2136443661971831,
+        "baseline_mean": 0.0846656690140845,
+        "baseline_p95": 0.0883824823943662,
+        "p_value": 0.0,
+        "seed": 43
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.23296654929577462,
+        "baseline_mean": 0.08472790492957748,
+        "baseline_p95": 0.0886905809859155,
+        "p_value": 0.0,
+        "seed": 44
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.18970070422535215,
+        "baseline_mean": 0.08481408450704225,
+        "baseline_p95": 0.08860255281690141,
+        "p_value": 0.0,
+        "seed": 45
+      },
+      {
+        "n_valid_languages": 2272,
+        "n_total_languages": 2360,
+        "n_families": 129,
+        "score": 0.2422095070422535,
+        "baseline_mean": 0.08454286971830988,
+        "baseline_p95": 0.08877860915492958,
+        "p_value": 0.0,
+        "seed": 46
+      }
+    ]
+  }
+}

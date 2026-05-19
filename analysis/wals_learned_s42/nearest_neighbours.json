@@ -1,0 +1,553 @@
+{
+  "_annotation": "Learned: nearest neighbours are over per-featvalue embeddings (one row per (feature, value) pair).",
+  "_architecture": "learned",
+  "_database": "wals",
+  "results": {
+    "81A=SOV": [
+      {
+        "neighbour": "95A=OV and Postpositions",
+        "cosine_sim": 0.9836820960044861
+      },
+      {
+        "neighbour": "83A=OV",
+        "cosine_sim": 0.9750407934188843
+      },
+      {
+        "neighbour": "85A=Postpositions",
+        "cosine_sim": 0.9391283988952637
+      },
+      {
+        "neighbour": "144Q=No SNegOV",
+        "cosine_sim": 0.8601645231246948
+      },
+      {
+        "neighbour": "86A=Genitive-Noun",
+        "cosine_sim": 0.8449752330780029
+      },
+      {
+        "neighbour": "144P=No NegSOV",
+        "cosine_sim": 0.8384007215499878
+      },
+      {
+        "neighbour": "50A=Symmetrical",
+        "cosine_sim": 0.78052818775177
+      },
+      {
+        "neighbour": "69A=Tense-aspect suffixes",
+        "cosine_sim": 0.6997709274291992
+      },
+      {
+        "neighbour": "97A=OV and NAdj",
+        "cosine_sim": 0.6906276345252991
+      },
+      {
+        "neighbour": "125A=Deranked",
+        "cosine_sim": 0.6739002466201782
+      }
+    ],
+    "81A=SVO": [
+      {
+        "neighbour": "144H=No NegSVO",
+        "cosine_sim": 0.9050672650337219
+      },
+      {
+        "neighbour": "84A=VOX",
+        "cosine_sim": 0.8376393914222717
+      },
+      {
+        "neighbour": "96A=VO and NRel",
+        "cosine_sim": 0.831230640411377
+      },
+      {
+        "neighbour": "97A=VO and NAdj",
+        "cosine_sim": 0.8252730369567871
+      },
+      {
+        "neighbour": "144J=No SVNegO",
+        "cosine_sim": 0.8101494312286377
+      },
+      {
+        "neighbour": "83A=VO",
+        "cosine_sim": 0.8091889023780823
+      },
+      {
+        "neighbour": "142A=Affective meanings",
+        "cosine_sim": 0.7682082653045654
+      },
+      {
+        "neighbour": "95A=VO and Prepositions",
+        "cosine_sim": 0.755521833896637
+      },
+      {
+        "neighbour": "85A=Prepositions",
+        "cosine_sim": 0.7116221189498901
+      },
+      {
+        "neighbour": "49A=No morphological case-marking",
+        "cosine_sim": 0.7107247710227966
+      }
+    ],
+    "81A=VSO": [
+      {
+        "neighbour": "82A=VS",
+        "cosine_sim": 0.9518325328826904
+      },
+      {
+        "neighbour": "144A=NegVSO",
+        "cosine_sim": 0.9303808212280273
+      },
+      {
+        "neighbour": "144T=NegVSO",
+        "cosine_sim": 0.7512561082839966
+      },
+      {
+        "neighbour": "54A=Marked by prefix",
+        "cosine_sim": 0.7066330909729004
+      },
+      {
+        "neighbour": "86A=Noun-Genitive",
+        "cosine_sim": 0.6394259929656982
+      },
+      {
+        "neighbour": "133A=7-7.5",
+        "cosine_sim": 0.6377624273300171
+      },
+      {
+        "neighbour": "144P=NoDoubleNeg",
+        "cosine_sim": 0.6102981567382812
+      },
+      {
+        "neighbour": "61A=Marked by preceding word",
+        "cosine_sim": 0.6082292199134827
+      },
+      {
+        "neighbour": "42A=Different stem",
+        "cosine_sim": 0.6061255931854248
+      },
+      {
+        "neighbour": "81B=SVO or VSO",
+        "cosine_sim": 0.6059850454330444
+      }
+    ],
+    "81A=VOS": [
+      {
+        "neighbour": "93A=Mixed",
+        "cosine_sim": 0.9839662909507751
+      },
+      {
+        "neighbour": "144A=NegVOS",
+        "cosine_sim": 0.9780876040458679
+      },
+      {
+        "neighbour": "81A=OVS",
+        "cosine_sim": 0.9615910053253174
+      },
+      {
+        "neighbour": "57A=Prefixes and suffixes",
+        "cosine_sim": 0.958491861820221
+      },
+      {
+        "neighbour": "116A=Mixture of previous two types",
+        "cosine_sim": 0.9581142663955688
+      },
+      {
+        "neighbour": "51A=Prepositional clitics",
+        "cosine_sim": 0.9562383890151978
+      },
+      {
+        "neighbour": "92A=In either of two positions",
+        "cosine_sim": 0.954483151435852
+      },
+      {
+        "neighbour": "116A=Interrogative word order",
+        "cosine_sim": 0.9527696371078491
+      },
+      {
+        "neighbour": "89A=No dominant order",
+        "cosine_sim": 0.9479120373725891
+      },
+      {
+        "neighbour": "14A=Antepenultimate",
+        "cosine_sim": 0.946247935295105
+      }
+    ],
+    "81A=OVS": [
+      {
+        "neighbour": "116A=Mixture of previous two types",
+        "cosine_sim": 0.9831792116165161
+      },
+      {
+        "neighbour": "88A=Demonstrative before and after Noun",
+        "cosine_sim": 0.9758862257003784
+      },
+      {
+        "neighbour": "95A=OV and Prepositions",
+        "cosine_sim": 0.9735506176948547
+      },
+      {
+        "neighbour": "69A=Tense-aspect tone",
+        "cosine_sim": 0.9734646081924438
+      },
+      {
+        "neighbour": "18A=No nasals",
+        "cosine_sim": 0.9726060628890991
+      },
+      {
+        "neighbour": "112A=Variation between negative word and affix",
+        "cosine_sim": 0.9725507497787476
+      },
+      {
+        "neighbour": "93A=Mixed",
+        "cosine_sim": 0.9723605513572693
+      },
+      {
+        "neighbour": "89A=No dominant order",
+        "cosine_sim": 0.9670412540435791
+      },
+      {
+        "neighbour": "14A=Antepenultimate",
+        "cosine_sim": 0.9656267762184143
+      },
+      {
+        "neighbour": "39A='We' the same as 'I'",
+        "cosine_sim": 0.9647188186645508
+      }
+    ],
+    "85A=Postpositions": [
+      {
+        "neighbour": "95A=OV and Postpositions",
+        "cosine_sim": 0.9527373909950256
+      },
+      {
+        "neighbour": "86A=Genitive-Noun",
+        "cosine_sim": 0.9451894760131836
+      },
+      {
+        "neighbour": "81A=SOV",
+        "cosine_sim": 0.9391283988952637
+      },
+      {
+        "neighbour": "83A=OV",
+        "cosine_sim": 0.8979762196540833
+      },
+      {
+        "neighbour": "144Q=No SNegOV",
+        "cosine_sim": 0.844883143901825
+      },
+      {
+        "neighbour": "144P=No NegSOV",
+        "cosine_sim": 0.8012973070144653
+      },
+      {
+        "neighbour": "69A=Tense-aspect suffixes",
+        "cosine_sim": 0.7863065004348755
+      },
+      {
+        "neighbour": "50A=Symmetrical",
+        "cosine_sim": 0.7675518989562988
+      },
+      {
+        "neighbour": "125A=Deranked",
+        "cosine_sim": 0.6747297048568726
+      },
+      {
+        "neighbour": "20A=Exclusively concatenative",
+        "cosine_sim": 0.6746659278869629
+      }
+    ],
+    "85A=Prepositions": [
+      {
+        "neighbour": "95A=VO and Prepositions",
+        "cosine_sim": 0.9894843101501465
+      },
+      {
+        "neighbour": "84A=VOX",
+        "cosine_sim": 0.9471171498298645
+      },
+      {
+        "neighbour": "96A=VO and NRel",
+        "cosine_sim": 0.9470866322517395
+      },
+      {
+        "neighbour": "83A=VO",
+        "cosine_sim": 0.943226158618927
+      },
+      {
+        "neighbour": "86A=Noun-Genitive",
+        "cosine_sim": 0.890070378780365
+      },
+      {
+        "neighbour": "94A=Initial subordinator word",
+        "cosine_sim": 0.8580700159072876
+      },
+      {
+        "neighbour": "97A=VO and NAdj",
+        "cosine_sim": 0.8364814519882202
+      },
+      {
+        "neighbour": "90A=Noun-Relative clause",
+        "cosine_sim": 0.7653759121894836
+      },
+      {
+        "neighbour": "49A=No morphological case-marking",
+        "cosine_sim": 0.7373999357223511
+      },
+      {
+        "neighbour": "144H=No NegSVO",
+        "cosine_sim": 0.7243039608001709
+      }
+    ],
+    "55A=Absent": [
+      {
+        "neighbour": "25B=Non-zero marking",
+        "cosine_sim": 0.8975740671157837
+      },
+      {
+        "neighbour": "70A=Second singular and second plural",
+        "cosine_sim": 0.8628720045089722
+      },
+      {
+        "neighbour": "20A=Exclusively concatenative",
+        "cosine_sim": 0.8400563597679138
+      },
+      {
+        "neighbour": "111A=Morphological but no compound",
+        "cosine_sim": 0.8133108615875244
+      },
+      {
+        "neighbour": "61A=Without marking",
+        "cosine_sim": 0.8113240003585815
+      },
+      {
+        "neighbour": "125A=Deranked",
+        "cosine_sim": 0.8021902441978455
+      },
+      {
+        "neighbour": "100A=Accusative",
+        "cosine_sim": 0.79228276014328
+      },
+      {
+        "neighbour": "101A=Subject affixes on verb",
+        "cosine_sim": 0.7820541262626648
+      },
+      {
+        "neighbour": "33A=Plural suffix",
+        "cosine_sim": 0.7597638368606567
+      },
+      {
+        "neighbour": "60A=Highly differentiated",
+        "cosine_sim": 0.7472490668296814
+      }
+    ],
+    "55A=Obligatory": [
+      {
+        "neighbour": "25B=Zero-marking",
+        "cosine_sim": 0.8120269775390625
+      },
+      {
+        "neighbour": "68A=From 'finish', 'already'",
+        "cosine_sim": 0.7807514667510986
+      },
+      {
+        "neighbour": "106A=No reciprocals",
+        "cosine_sim": 0.7591681480407715
+      },
+      {
+        "neighbour": "60A=Weakly differentiated",
+        "cosine_sim": 0.7568128705024719
+      },
+      {
+        "neighbour": "110A=Both",
+        "cosine_sim": 0.7563619017601013
+      },
+      {
+        "neighbour": "72A=Both types of system",
+        "cosine_sim": 0.7311802506446838
+      },
+      {
+        "neighbour": "46A=Mixed",
+        "cosine_sim": 0.7257131338119507
+      },
+      {
+        "neighbour": "111A=Neither",
+        "cosine_sim": 0.7230795621871948
+      },
+      {
+        "neighbour": "20A=Exclusively isolating",
+        "cosine_sim": 0.7219365835189819
+      },
+      {
+        "neighbour": "112A=Negative word, unclear if verb or particle",
+        "cosine_sim": 0.7156559228897095
+      }
+    ],
+    "55A=Optional": [
+      {
+        "neighbour": "102A=Only the P argument",
+        "cosine_sim": 0.8910738229751587
+      },
+      {
+        "neighbour": "69A=Tense-aspect tone",
+        "cosine_sim": 0.8828657865524292
+      },
+      {
+        "neighbour": "93A=Mixed",
+        "cosine_sim": 0.8712373971939087
+      },
+      {
+        "neighbour": "88A=Demonstrative before and after Noun",
+        "cosine_sim": 0.869373083114624
+      },
+      {
+        "neighbour": "37A=No definite, but indefinite article",
+        "cosine_sim": 0.8685960173606873
+      },
+      {
+        "neighbour": "81A=VOS",
+        "cosine_sim": 0.8650438189506531
+      },
+      {
+        "neighbour": "116A=Mixture of previous two types",
+        "cosine_sim": 0.8628476858139038
+      },
+      {
+        "neighbour": "46A=Mixed",
+        "cosine_sim": 0.8584755659103394
+      },
+      {
+        "neighbour": "20A=Isolating/concatenative",
+        "cosine_sim": 0.8534725308418274
+      },
+      {
+        "neighbour": "81A=OVS",
+        "cosine_sim": 0.8498023152351379
+      }
+    ],
+    "13A=No tones": [
+      {
+        "neighbour": "46A=Interrogative-based",
+        "cosine_sim": 0.7327331900596619
+      },
+      {
+        "neighbour": "10A=Contrast absent",
+        "cosine_sim": 0.7125465869903564
+      },
+      {
+        "neighbour": "25B=Non-zero marking",
+        "cosine_sim": 0.7043154835700989
+      },
+      {
+        "neighbour": "111A=Morphological but no compound",
+        "cosine_sim": 0.6992161273956299
+      },
+      {
+        "neighbour": "88A=Demonstrative-Noun",
+        "cosine_sim": 0.6938772797584534
+      },
+      {
+        "neighbour": "110A=Purposive but no sequential",
+        "cosine_sim": 0.6502062082290649
+      },
+      {
+        "neighbour": "17A=Trochaic",
+        "cosine_sim": 0.6429698467254639
+      },
+      {
+        "neighbour": "22A=4-5 categories per word",
+        "cosine_sim": 0.6367329955101013
+      },
+      {
+        "neighbour": "72A=Neither type of system",
+        "cosine_sim": 0.6317230463027954
+      },
+      {
+        "neighbour": "89A=Numeral-Noun",
+        "cosine_sim": 0.625049352645874
+      }
+    ],
+    "13A=Simple tone system": [
+      {
+        "neighbour": "143C=(Neg)VNeg",
+        "cosine_sim": 0.6745556592941284
+      },
+      {
+        "neighbour": "118A=Mixed",
+        "cosine_sim": 0.6506081223487854
+      },
+      {
+        "neighbour": "42A=Different stem",
+        "cosine_sim": 0.5902516841888428
+      },
+      {
+        "neighbour": "22A=6-7 categories per word",
+        "cosine_sim": 0.5604974031448364
+      },
+      {
+        "neighbour": "69A=Tense-aspect prefixes",
+        "cosine_sim": 0.5278478860855103
+      },
+      {
+        "neighbour": "29A=Syncretic",
+        "cosine_sim": 0.5075631737709045
+      },
+      {
+        "neighbour": "15A=Not predictable",
+        "cosine_sim": 0.4988558888435364
+      },
+      {
+        "neighbour": "144A=OptDoubleNeg",
+        "cosine_sim": 0.49178847670555115
+      },
+      {
+        "neighbour": "65A=Grammatical marking",
+        "cosine_sim": 0.4834001064300537
+      },
+      {
+        "neighbour": "109B=Instrument",
+        "cosine_sim": 0.4743834435939789
+      }
+    ],
+    "13A=Complex tone system": [
+      {
+        "neighbour": "68A=From 'finish', 'already'",
+        "cosine_sim": 0.8555506467819214
+      },
+      {
+        "neighbour": "20A=Exclusively isolating",
+        "cosine_sim": 0.8232368230819702
+      },
+      {
+        "neighbour": "25B=Zero-marking",
+        "cosine_sim": 0.7927811145782471
+      },
+      {
+        "neighbour": "72A=Both types of system",
+        "cosine_sim": 0.7603693008422852
+      },
+      {
+        "neighbour": "7A=Implosives only",
+        "cosine_sim": 0.7577353715896606
+      },
+      {
+        "neighbour": "111A=Neither",
+        "cosine_sim": 0.7533086538314819
+      },
+      {
+        "neighbour": "60A=Weakly differentiated",
+        "cosine_sim": 0.752822756767273
+      },
+      {
+        "neighbour": "144L=SNegOV",
+        "cosine_sim": 0.7365512251853943
+      },
+      {
+        "neighbour": "121A=Exceed",
+        "cosine_sim": 0.7319339513778687
+      },
+      {
+        "neighbour": "72A=Minimal system",
+        "cosine_sim": 0.7267221808433533
+      }
+    ]
+  }
+}

@@ -1,0 +1,511 @@
+{
+  "_annotation": "Learned: nearest neighbours are over per-featvalue embeddings (one row per (feature, value) pair).",
+  "_architecture": "learned",
+  "_database": "grambank",
+  "results": {
+    "GB133=1": [
+      {
+        "neighbour": "GB074=0",
+        "cosine_sim": 0.9736241102218628
+      },
+      {
+        "neighbour": "GB075=1",
+        "cosine_sim": 0.9724494218826294
+      },
+      {
+        "neighbour": "GB328=1",
+        "cosine_sim": 0.9383891820907593
+      },
+      {
+        "neighbour": "GB432=1",
+        "cosine_sim": 0.8870804309844971
+      },
+      {
+        "neighbour": "GB070=1",
+        "cosine_sim": 0.876223087310791
+      },
+      {
+        "neighbour": "GB152=1",
+        "cosine_sim": 0.863521933555603
+      },
+      {
+        "neighbour": "GB123=1",
+        "cosine_sim": 0.8496103286743164
+      },
+      {
+        "neighbour": "GB257=0",
+        "cosine_sim": 0.8455783724784851
+      },
+      {
+        "neighbour": "GB132=0",
+        "cosine_sim": 0.8369835615158081
+      },
+      {
+        "neighbour": "GB421=0",
+        "cosine_sim": 0.8354368805885315
+      }
+    ],
+    "GB133=0": [
+      {
+        "neighbour": "GB065=2",
+        "cosine_sim": 0.983557939529419
+      },
+      {
+        "neighbour": "GB074=1",
+        "cosine_sim": 0.9736241102218628
+      },
+      {
+        "neighbour": "GB075=0",
+        "cosine_sim": 0.9724494218826294
+      },
+      {
+        "neighbour": "GB328=0",
+        "cosine_sim": 0.9383891820907593
+      },
+      {
+        "neighbour": "GB432=0",
+        "cosine_sim": 0.8870804309844971
+      },
+      {
+        "neighbour": "GB070=0",
+        "cosine_sim": 0.876223087310791
+      },
+      {
+        "neighbour": "GB152=0",
+        "cosine_sim": 0.863521933555603
+      },
+      {
+        "neighbour": "GB123=0",
+        "cosine_sim": 0.8496102094650269
+      },
+      {
+        "neighbour": "GB257=1",
+        "cosine_sim": 0.8455783724784851
+      },
+      {
+        "neighbour": "GB132=1",
+        "cosine_sim": 0.8369835019111633
+      }
+    ],
+    "GB131=1": [
+      {
+        "neighbour": "GB130=2",
+        "cosine_sim": 0.9817242622375488
+      },
+      {
+        "neighbour": "GB022=1",
+        "cosine_sim": 0.9620494246482849
+      },
+      {
+        "neighbour": "GB093=1",
+        "cosine_sim": 0.9450880289077759
+      },
+      {
+        "neighbour": "GB433=1",
+        "cosine_sim": 0.9383220672607422
+      },
+      {
+        "neighbour": "GB081=1",
+        "cosine_sim": 0.9068437218666077
+      },
+      {
+        "neighbour": "GB104=1",
+        "cosine_sim": 0.8663699626922607
+      },
+      {
+        "neighbour": "GB124=1",
+        "cosine_sim": 0.8643109202384949
+      },
+      {
+        "neighbour": "GB065=3",
+        "cosine_sim": 0.8569677472114563
+      },
+      {
+        "neighbour": "GB138=1",
+        "cosine_sim": 0.8568159341812134
+      },
+      {
+        "neighbour": "GB301=1",
+        "cosine_sim": 0.851884126663208
+      }
+    ],
+    "GB131=0": [
+      {
+        "neighbour": "GB130=1",
+        "cosine_sim": 0.9623925685882568
+      },
+      {
+        "neighbour": "GB022=0",
+        "cosine_sim": 0.9620494842529297
+      },
+      {
+        "neighbour": "GB093=0",
+        "cosine_sim": 0.9450881481170654
+      },
+      {
+        "neighbour": "GB433=0",
+        "cosine_sim": 0.9383220076560974
+      },
+      {
+        "neighbour": "GB081=0",
+        "cosine_sim": 0.9068436622619629
+      },
+      {
+        "neighbour": "GB104=0",
+        "cosine_sim": 0.8663699626922607
+      },
+      {
+        "neighbour": "GB124=0",
+        "cosine_sim": 0.8643108606338501
+      },
+      {
+        "neighbour": "GB138=0",
+        "cosine_sim": 0.8568159341812134
+      },
+      {
+        "neighbour": "GB301=0",
+        "cosine_sim": 0.851884126663208
+      },
+      {
+        "neighbour": "GB203=2",
+        "cosine_sim": 0.8497589826583862
+      }
+    ],
+    "GB074=1": [
+      {
+        "neighbour": "GB133=0",
+        "cosine_sim": 0.9736241102218628
+      },
+      {
+        "neighbour": "GB075=0",
+        "cosine_sim": 0.9660959243774414
+      },
+      {
+        "neighbour": "GB065=2",
+        "cosine_sim": 0.9503860473632812
+      },
+      {
+        "neighbour": "GB328=0",
+        "cosine_sim": 0.8783963918685913
+      },
+      {
+        "neighbour": "GB070=0",
+        "cosine_sim": 0.8773005604743958
+      },
+      {
+        "neighbour": "GB132=1",
+        "cosine_sim": 0.8765324950218201
+      },
+      {
+        "neighbour": "GB072=0",
+        "cosine_sim": 0.8742018938064575
+      },
+      {
+        "neighbour": "GB152=0",
+        "cosine_sim": 0.8702479600906372
+      },
+      {
+        "neighbour": "GB421=1",
+        "cosine_sim": 0.8439286351203918
+      },
+      {
+        "neighbour": "GB073=0",
+        "cosine_sim": 0.8428629040718079
+      }
+    ],
+    "GB074=0": [
+      {
+        "neighbour": "GB133=1",
+        "cosine_sim": 0.9736241102218628
+      },
+      {
+        "neighbour": "GB075=1",
+        "cosine_sim": 0.9660959243774414
+      },
+      {
+        "neighbour": "GB328=1",
+        "cosine_sim": 0.8783964514732361
+      },
+      {
+        "neighbour": "GB070=1",
+        "cosine_sim": 0.8773005604743958
+      },
+      {
+        "neighbour": "GB132=0",
+        "cosine_sim": 0.8765324354171753
+      },
+      {
+        "neighbour": "GB072=1",
+        "cosine_sim": 0.8742019534111023
+      },
+      {
+        "neighbour": "GB152=1",
+        "cosine_sim": 0.870248019695282
+      },
+      {
+        "neighbour": "GB065=1",
+        "cosine_sim": 0.8529860973358154
+      },
+      {
+        "neighbour": "GB421=0",
+        "cosine_sim": 0.8439286947250366
+      },
+      {
+        "neighbour": "GB073=1",
+        "cosine_sim": 0.8428629636764526
+      }
+    ],
+    "GB075=1": [
+      {
+        "neighbour": "GB133=1",
+        "cosine_sim": 0.9724494218826294
+      },
+      {
+        "neighbour": "GB074=0",
+        "cosine_sim": 0.9660959243774414
+      },
+      {
+        "neighbour": "GB257=0",
+        "cosine_sim": 0.9060206413269043
+      },
+      {
+        "neighbour": "GB065=1",
+        "cosine_sim": 0.8840755224227905
+      },
+      {
+        "neighbour": "GB328=1",
+        "cosine_sim": 0.8609261512756348
+      },
+      {
+        "neighbour": "GB068=0",
+        "cosine_sim": 0.8524340391159058
+      },
+      {
+        "neighbour": "GB070=1",
+        "cosine_sim": 0.8320422768592834
+      },
+      {
+        "neighbour": "GB421=0",
+        "cosine_sim": 0.8290454149246216
+      },
+      {
+        "neighbour": "GB432=1",
+        "cosine_sim": 0.827974796295166
+      },
+      {
+        "neighbour": "GB072=1",
+        "cosine_sim": 0.8149963021278381
+      }
+    ],
+    "GB075=0": [
+      {
+        "neighbour": "GB133=0",
+        "cosine_sim": 0.9724494218826294
+      },
+      {
+        "neighbour": "GB074=1",
+        "cosine_sim": 0.9660959243774414
+      },
+      {
+        "neighbour": "GB065=2",
+        "cosine_sim": 0.9361544251441956
+      },
+      {
+        "neighbour": "GB257=1",
+        "cosine_sim": 0.9060206413269043
+      },
+      {
+        "neighbour": "GB328=0",
+        "cosine_sim": 0.86092609167099
+      },
+      {
+        "neighbour": "GB068=1",
+        "cosine_sim": 0.8524341583251953
+      },
+      {
+        "neighbour": "GB070=0",
+        "cosine_sim": 0.832042396068573
+      },
+      {
+        "neighbour": "GB421=1",
+        "cosine_sim": 0.829045295715332
+      },
+      {
+        "neighbour": "GB432=0",
+        "cosine_sim": 0.8279748558998108
+      },
+      {
+        "neighbour": "GB072=0",
+        "cosine_sim": 0.8149963021278381
+      }
+    ],
+    "GB193=0": [
+      {
+        "neighbour": "GB037=1",
+        "cosine_sim": 0.9978477358818054
+      },
+      {
+        "neighbour": "GB116=1",
+        "cosine_sim": 0.9977586269378662
+      },
+      {
+        "neighbour": "GB166=1",
+        "cosine_sim": 0.9973394870758057
+      },
+      {
+        "neighbour": "GB177=1",
+        "cosine_sim": 0.9964916706085205
+      },
+      {
+        "neighbour": "GB130=3",
+        "cosine_sim": 0.9964579343795776
+      },
+      {
+        "neighbour": "GB024=3",
+        "cosine_sim": 0.9961020350456238
+      },
+      {
+        "neighbour": "GB129=1",
+        "cosine_sim": 0.9960829019546509
+      },
+      {
+        "neighbour": "GB285=1",
+        "cosine_sim": 0.9959166049957275
+      },
+      {
+        "neighbour": "GB099=1",
+        "cosine_sim": 0.9957507848739624
+      },
+      {
+        "neighbour": "GB197=1",
+        "cosine_sim": 0.9955668449401855
+      }
+    ],
+    "GB193=1": [
+      {
+        "neighbour": "GB025=1",
+        "cosine_sim": 0.9816655516624451
+      },
+      {
+        "neighbour": "GB071=1",
+        "cosine_sim": 0.9201821088790894
+      },
+      {
+        "neighbour": "GB073=1",
+        "cosine_sim": 0.9057867527008057
+      },
+      {
+        "neighbour": "GB027=1",
+        "cosine_sim": 0.8793532252311707
+      },
+      {
+        "neighbour": "GB089=1",
+        "cosine_sim": 0.8703881502151489
+      },
+      {
+        "neighbour": "GB132=0",
+        "cosine_sim": 0.8607812523841858
+      },
+      {
+        "neighbour": "GB265=0",
+        "cosine_sim": 0.8604483604431152
+      },
+      {
+        "neighbour": "GB072=1",
+        "cosine_sim": 0.8189436197280884
+      },
+      {
+        "neighbour": "GB408=1",
+        "cosine_sim": 0.8056532740592957
+      },
+      {
+        "neighbour": "GB024=1",
+        "cosine_sim": 0.8009465932846069
+      }
+    ],
+    "GB203=0": [
+      {
+        "neighbour": "GB336=1",
+        "cosine_sim": 0.9985054135322571
+      },
+      {
+        "neighbour": "GB129=1",
+        "cosine_sim": 0.9942403435707092
+      },
+      {
+        "neighbour": "GB285=1",
+        "cosine_sim": 0.9941877722740173
+      },
+      {
+        "neighbour": "GB330=1",
+        "cosine_sim": 0.9941131472587585
+      },
+      {
+        "neighbour": "GB099=1",
+        "cosine_sim": 0.9934096932411194
+      },
+      {
+        "neighbour": "GB135=0",
+        "cosine_sim": 0.9931589961051941
+      },
+      {
+        "neighbour": "GB197=1",
+        "cosine_sim": 0.9921141862869263
+      },
+      {
+        "neighbour": "GB043=1",
+        "cosine_sim": 0.9912482500076294
+      },
+      {
+        "neighbour": "GB193=0",
+        "cosine_sim": 0.9910404682159424
+      },
+      {
+        "neighbour": "GB166=1",
+        "cosine_sim": 0.9906206727027893
+      }
+    ],
+    "GB203=1": [
+      {
+        "neighbour": "GB024=1",
+        "cosine_sim": 0.942818820476532
+      },
+      {
+        "neighbour": "GB204=1",
+        "cosine_sim": 0.8553818464279175
+      },
+      {
+        "neighbour": "GB263=0",
+        "cosine_sim": 0.836668074131012
+      },
+      {
+        "neighbour": "GB155=1",
+        "cosine_sim": 0.8148002028465271
+      },
+      {
+        "neighbour": "GB296=0",
+        "cosine_sim": 0.7923737168312073
+      },
+      {
+        "neighbour": "GB256=0",
+        "cosine_sim": 0.7866191864013672
+      },
+      {
+        "neighbour": "GB137=0",
+        "cosine_sim": 0.7736450433731079
+      },
+      {
+        "neighbour": "GB023=0",
+        "cosine_sim": 0.7691344022750854
+      },
+      {
+        "neighbour": "GB334=0",
+        "cosine_sim": 0.7618985176086426
+      },
+      {
+        "neighbour": "GB113=1",
+        "cosine_sim": 0.7540199756622314
+      }
+    ]
+  }
+}

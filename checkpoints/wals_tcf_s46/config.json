@@ -1,0 +1,19 @@
+{
+  "database": "wals",
+  "architecture": "tcf",
+  "data_path": "/home/user/wals",
+  "glottolog_repo": null,
+  "out_dir": "checkpoints/wals_tcf_s46",
+  "seed": 46,
+  "embed_dim": 64,
+  "n_epochs": 200,
+  "patience": 10,
+  "batch_size": 64,
+  "lr": 0.001,
+  "l2_coef": 0.1,
+  "val_frac": 0.05,
+  "device": "cpu",
+  "n_epochs_run": 39,
+  "best_epoch": 29,
+  "best_val_loss": 0.43947127840735695
+}
