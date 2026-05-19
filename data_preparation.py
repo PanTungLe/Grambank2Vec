@@ -969,6 +969,7 @@ def match_wals_to_bible(
 def binarise_features(
     df: pd.DataFrame,
     feature_cols: list,
+    max_majority_frac: float = None,
 ) -> Tuple[np.ndarray, list, dict, dict]:
     """
     Binarise typological features following the paper's protocol (Section 6).
@@ -988,6 +989,17 @@ def binarise_features(
     - Features with ≥ 3 values → one-hot encoded into n binary columns.
     - Features with 1 value → dropped (no discriminative information).
 
+    Parameters
+    ----------
+    max_majority_frac : float or None
+        If set, drop any feature whose average majority fraction (across its
+        binary columns, computed with nanmean) exceeds this threshold.
+        Useful for removing near-universal features that inflate Freq baselines.
+        On WALS CLDF HEAD (1683 langs, 176 features → 169 informative):
+          threshold 0.87 removes ~14 features (the most extreme outliers)
+          threshold 0.75 removes ~98 features (aggressive; use with caution)
+        Default None = no filtering.
+
     Returns
     -------
     binary_matrix : np.ndarray (n_langs × n_binary_features), 0/1/NaN
@@ -1002,6 +1014,7 @@ def binarise_features(
     feature_groups: Dict[str, List[int]] = {}
     feature_value_names: Dict[str, List[str]] = {}
 
+    n_dropped = 0
     idx = 0
     for col in feature_cols:
         unique_vals = sorted(df[col].dropna().unique())
@@ -1011,31 +1024,45 @@ def binarise_features(
             # Skip: no discriminative information
             continue
 
-        group_indices = []
+        # Build binary columns tentatively
+        tentative_bins = []
+        tentative_names = []
 
         if n_vals == 2:
-            # Single binary column: first value → 0, second → 1
             bin_col = np.full(len(df), np.nan)
             observed = df[col].notna()
             bin_col[observed] = (df.loc[observed, col] == unique_vals[1]).astype(float).values
-            binary_columns.append(bin_col)
-            binary_col_names.append(f"{col}")
-            group_indices.append(idx)
-            idx += 1
-            feature_value_names[col] = unique_vals  # [neg_value, pos_value]
+            tentative_bins.append(bin_col)
+            tentative_names.append(f"{col}")
         else:
-            # One-hot encode (≥ 3 values)
             for val in unique_vals:
                 bin_col = np.full(len(df), np.nan)
                 observed = df[col].notna()
                 bin_col[observed] = (df.loc[observed, col] == val).astype(float).values
-                binary_columns.append(bin_col)
-                binary_col_names.append(f"{col}={val}")
-                group_indices.append(idx)
-                idx += 1
-            feature_value_names[col] = unique_vals  # [val_0, val_1, ...]
+                tentative_bins.append(bin_col)
+                tentative_names.append(f"{col}={val}")
 
+        # Majority fraction filter
+        if max_majority_frac is not None:
+            col_mf = []
+            for bc in tentative_bins:
+                m = np.nanmean(bc)
+                if not np.isnan(m):
+                    col_mf.append(max(m, 1.0 - m))
+            if col_mf and np.mean(col_mf) > max_majority_frac:
+                n_dropped += 1
+                continue
+
+        # Commit this feature
+        group_indices = list(range(idx, idx + len(tentative_bins)))
+        binary_columns.extend(tentative_bins)
+        binary_col_names.extend(tentative_names)
         feature_groups[col] = group_indices
+        feature_value_names[col] = unique_vals
+        idx += len(tentative_bins)
+
+    if max_majority_frac is not None and n_dropped:
+        print(f"  max_majority_frac={max_majority_frac}: dropped {n_dropped} features")
 
     binary_matrix = np.column_stack(binary_columns)
     print(f"Binarised matrix: {binary_matrix.shape[0]} langs × "
