@@ -186,19 +186,8 @@ class TypologicalMF_SemiSup(nn.Module):
         logits = (lang_emb * feat_emb).sum(dim=-1)
         preds = torch.sigmoid(logits)
 
-        # L2 penalty: penalise feat_embeddings (always trainable and
-        # batch-accessed) and the proj weight if it is a learned layer.
-        # We do NOT penalise lang_emb (the projected output) because
-        # that would flow gradient through proj toward making it output
-        # near-zero vectors, regularising out the pretrained geometry.
-        # Instead, penalise proj.weight directly as a parameter, which
-        # is the standard weight-decay interpretation.
-        l2 = feat_emb.pow(2).sum() / lang_idx.shape[0]
-        if isinstance(self.proj, nn.Linear):
-            l2 = l2 + self.proj.weight.pow(2).sum() / lang_idx.shape[0]
-        if self.lang_embeddings.weight.requires_grad:
-            l2 = l2 + lang_emb.pow(2).sum() / lang_idx.shape[0]
-        return preds, l2
+        # L2 handled by AdamW(weight_decay=l2_reg) in train_model.
+        return preds, torch.tensor(0.0)  # placeholder keeps (preds, l2) API
 
     def predict_all(self):
         all_lang = self.proj(self.lang_embeddings.weight)

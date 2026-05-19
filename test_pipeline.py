@@ -154,8 +154,8 @@ class TestModels:
             np.array([1, 0, 0, 1, 1, 0], dtype=float),
         )
         model = TypologicalMF(3, 2, embed_dim=4)
-        losses = train_model(model, ds, n_epochs=3, batch_size=2)
-        assert len(losses) == 3
+        losses, _epochs_run = train_model(model, ds, n_epochs=3, batch_size=2)
+        assert len(losses) <= 3
         assert all(isinstance(l, float) for l in losses)
 
     def test_semisup_training(self):
@@ -166,8 +166,8 @@ class TestModels:
             np.array([1, 0, 0, 1, 1, 0], dtype=float),
         )
         model = TypologicalMF_SemiSup(embs, 2, embed_dim=4)
-        losses = train_model(model, ds, n_epochs=3, batch_size=2)
-        assert len(losses) == 3
+        losses, _epochs_run = train_model(model, ds, n_epochs=3, batch_size=2)
+        assert len(losses) <= 3
 
 
 # ============================================================================
