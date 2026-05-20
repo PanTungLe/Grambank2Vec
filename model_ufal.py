@@ -2,10 +2,12 @@
 """
 PyTorch reimplementation of UFAL 2020 neural system + ablation upgrades.
 
-UFALNeural     : cosine similarity → Dense(1) → sigmoid  (binary BCE)
-CategoricalNeural    : cosine similarity → softmax over K values  (CE)
-CategoricalGeomNeural: shared value geometry → softmax over K values (CE)
+UFALNeural            : cosine similarity → Dense(1) → sigmoid  (binary BCE)
+CategoricalNeural     : dot-product → softmax over K values  (CE, vectorized)
+CategoricalGeomNeural : dot-product → softmax over K values, WALS-only vocab (CE)
 """
+
+import math
 
 import numpy as np
 import torch
@@ -86,8 +88,9 @@ class CategoricalNeural(nn.Module):
     values per feature, replacing binary sigmoid prediction.
 
     Same global fv_id embedding table as UFALNeural.
-    Same cosine similarity backbone.
-    Change: for each feature, score K values via cos_sim → softmax (not sigmoid).
+    Change: for each feature, score K values via dot-product → softmax (not sigmoid).
+    Training uses group-by-feature vectorized matmul to avoid per-sample Python loops.
+    Xavier init (std=1/sqrt(d)) ensures non-degenerate logits from step 1.
     """
 
     def __init__(self, n_languages, n_global_fv_ids, feat_to_fv_ids,
@@ -97,43 +100,59 @@ class CategoricalNeural(nn.Module):
         """
         super().__init__()
         self.feat_to_fv_ids = feat_to_fv_ids
+        self.embed_dim = embed_dim
         self.lang_embeddings = nn.Embedding(n_languages, embed_dim)
         self.fv_embeddings   = nn.Embedding(n_global_fv_ids, embed_dim)
         self.dropout = nn.Dropout(dropout_rate)
-        nn.init.normal_(self.lang_embeddings.weight, std=0.01)
-        nn.init.normal_(self.fv_embeddings.weight,   std=0.01)
+        std = 1.0 / math.sqrt(embed_dim)
+        nn.init.normal_(self.lang_embeddings.weight, std=std)
+        nn.init.normal_(self.fv_embeddings.weight,   std=std)
 
-    def logits_for_feature(self, lang_emb_normed, feat_idx, device):
-        """
-        lang_emb_normed: (1, d) normalized embedding
-        Returns: (K_f,) cosine similarity scores (raw logits for softmax)
-        """
+    def logits_for_feature(self, lang_emb, feat_idx, device):
+        """lang_emb: (1, d). Returns (K_f,) raw dot-product logits."""
         fv_ids = self.feat_to_fv_ids[feat_idx]
         fi_t   = torch.tensor(fv_ids, dtype=torch.long, device=device)
-        fe     = F.normalize(self.fv_embeddings(fi_t), dim=-1)  # (K, d)
-        return (lang_emb_normed @ fe.T).squeeze(0)              # (K,)
+        fe     = self.fv_embeddings(fi_t)          # (K, d)
+        return (lang_emb @ fe.T).squeeze(0)        # (K,)
 
     def forward(self, lang_ids, feat_indices, val_local_indices, device):
-        """Training forward: CE over K values per (lang, feat) cell."""
+        """
+        Vectorized training forward: group batch by feature to replace the
+        per-sample Python loop with one matmul per unique feature.
+        """
+        vi_list = (val_local_indices.tolist()
+                   if hasattr(val_local_indices, 'tolist')
+                   else list(val_local_indices))
+        feat_groups = defaultdict(list)
+        for batch_i, (fi, vi) in enumerate(zip(feat_indices, vi_list)):
+            feat_groups[fi].append((batch_i, vi))
+
         total_nll = torch.tensor(0.0, device=device)
         acc_embs, acc_langs = [], []
-        for i in range(len(lang_ids)):
-            le_raw = self.dropout(self.lang_embeddings(lang_ids[i:i+1]))
-            le     = F.normalize(le_raw, dim=-1)
-            logits = self.logits_for_feature(le, feat_indices[i], device)
-            total_nll -= F.log_softmax(logits, dim=0)[val_local_indices[i]]
-            acc_embs.append(self.fv_embeddings(
-                torch.tensor(self.feat_to_fv_ids[feat_indices[i]],
-                             dtype=torch.long, device=device)))
+
+        for fi, items in feat_groups.items():
+            bidx_t   = torch.tensor([x[0] for x in items],
+                                    dtype=torch.long, device=device)
+            vi_locals = [x[1] for x in items]
+
+            fv_ids_t = torch.tensor(self.feat_to_fv_ids[fi],
+                                    dtype=torch.long, device=device)
+            fe      = self.fv_embeddings(fv_ids_t)                # (K, d)
+            le_raw  = self.dropout(self.lang_embeddings(lang_ids[bidx_t]))  # (n, d)
+            logits  = le_raw @ fe.T                               # (n, K)
+            lp      = F.log_softmax(logits, dim=-1)               # (n, K)
+            for j, vi in enumerate(vi_locals):
+                total_nll -= lp[j, vi]
+            acc_embs.append(fe)
             acc_langs.append(le_raw)
-        loss = total_nll / max(len(lang_ids), 1)
+
+        loss = total_nll / max(len(feat_indices), 1)
         all_acc = torch.cat(acc_embs + acc_langs, dim=0)
-        return loss, all_acc.pow(2).mean()  # (loss, l2)
+        return loss, all_acc.pow(2).mean()
 
     def predict_from_emb(self, raw_lang_emb, feat_idx, device, temperature=1.0):
         """Predict from raw (1, d) embedding."""
-        le = F.normalize(raw_lang_emb, dim=-1)
-        logits = self.logits_for_feature(le, feat_idx, device)
+        logits = self.logits_for_feature(raw_lang_emb, feat_idx, device)
         lp = F.log_softmax(logits / temperature, dim=0)
         return lp.argmax().item(), lp.exp().cpu().numpy()
 
@@ -147,50 +166,70 @@ class CategoricalGeomNeural(nn.Module):
     Ablation step 2: Categorical prediction with SHARED DENSE VALUE GEOMETRY.
 
     Key change from CategoricalNeural:
-    - fv_embeddings indexed by GLOBAL VALUE ID (feat_to_global_ids, same as
-      SetEncoder) rather than feature:value string ID (feat_to_fv_ids).
+    - val_embeddings indexed by GLOBAL VALUE ID (feat_to_global_ids, same as
+      SetEncoder) rather than UFAL fv_ids — pure WALS-only value space, no
+      metadata embeddings diluting the geometry.
     - Values of DIFFERENT features share the same embedding space.
     - SOV and OVS can be geometrically close even though they belong to
       different features — this is the thesis contribution.
 
-    Same cosine similarity backbone. Same softmax prediction.
+    Same dot-product backbone, vectorized forward, Xavier init.
     """
 
     def __init__(self, n_languages, n_total_values, feat_to_global_ids,
                  embed_dim=64, dropout_rate=0.5):
         super().__init__()
         self.feat_to_global_ids = feat_to_global_ids
+        self.embed_dim = embed_dim
         self.lang_embeddings = nn.Embedding(n_languages, embed_dim)
         self.val_embeddings  = nn.Embedding(n_total_values, embed_dim)
         self.dropout = nn.Dropout(dropout_rate)
-        nn.init.normal_(self.lang_embeddings.weight, std=0.01)
-        nn.init.normal_(self.val_embeddings.weight,  std=0.01)
+        std = 1.0 / math.sqrt(embed_dim)
+        nn.init.normal_(self.lang_embeddings.weight, std=std)
+        nn.init.normal_(self.val_embeddings.weight,  std=std)
 
-    def logits_for_feature(self, lang_emb_normed, feat_idx, device):
+    def logits_for_feature(self, lang_emb, feat_idx, device):
+        """lang_emb: (1, d). Returns (K_f,) raw dot-product logits."""
         gids = self.feat_to_global_ids[feat_idx]
         gi_t = torch.tensor(gids, dtype=torch.long, device=device)
-        ve   = F.normalize(self.val_embeddings(gi_t), dim=-1)   # (K, d)
-        return (lang_emb_normed @ ve.T).squeeze(0)              # (K,)
+        ve   = self.val_embeddings(gi_t)           # (K, d)
+        return (lang_emb @ ve.T).squeeze(0)        # (K,)
 
     def forward(self, lang_ids, feat_indices, val_local_indices, device):
+        """Vectorized training forward: group by feature, one matmul per feature."""
+        vi_list = (val_local_indices.tolist()
+                   if hasattr(val_local_indices, 'tolist')
+                   else list(val_local_indices))
+        feat_groups = defaultdict(list)
+        for batch_i, (fi, vi) in enumerate(zip(feat_indices, vi_list)):
+            feat_groups[fi].append((batch_i, vi))
+
         total_nll = torch.tensor(0.0, device=device)
         acc_embs, acc_langs = [], []
-        for i in range(len(lang_ids)):
-            le_raw = self.dropout(self.lang_embeddings(lang_ids[i:i+1]))
-            le     = F.normalize(le_raw, dim=-1)
-            logits = self.logits_for_feature(le, feat_indices[i], device)
-            total_nll -= F.log_softmax(logits, dim=0)[val_local_indices[i]]
-            acc_embs.append(self.val_embeddings(
-                torch.tensor(self.feat_to_global_ids[feat_indices[i]],
-                             dtype=torch.long, device=device)))
+
+        for fi, items in feat_groups.items():
+            bidx_t    = torch.tensor([x[0] for x in items],
+                                     dtype=torch.long, device=device)
+            vi_locals = [x[1] for x in items]
+
+            gids_t  = torch.tensor(self.feat_to_global_ids[fi],
+                                   dtype=torch.long, device=device)
+            ve      = self.val_embeddings(gids_t)                  # (K, d)
+            le_raw  = self.dropout(self.lang_embeddings(lang_ids[bidx_t]))  # (n, d)
+            logits  = le_raw @ ve.T                                # (n, K)
+            lp      = F.log_softmax(logits, dim=-1)                # (n, K)
+            for j, vi in enumerate(vi_locals):
+                total_nll -= lp[j, vi]
+            acc_embs.append(ve)
             acc_langs.append(le_raw)
-        loss = total_nll / max(len(lang_ids), 1)
+
+        loss = total_nll / max(len(feat_indices), 1)
         all_acc = torch.cat(acc_embs + acc_langs, dim=0)
         return loss, all_acc.pow(2).mean()
 
     def predict_from_emb(self, raw_lang_emb, feat_idx, device, temperature=1.0):
-        le = F.normalize(raw_lang_emb, dim=-1)
-        logits = self.logits_for_feature(le, feat_idx, device)
+        """Predict from raw (1, d) embedding."""
+        logits = self.logits_for_feature(raw_lang_emb, feat_idx, device)
         lp = F.log_softmax(logits / temperature, dim=0)
         return lp.argmax().item(), lp.exp().cpu().numpy()
 
@@ -448,13 +487,13 @@ def transductive_finetune_emb(model, model_type, obs_feat_dict,
         if not obs:
             break
         total_loss = torch.tensor(0.0, device=device)
-        le_normed  = F.normalize(new_emb, dim=-1)
 
         for fi, vi_local in obs:
             ids  = feat_to_fv_ids_or_gids[fi]
             fi_t = torch.tensor(ids, dtype=torch.long, device=device)
 
             if model_type == 'ufal':
+                le_normed = F.normalize(new_emb, dim=-1)
                 fe  = F.normalize(model.fv_embeddings(fi_t), dim=-1)
                 cos = (le_normed.expand(len(ids), -1) * fe).sum(-1, keepdim=True)
                 probs = torch.sigmoid(model.output_layer(cos)).squeeze(-1)
@@ -462,12 +501,12 @@ def transductive_finetune_emb(model, model_type, obs_feat_dict,
                 targets[vi_local] = 1.0
                 total_loss += F.binary_cross_entropy(probs, targets)
             elif model_type == 'categorical':
-                fe     = F.normalize(model.fv_embeddings(fi_t), dim=-1)
-                logits = (le_normed @ fe.T).squeeze(0)
+                fe     = model.fv_embeddings(fi_t)
+                logits = (new_emb @ fe.T).squeeze(0)
                 total_loss -= F.log_softmax(logits / temperature, dim=0)[vi_local]
             else:  # geom
-                ve     = F.normalize(model.val_embeddings(fi_t), dim=-1)
-                logits = (le_normed @ ve.T).squeeze(0)
+                ve     = model.val_embeddings(fi_t)
+                logits = (new_emb @ ve.T).squeeze(0)
                 total_loss -= F.log_softmax(logits / temperature, dim=0)[vi_local]
 
         loss = total_loss / max(len(obs), 1)
