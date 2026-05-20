@@ -333,7 +333,6 @@ def calibrate_temperature(model, model_type, cat_matrix_dev,
                 feat_to_fv_ids_or_gids, embed_dim, device,
                 n_steps=50, lr=0.05, temperature=T)
 
-            le_normed = F.normalize(new_emb, dim=-1)
             with torch.no_grad():
                 for fi in tgt_feats:
                     true_local = int(cat_matrix_dev[lang_idx, fi])
@@ -341,11 +340,11 @@ def calibrate_temperature(model, model_type, cat_matrix_dev,
                     fi_t = torch.tensor(ids, dtype=torch.long, device=device)
 
                     if model_type == 'categorical':
-                        fe = F.normalize(model.fv_embeddings(fi_t), dim=-1)
-                        logits = (le_normed @ fe.T).squeeze(0)
+                        fe = model.fv_embeddings(fi_t)
+                        logits = (new_emb @ fe.T).squeeze(0)
                     else:  # geom
-                        ve = F.normalize(model.val_embeddings(fi_t), dim=-1)
-                        logits = (le_normed @ ve.T).squeeze(0)
+                        ve = model.val_embeddings(fi_t)
+                        logits = (new_emb @ ve.T).squeeze(0)
 
                     lp = F.log_softmax(logits / T, dim=0)
                     total_nll -= lp[true_local].item()
@@ -384,12 +383,12 @@ def predict_test_language(model, model_type, new_emb, kept_feature_names,
                 probs = torch.sigmoid(model.output_layer(cos)).squeeze(-1).cpu().numpy()
                 pred_local = int(probs.argmax())
             elif model_type == 'categorical':
-                fe     = F.normalize(model.fv_embeddings(fi_t), dim=-1)
-                logits = (le_normed @ fe.T).squeeze(0)
+                fe     = model.fv_embeddings(fi_t)
+                logits = (new_emb @ fe.T).squeeze(0)
                 pred_local = F.log_softmax(logits / temperature, dim=0).argmax().item()
             else:  # geom
-                ve     = F.normalize(model.val_embeddings(fi_t), dim=-1)
-                logits = (le_normed @ ve.T).squeeze(0)
+                ve     = model.val_embeddings(fi_t)
+                logits = (new_emb @ ve.T).squeeze(0)
                 pred_local = F.log_softmax(logits / temperature, dim=0).argmax().item()
 
             results[fname] = feat_to_value_names[fi][pred_local]
