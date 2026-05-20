@@ -649,7 +649,15 @@ def main():
                         choices=["wals", "grambank"],
                         help="Typological database to use (default: wals)")
     parser.add_argument("--wals_repo", type=str, default=None,
-                        help="Path to cloned cldf-datasets/wals repo")
+                        help="Path to cloned cldf-datasets/wals repo. "
+                             "For replication of Bjerva et al. (2019), "
+                             "use tag v2020.4 (closest available to paper's WALS 2013 data). "
+                             "Current HEAD produces Freq ~0.52 vs paper's ~0.30 due to data updates.")
+    parser.add_argument("--max_majority_frac", type=float, default=None,
+                        help="Drop features whose average majority fraction exceeds this "
+                             "threshold (computed with nanmean over observed cells). "
+                             "On WALS CLDF HEAD: 0.87 removes ~14 near-universal features, "
+                             "0.75 removes ~98. Default None = no filtering.")
     parser.add_argument("--grambank_repo", type=str, default=None,
                         help="Path to cloned glottobank/grambank repo")
     parser.add_argument("--glottolog_repo", type=str, default=None,
@@ -701,7 +709,8 @@ def main():
         df, feature_cols = load_wals_cldf(args.wals_repo)
 
     binary_matrix, bin_names, feature_groups, feature_value_names = \
-        binarise_features(df, feature_cols)
+        binarise_features(df, feature_cols,
+                          max_majority_frac=args.max_majority_frac)
 
     # 2. Optionally load pre-trained language embeddings
     pretrained = None
@@ -733,7 +742,8 @@ def main():
             pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
         binary_matrix, bin_names, feature_groups, feature_value_names = \
-            binarise_features(df, feature_cols)
+            binarise_features(df, feature_cols,
+                              max_majority_frac=args.max_majority_frac)
         print(f"Bible ∩ database filter: {n_before} → {len(df)} languages")
     else:
         print("WARNING: No Bible filter applied — results not comparable "
