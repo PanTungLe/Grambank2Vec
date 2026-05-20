@@ -296,7 +296,7 @@ model_tcf = TypologicalMF(
 )
 print(f"\n  Training TCF model ({EPOCHS} epochs) ...")
 t0 = time.time()
-losses_tcf = train_model(
+losses_tcf, _epochs = train_model(
     model_tcf, train_ds_tcf,
     n_epochs=EPOCHS, batch_size=BATCH, lr=LR, l2_reg=L2, device=device,
 )

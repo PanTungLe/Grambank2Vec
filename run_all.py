@@ -38,7 +38,11 @@ from data_preparation import (
     align_embeddings,
 )
 from char_lm import train_charlm
-from evaluation_pipeline import run_experiments, summarise_results
+from evaluation_pipeline import (
+    run_experiments,
+    summarise_results,
+    summarise_results_weighted,
+)
 
 
 def clone_repo(url: str, target_dir: str) -> str:
@@ -139,6 +143,10 @@ def main():
                         help="Skip char-LM training (run T-CF only)")
     parser.add_argument("--pretrained_embs", type=str, default=None,
                         help="Path to pre-existing aligned embeddings .npy")
+    parser.add_argument("--bible_lang_mask", type=str, default=None,
+                        help="Path to pre-computed .npy boolean mask for "
+                             "Bible ∩ WALS filtering. Enables the filter "
+                             "even when --skip_charlm is active.")
 
     # Char-LM hyperparameters
     parser.add_argument("--charlm_hidden_dim", type=int, default=1024)
@@ -149,15 +157,17 @@ def main():
 
     # Experiment hyperparameters
     parser.add_argument("--embed_dim", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=0.1)
+    parser.add_argument("--l2_reg", type=float, default=0.1,
+                        help="AdamW weight_decay. Default 0.1 matches Bjerva et al.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5)
-    parser.add_argument("--no_freeze_lang", action="store_true",
-                        help="Allow pretrained language embeddings to be "
-                             "fine-tuned. Default is to freeze them.")
+    parser.add_argument("--freeze_lang", action="store_true",
+                        help="Freeze pretrained language embeddings during "
+                             "training. Default is to fine-tune them, as "
+                             "reported in Bjerva et al. (2019).")
 
     parser.add_argument("--device", type=str, default="cpu")
 
@@ -177,6 +187,10 @@ def main():
         args.wals_repo = os.path.join(args.output_dir, "wals")
         clone_repo("https://github.com/cldf-datasets/wals.git",
                     args.wals_repo)
+        print("NOTE: Paper (Bjerva et al. 2019) used WALS 2013 website data.")
+        print("      For closest replication, use v2020.4:")
+        print("      git clone --branch v2020.4 https://github.com/cldf-datasets/wals")
+        print("      Current HEAD differs in feature distributions (Freq ~0.52 vs ~0.30).")
     print(f"WALS repo: {args.wals_repo}")
 
     # Bible corpora
@@ -291,19 +305,35 @@ def main():
     # ================================================================
     # Step 3b: Filter to Bible ∩ WALS intersection (paper §7.1)
     # ================================================================
-    if pretrained_embs is not None:
-        print("\n" + "=" * 60)
-        print("STEP 3b: Filter to Bible ∩ WALS intersection")
-        print("=" * 60)
+    print("\n" + "=" * 60)
+    print("STEP 3b: Filter to Bible ∩ WALS intersection")
+    print("=" * 60)
+
+    has_bible = None
+    if args.bible_lang_mask:
+        has_bible = np.load(args.bible_lang_mask).astype(bool)
+        print(f"Loaded Bible mask from {args.bible_lang_mask}")
+    elif pretrained_embs is not None:
         has_bible = np.any(pretrained_embs != 0, axis=1)
+        print("Computed Bible mask from non-zero pretrained embedding rows")
+
+    if has_bible is not None:
         n_before = len(df)
+        mask_path = os.path.join(args.output_dir, "bible_lang_mask.npy")
+        np.save(mask_path, has_bible)
+        print(f"Saved Bible mask to {mask_path}")
         df = df[has_bible].reset_index(drop=True)
         binary_matrix = binary_matrix[has_bible]
-        pretrained_embs = pretrained_embs[has_bible]
+        if pretrained_embs is not None:
+            pretrained_embs = pretrained_embs[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
         binary_matrix, bin_names, feature_groups, feature_value_names = binarise_wals(
             df, feature_cols)
         print(f"Filtered: {n_before} → {len(df)} languages with Bible data")
+    else:
+        print("WARNING: No Bible filter applied — results not comparable "
+              "to Bjerva et al. Table 1. "
+              "Use --bible_lang_mask to apply the filter for T-CF-only runs.")
 
     # ================================================================
     # Step 4: Run experiments
@@ -325,7 +355,7 @@ def main():
         pretrained_embs=pretrained_embs,
         device=args.device,
         min_branch_size=args.min_branch_size,
-        freeze_lang=not args.no_freeze_lang,
+        freeze_lang=args.freeze_lang,
     )
 
     # ================================================================
@@ -340,10 +370,13 @@ def main():
     print(f"Detailed results saved to {results_csv}")
 
     summary = summarise_results(results)
+    weighted_summary = summarise_results_weighted(results)
     print("\n" + "=" * 60)
     print("AGGREGATE RESULTS (cf. Table 1 in the paper)")
     print("=" * 60)
     print(summary.to_string(index=False))
+    print("\nWeighted by held-out original feature items (diagnostic):")
+    print(weighted_summary.to_string(index=False))
 
     # Also save summary
     summary_csv = os.path.join(args.output_dir, "summary.csv")

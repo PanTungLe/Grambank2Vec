@@ -21,6 +21,7 @@ Usage
 """
 
 import argparse
+import hashlib
 import warnings
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
@@ -394,6 +395,32 @@ def knn_baseline(
     return f1_score(y_true, y_pred, average="micro")
 
 
+
+def count_eval_items(
+    eval_langs: np.ndarray,
+    eval_feats: np.ndarray,
+    feature_groups: dict,
+) -> int:
+    """
+    Count original feature-language items in an evaluation split.
+
+    ``eval_vals`` is expressed over binarised columns, so a single original
+    multi-valued WALS feature can contribute several binary cells.  Aggregate
+    diagnostics should therefore use this original-item count rather than the
+    raw binary-cell count when weighting branch-level F1 scores.
+    """
+    bin_to_orig = {
+        bi: orig_feat
+        for orig_feat, bin_indices in feature_groups.items()
+        for bi in bin_indices
+    }
+    items = {
+        (int(lang_idx), bin_to_orig[int(feat_idx)])
+        for lang_idx, feat_idx in zip(eval_langs, eval_feats)
+        if int(feat_idx) in bin_to_orig
+    }
+    return len(items)
+
 # ============================================================================
 # 4.  Full Experiment Runner
 # ============================================================================
@@ -406,7 +433,7 @@ def run_experiments(
     in_branch_fracs: list = [0.0, 0.01, 0.05, 0.10, 0.20],
     n_repeats: int = 5,
     embed_dim: int = 64,
-    n_epochs: int = 10,
+    n_epochs: int = 30,
     batch_size: int = 64,
     lr: float = 1e-3,
     l2_reg: float = 0.1,
@@ -414,7 +441,8 @@ def run_experiments(
     device: str = "cpu",
     min_branch_size: int = 5,
     only_branches: Optional[list] = None,
-    freeze_lang: bool = True,
+    freeze_lang: bool = False,
+    output_csv: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Run the full set of experiments across all qualifying branches.
@@ -435,7 +463,8 @@ def run_experiments(
     Returns
     -------
     results_df : pd.DataFrame with columns
-        [branch, macroarea, in_branch_frac, repeat, model, f1]
+        [branch, macroarea, in_branch_frac, repeat, model, f1,
+         n_train_cells, n_eval_cells, n_eval_items]
     """
     n_langs, n_bfeat = binary_matrix.shape
 
@@ -447,6 +476,9 @@ def run_experiments(
     print(f"\nQualifying branches (≥{min_branch_size} languages): "
           f"{len(qualifying)}")
 
+    branch_list = sorted(qualifying)
+    branch_to_int = {b: i for i, b in enumerate(branch_list)}
+
     rows = []
 
     for branch in qualifying:
@@ -457,7 +489,13 @@ def run_experiments(
 
         for frac in in_branch_fracs:
             for rep in range(n_repeats):
-                rng = np.random.default_rng(seed=rep * 1000 + hash(branch) % 10000)
+                branch_seed = int.from_bytes(
+                    hashlib.blake2b(
+                        branch.encode("utf-8"), digest_size=4
+                    ).digest(),
+                    "little",
+                )
+                rng = np.random.default_rng(seed=rep * 1000 + branch_seed)
 
                 # --- Split ---
                 train_ds, eval_langs, eval_feats, eval_vals = split_by_branch(
@@ -471,6 +509,8 @@ def run_experiments(
                     continue
 
                 n_bfeat_local = binary_matrix.shape[1]
+                n_eval_items = count_eval_items(
+                    eval_langs, eval_feats, feature_groups)
 
                 # --- Majority baseline ---
                 f1_freq = majority_baseline(
@@ -479,7 +519,10 @@ def run_experiments(
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
-                    "model": "Freq", "f1": f1_freq
+                    "model": "Freq", "f1": f1_freq,
+                    "n_train_cells": len(train_ds),
+                    "n_eval_cells": len(eval_vals),
+                    "n_eval_items": n_eval_items,
                 })
 
                 # --- KNN baseline (if pretrained embeddings provided) ---
@@ -492,15 +535,18 @@ def run_experiments(
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
-                        "model": "KNN", "f1": f1_knn
+                        "model": "KNN", "f1": f1_knn,
+                        "n_train_cells": len(train_ds),
+                        "n_eval_cells": len(eval_vals),
+                        "n_eval_items": n_eval_items,
                     })
 
                 # --- T-CF (core model) ---
                 model = TypologicalMF(n_langs, n_bfeat, embed_dim)
                 print(f"\n  [T-CF] branch={branch}, frac={frac}, rep={rep+1}")
-                train_model(model, train_ds, n_epochs=n_epochs,
-                            batch_size=batch_size, lr=lr,
-                            l2_reg=l2_reg, device=device)
+                _losses, _epochs = train_model(model, train_ds, n_epochs=n_epochs,
+                                               batch_size=batch_size, lr=lr,
+                                               l2_reg=l2_reg, device=device)
 
                 f1_tcf = decode_and_evaluate(
                     model, eval_langs, eval_feats, eval_vals,
@@ -508,9 +554,14 @@ def run_experiments(
                 rows.append({
                     "branch": branch, "macroarea": macroarea,
                     "in_branch_frac": frac, "repeat": rep,
-                    "model": "T-CF", "f1": f1_tcf
+                    "model": "T-CF", "f1": f1_tcf,
+                    "n_train_cells": len(train_ds),
+                    "n_eval_cells": len(eval_vals),
+                    "n_eval_items": n_eval_items,
                 })
                 print(f"    → F1 = {f1_tcf:.4f}")
+                if output_csv:
+                    pd.DataFrame(rows).to_csv(output_csv, index=False)
 
                 # --- SemiSup (if pretrained embeddings provided) ---
                 if pretrained_embs is not None:
@@ -519,9 +570,9 @@ def run_experiments(
                         embed_dim=embed_dim, freeze_lang=freeze_lang)
                     print(f"  [SemiSup] branch={branch}, frac={frac}, "
                           f"rep={rep+1}")
-                    train_model(model_ss, train_ds, n_epochs=n_epochs,
-                                batch_size=batch_size, lr=lr,
-                                l2_reg=l2_reg, device=device)
+                    _losses, _epochs = train_model(model_ss, train_ds, n_epochs=n_epochs,
+                                                   batch_size=batch_size, lr=lr,
+                                                   l2_reg=l2_reg, device=device)
 
                     f1_ss = decode_and_evaluate(
                         model_ss, eval_langs, eval_feats, eval_vals,
@@ -529,7 +580,10 @@ def run_experiments(
                     rows.append({
                         "branch": branch, "macroarea": macroarea,
                         "in_branch_frac": frac, "repeat": rep,
-                        "model": "SemiSup", "f1": f1_ss
+                        "model": "SemiSup", "f1": f1_ss,
+                        "n_train_cells": len(train_ds),
+                        "n_eval_cells": len(eval_vals),
+                        "n_eval_items": n_eval_items,
                     })
                     print(f"    → F1 = {f1_ss:.4f}")
 
@@ -550,6 +604,40 @@ def summarise_results(results_df: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def summarise_results_weighted(
+    results_df: pd.DataFrame,
+    weight_col: str = "n_eval_items",
+) -> pd.DataFrame:
+    """
+    Summarise results with weighted means.
+
+    Useful for diagnosing branch-composition effects: if macro (unweighted)
+    and weighted summaries differ strongly, the aggregate score is highly
+    sensitive to which branches and branch sizes are present.  The default
+    weight is the number of original held-out feature-language items, not the
+    number of binarised cells, to avoid over-weighting multi-valued features.
+    """
+    if weight_col not in results_df.columns:
+        raise ValueError(f"Missing weight column '{weight_col}' in results_df")
+
+    rows = []
+    grouped = results_df.groupby(["in_branch_frac", "model"], as_index=False)
+    for _, group in grouped:
+        weights = group[weight_col].to_numpy(dtype=float)
+        scores = group["f1"].to_numpy(dtype=float)
+        if np.isclose(weights.sum(), 0.0):
+            weighted_mean = float(np.mean(scores))
+        else:
+            weighted_mean = float(np.average(scores, weights=weights))
+        rows.append({
+            "in_branch_frac": group["in_branch_frac"].iloc[0],
+            "model": group["model"].iloc[0],
+            "weighted_mean_f1": weighted_mean,
+            "n_runs": int(len(group)),
+        })
+    return pd.DataFrame(rows)
+
+
 # ============================================================================
 # 5.  Main  —  Putting It All Together
 # ============================================================================
@@ -561,7 +649,15 @@ def main():
                         choices=["wals", "grambank"],
                         help="Typological database to use (default: wals)")
     parser.add_argument("--wals_repo", type=str, default=None,
-                        help="Path to cloned cldf-datasets/wals repo")
+                        help="Path to cloned cldf-datasets/wals repo. "
+                             "For replication of Bjerva et al. (2019), "
+                             "use tag v2020.4 (closest available to paper's WALS 2013 data). "
+                             "Current HEAD produces Freq ~0.52 vs paper's ~0.30 due to data updates.")
+    parser.add_argument("--max_majority_frac", type=float, default=None,
+                        help="Drop features whose average majority fraction exceeds this "
+                             "threshold (computed with nanmean over observed cells). "
+                             "On WALS CLDF HEAD: 0.87 removes ~14 near-universal features, "
+                             "0.75 removes ~98. Default None = no filtering.")
     parser.add_argument("--grambank_repo", type=str, default=None,
                         help="Path to cloned glottobank/grambank repo")
     parser.add_argument("--glottolog_repo", type=str, default=None,
@@ -579,20 +675,21 @@ def main():
                              "filtering. If not provided and --pretrained_embs "
                              "is set, inferred from non-zero embedding rows.")
     parser.add_argument("--embed_dim", type=int, default=64)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--l2_reg", type=float, default=0.1)
+    parser.add_argument("--l2_reg", type=float, default=0.1,
+                        help="AdamW weight_decay. Default 0.1 matches Bjerva et al.")
     parser.add_argument("--n_repeats", type=int, default=5)
     parser.add_argument("--min_branch_size", type=int, default=5,
                         help="Skip branches with fewer languages (paper: >4)")
     parser.add_argument("--branches", type=str, nargs="+", default=None,
                         help="Only evaluate these branches (e.g. --branches Oceanic Slavic)")
-    parser.add_argument("--no_freeze_lang", action="store_true",
-                        help="Allow pretrained language embeddings to be "
-                             "fine-tuned during training. Default is to "
-                             "freeze them, which preserves high-quality "
-                             "pretrained geometry (e.g. from Östling vectors).")
+    parser.add_argument("--freeze_lang", action="store_true",
+                        help="Freeze pretrained language embeddings during "
+                             "training. Default is to fine-tune them, as "
+                             "reported in Bjerva et al. (2019). Use "
+                             "--freeze_lang to freeze them.")
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output_csv", type=str, default="results.csv")
     args = parser.parse_args()
@@ -612,7 +709,8 @@ def main():
         df, feature_cols = load_wals_cldf(args.wals_repo)
 
     binary_matrix, bin_names, feature_groups, feature_value_names = \
-        binarise_features(df, feature_cols)
+        binarise_features(df, feature_cols,
+                          max_majority_frac=args.max_majority_frac)
 
     # 2. Optionally load pre-trained language embeddings
     pretrained = None
@@ -632,7 +730,7 @@ def main():
         print(f"Loaded pretrained embeddings: {pretrained.shape}")
 
     # 2b. Filter to Bible ∩ database intersection (paper §7.1)
-    if pretrained is not None:
+    if args.bible_lang_mask or pretrained is not None:
         if args.bible_lang_mask:
             has_bible = np.load(args.bible_lang_mask).astype(bool)
         else:
@@ -640,11 +738,16 @@ def main():
         n_before = len(df)
         df = df[has_bible].reset_index(drop=True)
         binary_matrix = binary_matrix[has_bible]
-        pretrained = pretrained[has_bible]
+        if pretrained is not None:
+            pretrained = pretrained[has_bible]
         # Re-binarise to recompute feature_groups with correct indices
         binary_matrix, bin_names, feature_groups, feature_value_names = \
-            binarise_features(df, feature_cols)
+            binarise_features(df, feature_cols,
+                              max_majority_frac=args.max_majority_frac)
         print(f"Bible ∩ database filter: {n_before} → {len(df)} languages")
+    else:
+        print("WARNING: No Bible filter applied — results not comparable "
+              "to Bjerva et al. Table 1")
 
     # 3. Run experiments
     results = run_experiments(
@@ -661,7 +764,8 @@ def main():
         device=args.device,
         min_branch_size=args.min_branch_size,
         only_branches=args.branches,
-        freeze_lang=not args.no_freeze_lang,
+        freeze_lang=args.freeze_lang,
+        output_csv=args.output_csv,
     )
 
     # 4. Save and display results
@@ -669,10 +773,13 @@ def main():
     print(f"\nDetailed results saved to {args.output_csv}")
 
     summary = summarise_results(results)
+    weighted_summary = summarise_results_weighted(results)
     print("\n" + "=" * 60)
     print(f"AGGREGATE RESULTS — {args.database.upper()}")
     print("=" * 60)
     print(summary.to_string(index=False))
+    print("\nWeighted by held-out original feature items (diagnostic):")
+    print(weighted_summary.to_string(index=False))
 
 
 if __name__ == "__main__":
