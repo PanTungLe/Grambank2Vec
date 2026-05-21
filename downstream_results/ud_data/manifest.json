@@ -1,0 +1,206 @@
+{
+  "stan1318": {
+    "train": "downstream_results/ud_data/arb_padt-train.conllu",
+    "test": "downstream_results/ud_data/arb_padt-test.conllu"
+  },
+  "nucl1235": {
+    "train": "downstream_results/ud_data/hye_armtdp-train.conllu",
+    "test": "downstream_results/ud_data/hye_armtdp-test.conllu"
+  },
+  "bamb1269": {
+    "test": "downstream_results/ud_data/bam_crb-test.conllu"
+  },
+  "beja1238": {},
+  "bela1254": {
+    "train": "downstream_results/ud_data/bel_hse-train.conllu",
+    "test": "downstream_results/ud_data/bel_hse-test.conllu"
+  },
+  "bhoj1244": {
+    "test": "downstream_results/ud_data/bho_bhtb-test.conllu"
+  },
+  "bret1244": {
+    "test": "downstream_results/ud_data/bre_keb-test.conllu"
+  },
+  "yuec1235": {
+    "test": "downstream_results/ud_data/yue_hk-test.conllu"
+  },
+  "stan1289": {
+    "train": "downstream_results/ud_data/cat_ancora-train.conllu",
+    "test": "downstream_results/ud_data/cat_ancora-test.conllu"
+  },
+  "mand1415": {
+    "train": "downstream_results/ud_data/cmn_gsdsimp-train.conllu",
+    "test": "downstream_results/ud_data/cmn_gsdsimp-test.conllu"
+  },
+  "chuk1273": {
+    "test": "downstream_results/ud_data/ckt_hse-test.conllu"
+  },
+  "copt1239": {
+    "train": "downstream_results/ud_data/cop_scriptorium-train.conllu",
+    "test": "downstream_results/ud_data/cop_scriptorium-test.conllu"
+  },
+  "czec1258": {
+    "train": "downstream_results/ud_data/ces_fictree-train.conllu",
+    "test": "downstream_results/ud_data/ces_fictree-test.conllu"
+  },
+  "dani1285": {
+    "train": "downstream_results/ud_data/dan_ddt-train.conllu",
+    "test": "downstream_results/ud_data/dan_ddt-test.conllu"
+  },
+  "dutc1256": {
+    "train": "downstream_results/ud_data/nld_alpino-train.conllu",
+    "test": "downstream_results/ud_data/nld_alpino-test.conllu"
+  },
+  "stan1293": {
+    "train": "downstream_results/ud_data/eng_ewt-train.conllu",
+    "test": "downstream_results/ud_data/eng_ewt-test.conllu"
+  },
+  "even1259": {},
+  "faro1244": {
+    "train": "downstream_results/ud_data/fao_farpahc-train.conllu",
+    "test": "downstream_results/ud_data/fao_farpahc-test.conllu"
+  },
+  "finn1318": {
+    "train": "downstream_results/ud_data/fin_tdt-train.conllu",
+    "test": "downstream_results/ud_data/fin_tdt-test.conllu"
+  },
+  "stan1290": {
+    "train": "downstream_results/ud_data/fra_gsd-train.conllu",
+    "test": "downstream_results/ud_data/fra_gsd-test.conllu"
+  },
+  "west2354": {
+    "test": "downstream_results/ud_data/fry_fame-test.conllu"
+  },
+  "mode1248": {
+    "train": "downstream_results/ud_data/ell_gdt-train.conllu",
+    "test": "downstream_results/ud_data/ell_gdt-test.conllu"
+  },
+  "para1311": {},
+  "hebr1245": {
+    "train": "downstream_results/ud_data/heb_htb-train.conllu",
+    "test": "downstream_results/ud_data/heb_htb-test.conllu"
+  },
+  "hind1269": {
+    "train": "downstream_results/ud_data/hin_hdtb-train.conllu",
+    "test": "downstream_results/ud_data/hin_hdtb-test.conllu"
+  },
+  "hung1274": {
+    "train": "downstream_results/ud_data/hun_szeged-train.conllu",
+    "test": "downstream_results/ud_data/hun_szeged-test.conllu"
+  },
+  "icel1247": {
+    "train": "downstream_results/ud_data/isl_icepahc-train.conllu",
+    "test": "downstream_results/ud_data/isl_icepahc-test.conllu"
+  },
+  "iris1253": {
+    "train": "downstream_results/ud_data/gle_idt-train.conllu",
+    "test": "downstream_results/ud_data/gle_idt-test.conllu"
+  },
+  "ital1282": {
+    "train": "downstream_results/ud_data/ita_isdt-train.conllu",
+    "test": "downstream_results/ud_data/ita_isdt-test.conllu"
+  },
+  "nucl1643": {
+    "train": "downstream_results/ud_data/jpn_gsd-train.conllu",
+    "test": "downstream_results/ud_data/jpn_gsd-test.conllu"
+  },
+  "komi1268": {
+    "train": "downstream_results/ud_data/kpv_lattice-train.conllu",
+    "test": "downstream_results/ud_data/kpv_ikdp-test.conllu"
+  },
+  "kore1280": {
+    "train": "downstream_results/ud_data/kor_gsd-train.conllu",
+    "test": "downstream_results/ud_data/kor_gsd-test.conllu"
+  },
+  "latv1249": {
+    "train": "downstream_results/ud_data/lav_lvtb-train.conllu",
+    "test": "downstream_results/ud_data/lav_lvtb-test.conllu"
+  },
+  "lith1251": {
+    "train": "downstream_results/ud_data/lit_alksnis-train.conllu",
+    "test": "downstream_results/ud_data/lit_alksnis-test.conllu"
+  },
+  "malt1254": {
+    "train": "downstream_results/ud_data/mlt_mudt-train.conllu",
+    "test": "downstream_results/ud_data/mlt_mudt-test.conllu"
+  },
+  "mara1378": {
+    "train": "downstream_results/ud_data/mar_ufal-train.conllu",
+    "test": "downstream_results/ud_data/mar_ufal-test.conllu"
+  },
+  "mund1330": {
+    "test": "downstream_results/ud_data/myu_tudet-test.conllu"
+  },
+  "nort2671": {
+    "train": "downstream_results/ud_data/sme_giella-train.conllu",
+    "test": "downstream_results/ud_data/sme_giella-test.conllu"
+  },
+  "oloo1241": {},
+  "west2369": {
+    "train": "downstream_results/ud_data/pes_perdt-train.conllu",
+    "test": "downstream_results/ud_data/pes_perdt-test.conllu"
+  },
+  "poli1260": {
+    "train": "downstream_results/ud_data/pol_pdb-train.conllu",
+    "test": "downstream_results/ud_data/pol_pdb-test.conllu"
+  },
+  "port1283": {
+    "train": "downstream_results/ud_data/por_bosque-train.conllu",
+    "test": "downstream_results/ud_data/por_bosque-test.conllu"
+  },
+  "russ1263": {
+    "train": "downstream_results/ud_data/rus_gsd-train.conllu",
+    "test": "downstream_results/ud_data/rus_syntagrus-test.conllu"
+  },
+  "slov1268": {
+    "train": "downstream_results/ud_data/slv_ssj-train.conllu",
+    "test": "downstream_results/ud_data/slv_ssj-test.conllu"
+  },
+  "soma1255": {},
+  "swah1253": {},
+  "swed1254": {
+    "train": "downstream_results/ud_data/swe_talbanken-train.conllu",
+    "test": "downstream_results/ud_data/swe_talbanken-test.conllu"
+  },
+  "taga1270": {
+    "test": "downstream_results/ud_data/tgl_trg-test.conllu"
+  },
+  "tami1289": {
+    "train": "downstream_results/ud_data/tam_ttb-train.conllu",
+    "test": "downstream_results/ud_data/tam_ttb-test.conllu"
+  },
+  "telu1262": {
+    "train": "downstream_results/ud_data/tel_mtg-train.conllu",
+    "test": "downstream_results/ud_data/tel_mtg-test.conllu"
+  },
+  "thai1261": {
+    "test": "downstream_results/ud_data/tha_pud-test.conllu"
+  },
+  "nucl1301": {
+    "train": "downstream_results/ud_data/tur_boun-train.conllu",
+    "test": "downstream_results/ud_data/tur_boun-test.conllu"
+  },
+  "ukra1253": {
+    "train": "downstream_results/ud_data/ukr_iu-train.conllu",
+    "test": "downstream_results/ud_data/ukr_iu-test.conllu"
+  },
+  "viet1252": {
+    "train": "downstream_results/ud_data/vie_vtb-train.conllu",
+    "test": "downstream_results/ud_data/vie_vtb-test.conllu"
+  },
+  "warl1254": {
+    "test": "downstream_results/ud_data/wbp_ufal-test.conllu"
+  },
+  "wels1247": {
+    "train": "downstream_results/ud_data/cym_ccg-train.conllu",
+    "test": "downstream_results/ud_data/cym_ccg-test.conllu"
+  },
+  "nucl1347": {
+    "train": "downstream_results/ud_data/wol_wtb-train.conllu",
+    "test": "downstream_results/ud_data/wol_wtb-test.conllu"
+  },
+  "yaku1245": {
+    "test": "downstream_results/ud_data/sah_yktdt-test.conllu"
+  },
+  "zulu1248": {}
+}
