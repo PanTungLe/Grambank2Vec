@@ -329,7 +329,10 @@ def main(argv=None):
         # Save all results
         res_path = os.path.join(dirs["results"], "all_results.json")
         with open(res_path, "w") as f:
-            json.dump(all_results, f, indent=2, default=str)
+            json.dump(all_results, f, indent=2,
+                      default=lambda x: None if (isinstance(x, float)
+                                                  and (np.isnan(x) or np.isinf(x)))
+                                              else str(x))
         print(f"\nResults saved: {res_path}")
 
     # -----------------------------------------------------------------------
@@ -356,15 +359,21 @@ def main(argv=None):
                     continue
                 if not isinstance(metrics, dict):
                     continue
+
+                def _f(v):
+                    """Coerce None (JSON null from np.nan) back to np.nan."""
+                    return np.nan if v is None else float(v)
+
                 rows.append({
                     "representation": repr_key,
-                    "split": split_name,
-                    "split_type": split_type,
-                    "model": model_name,
-                    "mae":          metrics.get("mae", np.nan),
-                    "brier":        metrics.get("brier", np.nan),
-                    "spearman_rho": metrics.get("spearman_rho", np.nan),
-                    "kl":           metrics.get("kl", np.nan),
+                    "split":          split_name,
+                    "split_type":     split_type,
+                    "model":          model_name,
+                    "mae":          _f(metrics.get("mae")),
+                    "brier":        _f(metrics.get("brier")),
+                    "spearman_rho": _f(metrics.get("spearman_rho")),
+                    "kl":           _f(metrics.get("kl")),
+                    "n_cells":      _f(metrics.get("n_cells", np.nan)),
                 })
 
     if not rows:
@@ -376,35 +385,52 @@ def main(argv=None):
     df.to_csv(summary_path, index=False)
     print(f"Summary saved: {summary_path}")
 
+    # Print full summary table sorted by split type then spearman
+    print("\n--- FULL RESULTS: all splits × representations × models ---")
+    for split_name in sorted(df["split"].unique()):
+        sub = df[df["split"] == split_name]
+        mlp = sub[sub["model"] == "mlp"].sort_values("spearman_rho", ascending=False)
+        if mlp.empty:
+            continue
+        n_cells = int(mlp["n_cells"].dropna().iloc[0]) if not mlp["n_cells"].dropna().empty else "?"
+        print(f"\n  {split_name}  (n_test_cells={n_cells})")
+        print(f"  {'Representation':<35} {'MAE':>7} {'Spearman':>9} {'KL':>7}")
+        print(f"  {'-'*60}")
+        for _, row in mlp.iterrows():
+            rho_str = f"{row['spearman_rho']:>9.4f}" if not np.isnan(row['spearman_rho']) else "      NaN"
+            print(f"  {row['representation']:<35} {row['mae']:>7.4f} {rho_str} {row['kl']:>7.4f}")
+
     # Print the key result: Split C (value holdout), MLP model
     print("\n--- KEY RESULT: Value-holdout splits (Split C), MLP model ---")
     key_df = df[(df["split_type"] == "value") & (df["model"] == "mlp")]
     if not key_df.empty:
-        print(key_df[["representation", "split", "mae", "spearman_rho", "kl"]]
-              .sort_values("spearman_rho", ascending=False)
+        print(key_df[["representation", "split", "mae", "spearman_rho", "kl", "n_cells"]]
+              .sort_values(["split", "spearman_rho"], ascending=[True, False])
               .to_string(index=False, float_format="{:.4f}".format))
     else:
-        print("No value-holdout MLP results found yet.")
+        print("No value-holdout MLP results found.")
 
     print("\n--- Comparison: Repr B vs Repr C on value-holdout splits ---")
     for metric in ["mae", "spearman_rho", "kl"]:
-        for split in df["split"].unique():
+        for split in sorted(df["split"].unique()):
             if "value" not in split:
                 continue
             sub = df[(df["split"] == split) & (df["model"] == "mlp")]
             for db in ["wals", "grambank"]:
-                b_row = sub[sub["representation"].str.contains(
-                    f"{db}_s42_B$", regex=True)]
-                c_row = sub[sub["representation"].str.contains(
-                    f"{db}_s42_C", regex=True)]
+                b_row = sub[sub["representation"].str.fullmatch(
+                    rf"{db}_s\d+_B")]
+                c_row = sub[sub["representation"].str.fullmatch(
+                    rf"{db}_s\d+_C")]
                 if b_row.empty or c_row.empty:
                     continue
                 b_val = b_row[metric].values[0]
                 c_val = c_row[metric].values[0]
-                winner = "B" if (b_val < c_val if metric in ["mae","kl","brier"]
+                if np.isnan(b_val) or np.isnan(c_val):
+                    print(f"  {db} {split} {metric}: B={b_val}  C={c_val}  (NaN — check n_cells)")
+                    continue
+                winner = "B" if (b_val < c_val if metric in ["mae", "kl", "brier"]
                                  else b_val > c_val) else "C"
-                print(f"  {db} {split} {metric}: B={b_val:.4f}  C={c_val:.4f}  "
-                      f"Winner={winner}")
+                print(f"  {db} {split} {metric}: B={b_val:.4f}  C={c_val:.4f}  Winner={winner}")
 
     print(f"\n{'='*60}")
     print("DIRECTION TASK COMPLETE")
