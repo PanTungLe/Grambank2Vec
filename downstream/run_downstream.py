@@ -332,12 +332,24 @@ def main(argv=None):
               "Skipping distance computation. "
               "Run phase 1 first, or check --out_dir.")
 
+    # Load confound control files if present
+    sizes_path  = os.path.join(dirs["ud"], "treebank_sizes.json")
+    script_path = os.path.join(dirs["ud"], "script_map.json")
+    treebank_sizes = json.load(open(sizes_path))  if os.path.exists(sizes_path)  else None
+    script_map     = json.load(open(script_path)) if os.path.exists(script_path) else None
+    if treebank_sizes:
+        print(f"Treebank sizes loaded ({len(treebank_sizes)} entries) — enabling size-residualised Spearman")
+    if script_map:
+        print(f"Script map loaded ({len(script_map)} entries) — enabling script-controlled Spearman")
+
     # Evaluate
     if os.path.exists(dirs["dist"]):
         summary = evaluate_all(
             transfer_matrix=transfer_matrix,
             distances_dir=dirs["dist"],
             out_dir=dirs["results"],
+            treebank_sizes=treebank_sizes,
+            script_map=script_map,
         )
         print(f"\n{'='*60}")
         print("PIPELINE COMPLETE")
