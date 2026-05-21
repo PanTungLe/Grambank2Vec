@@ -1,0 +1,73 @@
+
+41 languages with train+test splits found in manifest
+Transfer matrix size: 41×41 = 1681 cells (1640 non-diagonal)
+
+Pre-loading test sets...
+  bela1254: 100 test sentences
+  copt1239: 100 test sentences
+  czec1258: 100 test sentences
+  dani1285: 100 test sentences
+  dutc1256: 100 test sentences
+  faro1244: 100 test sentences
+  finn1318: 100 test sentences
+  hebr1245: 100 test sentences
+  hind1269: 100 test sentences
+  hung1274: 100 test sentences
+  icel1247: 100 test sentences
+  iris1253: 100 test sentences
+  ital1282: 100 test sentences
+  komi1268: 100 test sentences
+  kore1280: 100 test sentences
+  latv1249: 100 test sentences
+  lith1251: 100 test sentences
+  malt1254: 100 test sentences
+  mand1415: 100 test sentences
+  mara1378: 47 test sentences
+  mode1248: 100 test sentences
+  nort2671: 100 test sentences
+  nucl1235: 100 test sentences
+  nucl1301: 100 test sentences
+  nucl1347: 100 test sentences
+  nucl1643: 100 test sentences
+  poli1260: 100 test sentences
+  port1283: 100 test sentences
+  russ1263: 100 test sentences
+  slov1268: 100 test sentences
+  stan1289: 100 test sentences
+  stan1290: 100 test sentences
+  stan1293: 100 test sentences
+  stan1318: 100 test sentences
+  swed1254: 100 test sentences
+  tami1289: 100 test sentences
+  telu1262: 100 test sentences
+  ukra1253: 100 test sentences
+  viet1252: 100 test sentences
+  wels1247: 100 test sentences
+  west2369: 100 test sentences
+Resumed from partial results: 164 cells already computed
+
+[1/41] bela1254: all results cached, skipping
+
+[2/41] copt1239: all results cached, skipping
+
+[3/41] czec1258: all results cached, skipping
+
+[4/41] dani1285: all results cached, skipping
+
+[5/41] Training on source: dutc1256
+  500 training sentences
+    Epoch   1  loss=2.5859  dev_acc=0.3543  patience=0/3
+    Epoch   2  loss=2.2148  dev_acc=0.4827  patience=0/3
+    Epoch   3  loss=1.8406  dev_acc=0.5281  patience=0/3
+    Epoch   4  loss=1.5074  dev_acc=0.5647  patience=0/3
+    Epoch   5  loss=1.3305  dev_acc=0.6081  patience=0/3
+  Evaluating on 41 target languages...
+    → bela1254: 0.2323 
+    → copt1239: 0.0535 
+    → czec1258: 0.3106 
+    → dani1285: 0.3204 
+    → dutc1256: 0.6081 (same)
+    → faro1244: 0.2190 
+    → finn1318: 0.2883 
+    → hebr1245: 0.1810 
+    → hind1269: 0.1289 
