@@ -282,13 +282,12 @@ def compute_repr_B_masked(
 
     feat_indices = sorted(feat_to_global_ids.keys())
     n_feats = len(feat_indices)
-    rng = np.random.default_rng(seed)
 
     # Number of features to keep per language
     n_keep = max(1, int(np.ceil(n_feats * (1.0 - mask_frac))))
 
     masked_reprs, full_reprs, found = [], [], []
-    for glot in glottocodes:
+    for lang_i, glot in enumerate(glottocodes):
         if glot not in lang2id:
             continue
         idx = lang2id[glot]
@@ -306,8 +305,11 @@ def compute_repr_B_masked(
         all_expected = np.stack(all_expected, axis=0)  # (n_feats, D)
         T_full = all_expected.mean(0)
 
-        # Mask: randomly drop features
-        kept_idx = rng.choice(n_feats, size=n_keep, replace=False)
+        # Per-language mask: seed offset by language index so each language
+        # gets its own independent feature subset. This correctly simulates
+        # per-language database sparsity rather than a global feature selection.
+        lang_rng = np.random.default_rng(seed + lang_i)
+        kept_idx = lang_rng.choice(n_feats, size=n_keep, replace=False)
         T_masked = all_expected[kept_idx].mean(0)
 
         full_reprs.append(T_full.astype(np.float32))
