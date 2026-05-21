@@ -76,8 +76,8 @@ for db in wals grambank; do
                 --architecture $arch \
                 --data_path $DATA_PATH \
                 --seed $seed \
-                --n_epochs 50 \
-                --patience 10 \
+                --n_epochs 10 \
+                --patience 0 \
                 --full \
                 --resume
         done
@@ -102,7 +102,7 @@ for db, arch, seed in itertools.product(
     print(f'python canonical/conditioning_pipeline.py '
           f'--database {db} --architecture {arch} '
           f'--data_path {data} '
-          f'--seed {seed} --n_epochs 50 --patience 10 '
+          f'--seed {seed} --n_epochs 10 --patience 0 '
           f'--full --resume')
 " > jobs.txt
 
