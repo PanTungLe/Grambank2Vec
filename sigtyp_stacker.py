@@ -681,27 +681,27 @@ def _macro_acc(per_genus):
 
 
 def compute_macro(preds_by_lang, gold_by_lang, test_meta_df, test_blank):
-    """Compute macro accuracy (per-genus mean of per-language accuracy)."""
-    per_genus = defaultdict(list)
-    gen_map   = {row["wals_code"]: row["genus"]
-                 for _, row in test_meta_df.iterrows()}
+    """Language-weighted macro accuracy (mean of per-language accuracies).
+
+    Matches the official scorer's 'overall' macro which averages 149 test
+    languages equally — NOT a mean of per-genus means.
+    """
+    accs = []
     for _, row in test_meta_df.iterrows():
-        wc    = row["wals_code"]
-        genus = row["genus"]
-        blk   = test_blank.get(wc, set())
-        gold  = gold_by_lang.get(wc, {})
-        pred  = preds_by_lang.get(wc, {})
-        c, t  = 0, 0
+        wc   = row["wals_code"]
+        blk  = test_blank.get(wc, set())
+        gold = gold_by_lang.get(wc, {})
+        pred = preds_by_lang.get(wc, {})
+        c, t = 0, 0
         for fn in blk:
             gv = gold.get(fn)
-            pv = pred.get(fn)
             if gv is None:
                 continue
             t += 1
-            c += int(pv == gv)
+            c += int(pred.get(fn) is not None and pred.get(fn) == gv)
         if t > 0:
-            per_genus[genus].append(c / t)
-    return _macro_acc(per_genus)
+            accs.append(c / t)
+    return float(np.mean(accs)) if accs else 0.0
 
 
 def _write_submission(path, test_meta_df, test_blank, test_obs_strs,
@@ -779,7 +779,8 @@ def oracle_ceiling(gold_by_lang, test_blank, test_meta_df, all_sys_preds,
             c += int(any_correct)
         if t > 0:
             per_genus[genus].append(c / t)
-    return _macro_acc(per_genus)
+    all_accs = [a for alist in per_genus.values() for a in alist]
+    return float(np.mean(all_accs)) if all_accs else 0.0
 
 
 def majority_vote_preds(gold_by_lang, test_blank, test_meta_df, all_sys_preds,
@@ -819,8 +820,8 @@ def main():
     # Load data
     # ------------------------------------------------------------------
     print("\n[Part 1] Parsing data ...")
-    train_meta, train_feat, _, _         = parse_tsv(TRAIN_CSV)
-    dev_meta,   dev_feat,   _, _         = parse_tsv(DEV_CSV)
+    train_meta, train_feat, _, train_obs_strs = parse_tsv(TRAIN_CSV)
+    dev_meta,   dev_feat,   _, dev_obs_strs   = parse_tsv(DEV_CSV)
     test_meta,  test_feat,  test_blank, test_obs_strs = parse_tsv(TEST_BLIND)
     _,          gold_feat,  _,          gold_obs_strs = parse_tsv(TEST_GOLD)
 
@@ -901,7 +902,8 @@ def main():
                 c += int(pv == gv)
             if t > 0:
                 pg[g].append(c / t)
-        mac = _macro_acc(pg)
+        all_lang_accs = [a for alist in pg.values() for a in alist]
+        mac = float(np.mean(all_lang_accs)) if all_lang_accs else 0.0
         sys_macros[sn] = mac
         print(f"    {sn:15s}: {mac:.4f}")
 
@@ -982,7 +984,7 @@ def main():
     # ------------------------------------------------------------------
     # Official scoring (if scorer exists)
     # ------------------------------------------------------------------
-    print("\n[Part 9] Running official scorer ...")
+    print("\n[Part 9] Running official scorer on stacker submission ...")
     try:
         stdout, stderr = _run_scorer([TEST_GOLD, OUT_TSV])
         if stdout:
@@ -991,6 +993,43 @@ def main():
             print("STDERR:", stderr[:500])
     except Exception as e:
         print(f"  Scorer failed: {e}")
+
+    # ------------------------------------------------------------------
+    # Ablation pilots
+    # ------------------------------------------------------------------
+    print("\n[Part 10] Ablation pilots (A–E) ...")
+    try:
+        import sigtyp_ablation as abl
+        ctx = {
+            "train_meta":        train_meta,
+            "dev_meta":          dev_meta,
+            "test_meta":         test_meta,
+            "train_obs":         train_obs_strs,
+            "dev_obs":           dev_obs_strs,
+            "test_obs":          test_obs_strs,
+            "test_blank":        test_blank,
+            "gold_by_lang":      gold_by_lang,
+            "kept_names":        kept_names,
+            "feat_to_vals":      feat_to_vals,
+            "BASE_DIR":          BASE_DIR,
+            "val_to_loc":        val_to_loc,
+            "feat_name_to_idx":  feat_name_to_idx,
+            "all_sys_preds":     all_sys_preds,
+            "freq_pred_str":     freq_pred_str,
+            "idf_weights":       idf_weights,
+            "cat_matrix_train":  cat_matrix_train,
+            "sys_macros":        sys_macros,
+            "SYS_NAMES":         SYS_NAMES,
+            "X_train":           X_train,
+            "y_train":           y_train,
+            "feat_idxs":         feat_idxs,
+            "groups":            groups,
+        }
+        abl.run_all_pilots(ctx)
+    except Exception as exc:
+        import traceback
+        print(f"  Ablation pilots failed: {exc}")
+        traceback.print_exc()
 
     # ------------------------------------------------------------------
     # Summary table
@@ -1009,7 +1048,7 @@ def main():
     print(f"{'Stacker (no override)':<20} {base_macro:8.4f}   (CV: {cv_macro:.4f})")
     for thr in sorted(override_results):
         m, _, n_ov = override_results[thr]
-        marker = " ← best" if thr == best_thr else ""
+        marker = " <- best" if thr == best_thr else ""
         print(f"  + neural thr={thr:>2}        {m:8.4f}   ({n_ov} overrides){marker}")
     print(f"{'Oracle ceiling':<20} {oracle:8.4f}")
     print("-" * 30)
