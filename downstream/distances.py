@@ -229,8 +229,15 @@ def compute_all_distances(
     all_reprs: Dict[str, np.ndarray] = {}
 
     for repr_dir in repr_dirs:
-        db_tag = Path(repr_dir).name  # e.g. "repr_wals_s42"
-        for repr_name in ["A", "B", "C", "B_masked30", "B_masked50", "B_masked70"]:
+        db_tag = Path(repr_dir).name  # e.g. "wals_s42"
+        # Discover all repr_*.npy files dynamically (handles weighted variants)
+        import glob as _glob
+        npy_files = sorted(_glob.glob(os.path.join(repr_dir, "repr_*.npy")))
+        for npy_path in npy_files:
+            stem = Path(npy_path).stem  # e.g. "repr_B_top20"
+            repr_name = stem[len("repr_"):]  # strip "repr_" prefix
+            if repr_name.endswith("_langs"):
+                continue
             mat, langs = load_repr(repr_dir, repr_name)
             if mat is None:
                 continue
