@@ -430,6 +430,17 @@ class MLPPredictor:
 # Evaluation metrics
 # ---------------------------------------------------------------------------
 
+def _safe_spearman(x: np.ndarray, y: np.ndarray) -> float:
+    """Spearman rho, returning NaN for constant inputs or n < 3."""
+    import warnings
+    if len(x) < 3:
+        return float("nan")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        rho, _ = spearmanr(x, y)
+    return float("nan") if np.isnan(rho) else float(rho)
+
+
 def evaluate_predictions(
     preds:   pd.DataFrame,  # (N_langs, N_configs) predicted probs
     targets: pd.DataFrame,  # (N_langs, N_configs) observed probs
@@ -441,16 +452,23 @@ def evaluate_predictions(
 
     Metrics
     -------
-    MAE          mean absolute error over all (lang, config) cells
-    RMSE         root mean squared error
-    Brier        mean squared error (= RMSE^2, standard probabilistic scoring)
-    Spearman_rho rank correlation between predicted and actual p values
+    MAE          mean absolute error over all (lang × config) cells
+    Brier        mean squared error
+    Spearman_rho rank correlation across all (lang × config) cells.
+                 With a single test language, this is Spearman over the 18
+                 direction configs — does the model correctly rank which
+                 configurations are head-first vs. dependent-first?
     KL           mean KL divergence D_KL(observed || predicted)
-               = p * log(p/p_hat) + (1-p) * log((1-p)/(1-p_hat))
-    weighted_MAE MAE weighted by arc count n (penalises errors on frequent configs)
+    weighted_MAE MAE weighted by arc count n
 
-    Per-config breakdown also returned.
+    Notes
+    -----
+    The per-config loop requires only >= 1 valid data point (not >= 2), so
+    that single-language value-holdout splits still contribute to all_pred.
+    Global Spearman is computed over all (lang × config) data points.
+    Per-config Spearman requires >= 3 languages.
     """
+    import warnings
     eps = 1e-7
     all_pred, all_true, all_w = [], [], []
     per_config: Dict[str, Dict] = {}
@@ -467,32 +485,30 @@ def evaluate_predictions(
                  if (col in counts.columns and glot in counts.index) else 1.0)
             if pd.isna(p_hat) or pd.isna(p_obs) or pd.isna(n):
                 continue
-            p_hat = float(np.clip(p_hat, eps, 1 - eps))
-            p_obs = float(np.clip(p_obs, eps, 1 - eps))
-            col_pred.append(p_hat)
-            col_true.append(p_obs)
+            col_pred.append(float(np.clip(p_hat, eps, 1 - eps)))
+            col_true.append(float(np.clip(p_obs, eps, 1 - eps)))
             col_w.append(float(n))
 
-        if len(col_pred) < 2:
+        # Require at least 1 valid point per config — do NOT skip single-language splits.
+        # This is crucial for value-holdout evaluation where n_test = 1.
+        if not col_pred:
             continue
 
         cp, ct, cw = np.array(col_pred), np.array(col_true), np.array(col_w)
         cw_norm = cw / cw.sum()
-
-        mae    = float(np.abs(cp - ct).mean())
-        rmse   = float(np.sqrt(((cp - ct) ** 2).mean()))
-        brier  = float(((cp - ct) ** 2).mean())
-        kl     = float(np.mean(
-            ct * np.log(ct / cp) + (1 - ct) * np.log((1 - ct) / (1 - cp))))
-        w_mae  = float((cw_norm * np.abs(cp - ct)).sum())
-        rho, _ = spearmanr(cp, ct) if len(cp) >= 5 else (np.nan, np.nan)
+        kl = float(np.mean(ct * np.log(ct / cp) + (1 - ct) * np.log((1 - ct) / (1 - cp))))
 
         per_config[col] = {
-            "mae": mae, "rmse": rmse, "brier": brier,
-            "kl": kl, "weighted_mae": w_mae, "spearman_rho": float(rho),
-            "n_langs": len(col_pred),
+            "mae":          float(np.abs(cp - ct).mean()),
+            "brier":        float(((cp - ct) ** 2).mean()),
+            "kl":           kl,
+            "weighted_mae": float((cw_norm * np.abs(cp - ct)).sum()),
+            # Per-config Spearman only meaningful with multiple languages
+            "spearman_rho": _safe_spearman(cp, ct),
+            "n_langs":      len(col_pred),
         }
 
+        # Always extend — even single data points contribute to global metrics
         all_pred.extend(col_pred)
         all_true.extend(col_true)
         all_w.extend(col_w)
@@ -502,22 +518,24 @@ def evaluate_predictions(
 
     ap, at, aw = np.array(all_pred), np.array(all_true), np.array(all_w)
     aw_norm = aw / aw.sum()
-
-    rho_global, _ = spearmanr(ap, at)
     kl_global = float(np.mean(
         at * np.log(at / ap) + (1 - at) * np.log((1 - at) / (1 - ap))))
 
-    metrics = {
+    # Global Spearman: correlation across ALL (lang × config) cells.
+    # With 1 test language and 18 configs → 18 data points; perfectly valid.
+    # Interpretation: does the model correctly rank the 18 direction configs?
+    rho_global = _safe_spearman(ap, at)
+
+    return {
         f"{prefix}mae":          float(np.abs(ap - at).mean()),
         f"{prefix}rmse":         float(np.sqrt(((ap - at) ** 2).mean())),
         f"{prefix}brier":        float(((ap - at) ** 2).mean()),
         f"{prefix}kl":           kl_global,
         f"{prefix}weighted_mae": float((aw_norm * np.abs(ap - at)).sum()),
-        f"{prefix}spearman_rho": float(rho_global),
+        f"{prefix}spearman_rho": rho_global,
         f"{prefix}n_cells":      len(all_pred),
         f"{prefix}per_config":   per_config,
     }
-    return metrics
 
 
 # ---------------------------------------------------------------------------
