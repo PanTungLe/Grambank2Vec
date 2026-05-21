@@ -184,6 +184,15 @@ class TypologicalMF_Conditioned(nn.Module):
         else:
             # 'both', 'geo_only', 'phylo_only': zero-init → no-op at start.
             nn.init.zeros_(self.cond_proj.weight)
+            # Pre-concatenate the (masked) conditioning input so _conditioned_lang_emb
+            # only needs a single index op + linear instead of cat + zeros_like per batch.
+            geo_t   = self.geo_vecs
+            phylo_t = self.phylo_vecs
+            if cond_mode == "geo_only":
+                phylo_t = torch.zeros_like(phylo_t)
+            elif cond_mode == "phylo_only":
+                geo_t = torch.zeros_like(geo_t)
+            self.register_buffer("cond_input", torch.cat([geo_t, phylo_t], dim=1))
 
         # Pre-compute padded value-ID tables for efficient batched softmax.
         max_n_vals = max(len(gids) for gids in feat_to_global_ids.values())
@@ -204,14 +213,9 @@ class TypologicalMF_Conditioned(nn.Module):
         if self.cond_mode == "init_only":
             # Conditioning was baked into lang_emb.weight at init; no runtime offset.
             return lang_emb
-        geo = self.geo_vecs[lang_idx]                              # (B, geo_dim)
-        phylo = self.phylo_vecs[lang_idx]                          # (B, phylo_dim)
-        if self.cond_mode == "geo_only":
-            phylo = torch.zeros_like(phylo)
-        elif self.cond_mode == "phylo_only":
-            geo = torch.zeros_like(geo)
-        offset = self.cond_proj(torch.cat([geo, phylo], dim=-1))   # (B, d)
-        return lang_emb + offset
+        # cond_input is pre-concatenated (and zero-masked for geo/phylo_only modes)
+        # — one index op replaces two separate lookups + cat + zeros_like per batch.
+        return lang_emb + self.cond_proj(self.cond_input[lang_idx])
 
     # ------------------------------------------------------------------
     def forward(
@@ -349,19 +353,20 @@ class TypologicalMF_TCF_Conditioned(nn.Module):
                 p.requires_grad = False
         else:
             nn.init.zeros_(self.cond_proj.weight)
+            geo_t   = self.geo_vecs
+            phylo_t = self.phylo_vecs
+            if cond_mode == "geo_only":
+                phylo_t = torch.zeros_like(phylo_t)
+            elif cond_mode == "phylo_only":
+                geo_t = torch.zeros_like(geo_t)
+            self.register_buffer("cond_input", torch.cat([geo_t, phylo_t], dim=1))
 
     # ------------------------------------------------------------------
     def _conditioned_lang_emb(self, lang_idx: torch.Tensor) -> torch.Tensor:
         lang_emb = self.lang_embeddings(lang_idx)
         if self.cond_mode == "init_only":
             return lang_emb
-        geo = self.geo_vecs[lang_idx]
-        phylo = self.phylo_vecs[lang_idx]
-        if self.cond_mode == "geo_only":
-            phylo = torch.zeros_like(phylo)
-        elif self.cond_mode == "phylo_only":
-            geo = torch.zeros_like(geo)
-        return lang_emb + self.cond_proj(torch.cat([geo, phylo], dim=-1))
+        return lang_emb + self.cond_proj(self.cond_input[lang_idx])
 
     # ------------------------------------------------------------------
     def forward(
@@ -440,11 +445,19 @@ def train_conditioned(
     losses : list of float — average NLL per epoch
     """
     model = model.to(device)
+    is_categorical = hasattr(model, "value_embeddings")
+
+    # JIT-compile the forward+backward graph for faster repeated passes.
+    # Skipped for short runs (n_epochs < 10) where compile overhead > savings.
+    if n_epochs >= 10 and hasattr(torch, "compile"):
+        try:
+            model = torch.compile(model)
+        except Exception:
+            pass  # eager fallback (compile unavailable or model not compilable)
+
     loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, drop_last=False)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-
-    is_categorical = hasattr(model, "value_embeddings")
     losses: List[float] = []
     best_loss = float("inf")
     no_improve = 0
