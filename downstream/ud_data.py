@@ -327,11 +327,18 @@ def download_all(
     """
     Download UD treebanks for all requested glottocodes.
 
+    Also writes to out_dir:
+      treebank_sizes.json  {glottocode: n_train_sentences}
+      script_map.json      {glottocode: script_family}
+
+    Both are consumed by evaluate.py for confound controls.
+
     Returns
     -------
     manifest : {glottocode -> {split -> local_path}}
     """
     manifest: Dict[str, Dict[str, str]] = {}
+    treebank_sizes: Dict[str, int] = {}
     missing = []
 
     for glot in glottocodes:
@@ -350,11 +357,27 @@ def download_all(
                                       overwrite=overwrite)
             if path:
                 manifest[glot][split] = path
+                if split == "train":
+                    w, _ = load_pos_dataset(path)
+                    treebank_sizes[glot] = len(w)
             else:
                 print(f"    WARNING: could not download {split} split for {name}")
 
     if missing:
         print(f"\nMissing entries for {len(missing)} glottocodes: {missing}")
+
+    # Write treebank_sizes.json
+    sizes_path = os.path.join(out_dir, "treebank_sizes.json")
+    with open(sizes_path, "w") as f:
+        json.dump(treebank_sizes, f, indent=2)
+    print(f"Treebank sizes saved: {sizes_path}")
+
+    # Write script_map.json
+    script_map = build_script_map(glottocodes)
+    script_path = os.path.join(out_dir, "script_map.json")
+    with open(script_path, "w") as f:
+        json.dump(script_map, f, indent=2)
+    print(f"Script map saved: {script_path}")
 
     return manifest
 
@@ -415,3 +438,53 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
+
+
+# ---------------------------------------------------------------------------
+# Script family mapping for confound controls
+# ---------------------------------------------------------------------------
+
+_GLOT_TO_SCRIPT: Dict[str, str] = {
+    # Latin
+    "stan1293": "Latin", "stan1290": "Latin", "stan1289": "Latin",
+    "dani1285": "Latin", "dutc1256": "Latin", "finn1318": "Latin",
+    "ital1282": "Latin", "port1283": "Latin", "swed1254": "Latin",
+    "czec1258": "Latin", "poli1260": "Latin", "slov1268": "Latin",
+    "hung1274": "Latin", "latv1249": "Latin", "lith1251": "Latin",
+    "icel1247": "Latin", "faro1244": "Latin", "iris1253": "Latin",
+    "wels1247": "Latin", "bret1244": "Latin", "nort2671": "Latin",
+    "west2354": "Latin", "malt1254": "Latin", "swah1253": "Latin",
+    "nucl1347": "Latin", "soma1255": "Latin", "zulu1248": "Latin",
+    "bamb1269": "Latin", "beja1238": "Latin", "taga1270": "Latin",
+    "viet1252": "Latin", "warl1254": "Latin",
+    # Cyrillic
+    "russ1263": "Cyrillic", "bela1254": "Cyrillic", "ukra1253": "Cyrillic",
+    "bulg1262": "Cyrillic", "srpo1240": "Cyrillic", "yaku1245": "Cyrillic",
+    "kaza1248": "Cyrillic", "even1259": "Cyrillic", "chuk1273": "Cyrillic",
+    "komi1268": "Cyrillic",
+    # Arabic / Perso-Arabic
+    "stan1318": "Arabic", "west2369": "Arabic",
+    # Hebrew
+    "hebr1245": "Hebrew",
+    # Devanagari
+    "hind1269": "Devanagari", "mara1378": "Devanagari", "bhoj1244": "Devanagari",
+    # CJK
+    "mand1415": "CJK", "yuec1235": "CJK", "nucl1643": "CJK",
+    # Korean
+    "kore1280": "Hangul",
+    # Thai
+    "thai1261": "Thai",
+    # Brahmic / South Asian
+    "tami1289": "Brahmic", "telu1262": "Brahmic",
+    # Armenian
+    "nucl1235": "Armenian",
+    # Greek
+    "mode1248": "Greek",
+    # Turkish (Latin since 1928)
+    "nucl1301": "Latin",
+}
+
+
+def build_script_map(glottocodes: List[str]) -> Dict[str, str]:
+    """Return {glottocode: script_family} for the given glottocodes."""
+    return {g: _GLOT_TO_SCRIPT.get(g, "Latin") for g in glottocodes}
