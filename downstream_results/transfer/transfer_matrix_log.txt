@@ -1,0 +1,1872 @@
+
+41 languages with train+test splits found in manifest
+Transfer matrix size: 41×41 = 1681 cells (1640 non-diagonal)
+
+Pre-loading test sets...
+  bela1254: 50 test sentences
+  copt1239: 50 test sentences
+  czec1258: 50 test sentences
+  dani1285: 50 test sentences
+  dutc1256: 50 test sentences
+  faro1244: 50 test sentences
+  finn1318: 50 test sentences
+  hebr1245: 50 test sentences
+  hind1269: 50 test sentences
+  hung1274: 50 test sentences
+  icel1247: 50 test sentences
+  iris1253: 50 test sentences
+  ital1282: 50 test sentences
+  komi1268: 50 test sentences
+  kore1280: 50 test sentences
+  latv1249: 50 test sentences
+  lith1251: 50 test sentences
+  malt1254: 50 test sentences
+  mand1415: 50 test sentences
+  mara1378: 47 test sentences
+  mode1248: 50 test sentences
+  nort2671: 50 test sentences
+  nucl1235: 50 test sentences
+  nucl1301: 50 test sentences
+  nucl1347: 50 test sentences
+  nucl1643: 50 test sentences
+  poli1260: 50 test sentences
+  port1283: 50 test sentences
+  russ1263: 50 test sentences
+  slov1268: 50 test sentences
+  stan1289: 50 test sentences
+  stan1290: 50 test sentences
+  stan1293: 50 test sentences
+  stan1318: 50 test sentences
+  swed1254: 50 test sentences
+  tami1289: 50 test sentences
+  telu1262: 50 test sentences
+  ukra1253: 50 test sentences
+  viet1252: 50 test sentences
+  wels1247: 50 test sentences
+  west2369: 50 test sentences
+Resumed from partial results: 205 cells already computed
+
+[1/41] bela1254: all results cached, skipping
+
+[2/41] copt1239: all results cached, skipping
+
+[3/41] czec1258: all results cached, skipping
+
+[4/41] dani1285: all results cached, skipping
+
+[5/41] dutc1256: all results cached, skipping
+
+[6/41] Training on source: faro1244
+  200 training sentences
+    Epoch   1  loss=2.7667  dev_acc=0.2264  patience=0/2
+    Epoch   2  loss=2.4479  dev_acc=0.2075  patience=1/2
+    Epoch   3  loss=2.2901  dev_acc=0.3239  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3466 
+    → copt1239: 0.1852 
+    → czec1258: 0.3127 
+    → dani1285: 0.2899 
+    → dutc1256: 0.2270 
+    → faro1244: 0.3239 (same)
+    → finn1318: 0.3225 
+    → hebr1245: 0.2689 
+    → hind1269: 0.2559 
+    → hung1274: 0.2772 
+    → icel1247: 0.2516 
+    → iris1253: 0.2467 
+    → ital1282: 0.2604 
+    → komi1268: 0.4165 
+    → kore1280: 0.4444 
+    → latv1249: 0.3564 
+    → lith1251: 0.3614 
+    → malt1254: 0.2495 
+    → mand1415: 0.3246 
+    → mara1378: 0.3252 
+    → mode1248: 0.2945 
+    → nort2671: 0.3214 
+    → nucl1235: 0.3408 
+    → nucl1301: 0.3556 
+    → nucl1347: 0.2760 
+    → nucl1643: 0.2764 
+    → poli1260: 0.3498 
+    → port1283: 0.2380 
+    → russ1263: 0.3408 
+    → slov1268: 0.2710 
+    → stan1289: 0.2011 
+    → stan1290: 0.2328 
+    → stan1293: 0.2416 
+    → stan1318: 0.3694 
+    → swed1254: 0.2897 
+    → tami1289: 0.3068 
+    → telu1262: 0.4059 
+    → ukra1253: 0.3567 
+    → viet1252: 0.3461 
+    → wels1247: 0.2946 
+    → west2369: 0.3318 
+  Done in 11.8s
+
+[7/41] Training on source: finn1318
+  200 training sentences
+    Epoch   1  loss=2.7482  dev_acc=0.2253  patience=0/2
+    Epoch   2  loss=2.3077  dev_acc=0.2809  patience=0/2
+    Epoch   3  loss=2.1406  dev_acc=0.3349  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3207 
+    → copt1239: 0.1501 
+    → czec1258: 0.2287 
+    → dani1285: 0.2415 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1580 
+    → finn1318: 0.3349 (same)
+    → hebr1245: 0.2634 
+    → hind1269: 0.2410 
+    → hung1274: 0.2843 
+    → icel1247: 0.2846 
+    → iris1253: 0.3096 
+    → ital1282: 0.2475 
+    → komi1268: 0.3550 
+    → kore1280: 0.4739 
+    → latv1249: 0.3164 
+    → lith1251: 0.3524 
+    → malt1254: 0.2523 
+    → mand1415: 0.3010 
+    → mara1378: 0.3350 
+    → mode1248: 0.2671 
+    → nort2671: 0.3274 
+    → nucl1235: 0.3042 
+    → nucl1301: 0.4056 
+    → nucl1347: 0.2424 
+    → nucl1643: 0.2315 
+    → poli1260: 0.4313 
+    → port1283: 0.2458 
+    → russ1263: 0.3697 
+    → slov1268: 0.2767 
+    → stan1289: 0.2105 
+    → stan1290: 0.2167 
+    → stan1293: 0.2183 
+    → stan1318: 0.3960 
+    → swed1254: 0.3613 
+    → tami1289: 0.3182 
+    → telu1262: 0.4519 
+    → ukra1253: 0.3258 
+    → viet1252: 0.2951 
+    → wels1247: 0.3228 
+    → west2369: 0.3788 
+  Done in 6.1s
+
+[8/41] Training on source: hebr1245
+  200 training sentences
+    Epoch   1  loss=2.7465  dev_acc=0.2055  patience=0/2
+    Epoch   2  loss=2.3691  dev_acc=0.2907  patience=0/2
+    Epoch   3  loss=2.2280  dev_acc=0.2601  patience=1/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2500 
+    → copt1239: 0.1404 
+    → czec1258: 0.1421 
+    → dani1285: 0.1727 
+    → dutc1256: 0.1953 
+    → faro1244: 0.1014 
+    → finn1318: 0.2253 
+    → hebr1245: 0.2907 (same)
+    → hind1269: 0.2410 
+    → hung1274: 0.2305 
+    → icel1247: 0.2179 
+    → iris1253: 0.2617 
+    → ital1282: 0.1805 
+    → komi1268: 0.2144 
+    → kore1280: 0.4217 
+    → latv1249: 0.2381 
+    → lith1251: 0.2801 
+    → malt1254: 0.2151 
+    → mand1415: 0.3010 
+    → mara1378: 0.1845 
+    → mode1248: 0.2202 
+    → nort2671: 0.2496 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.2981 
+    → nucl1347: 0.1925 
+    → nucl1643: 0.2247 
+    → poli1260: 0.3514 
+    → port1283: 0.1944 
+    → russ1263: 0.2706 
+    → slov1268: 0.2265 
+    → stan1289: 0.1823 
+    → stan1290: 0.1683 
+    → stan1293: 0.1604 
+    → stan1318: 0.3639 
+    → swed1254: 0.2775 
+    → tami1289: 0.2534 
+    → telu1262: 0.2427 
+    → ukra1253: 0.2565 
+    → viet1252: 0.2188 
+    → wels1247: 0.2582 
+    → west2369: 0.3274 
+  Done in 8.1s
+
+[9/41] Training on source: hind1269
+  200 training sentences
+    Epoch   1  loss=2.7785  dev_acc=0.3093  patience=0/2
+    Epoch   2  loss=2.3936  dev_acc=0.2410  patience=1/2
+    Epoch   3  loss=2.2162  dev_acc=0.4547  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2958 
+    → copt1239: 0.1404 
+    → czec1258: 0.1977 
+    → dani1285: 0.2295 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1313 
+    → finn1318: 0.2901 
+    → hebr1245: 0.2601 
+    → hind1269: 0.4547 (same)
+    → hung1274: 0.2772 
+    → icel1247: 0.2466 
+    → iris1253: 0.3077 
+    → ital1282: 0.2249 
+    → komi1268: 0.3005 
+    → kore1280: 0.4712 
+    → latv1249: 0.3149 
+    → lith1251: 0.3373 
+    → malt1254: 0.2502 
+    → mand1415: 0.3010 
+    → mara1378: 0.2864 
+    → mode1248: 0.2544 
+    → nort2671: 0.3229 
+    → nucl1235: 0.2630 
+    → nucl1301: 0.3796 
+    → nucl1347: 0.2326 
+    → nucl1643: 0.2292 
+    → poli1260: 0.4313 
+    → port1283: 0.2425 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2100 
+    → stan1290: 0.2104 
+    → stan1293: 0.2127 
+    → stan1318: 0.3871 
+    → swed1254: 0.3455 
+    → tami1289: 0.3102 
+    → telu1262: 0.4310 
+    → ukra1253: 0.2957 
+    → viet1252: 0.2731 
+    → wels1247: 0.3157 
+    → west2369: 0.3765 
+  Done in 6.7s
+
+[10/41] Training on source: hung1274
+  200 training sentences
+    Epoch   1  loss=2.7113  dev_acc=0.2305  patience=0/2
+    Epoch   2  loss=2.3067  dev_acc=0.2761  patience=0/2
+    Epoch   3  loss=2.1574  dev_acc=0.3716  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3247 
+    → copt1239: 0.1501 
+    → czec1258: 0.2300 
+    → dani1285: 0.2440 
+    → dutc1256: 0.2567 
+    → faro1244: 0.1549 
+    → finn1318: 0.2917 
+    → hebr1245: 0.2656 
+    → hind1269: 0.2410 
+    → hung1274: 0.3716 (same)
+    → icel1247: 0.2878 
+    → iris1253: 0.3236 
+    → ital1282: 0.2505 
+    → komi1268: 0.3726 
+    → kore1280: 0.4779 
+    → latv1249: 0.3164 
+    → lith1251: 0.3735 
+    → malt1254: 0.2523 
+    → mand1415: 0.3010 
+    → mara1378: 0.3277 
+    → mode1248: 0.2740 
+    → nort2671: 0.3318 
+    → nucl1235: 0.3219 
+    → nucl1301: 0.4000 
+    → nucl1347: 0.2498 
+    → nucl1643: 0.2348 
+    → poli1260: 0.4393 
+    → port1283: 0.2749 
+    → russ1263: 0.3719 
+    → slov1268: 0.2929 
+    → stan1289: 0.2244 
+    → stan1290: 0.2184 
+    → stan1293: 0.2216 
+    → stan1318: 0.3960 
+    → swed1254: 0.3613 
+    → tami1289: 0.3216 
+    → telu1262: 0.4435 
+    → ukra1253: 0.3425 
+    → viet1252: 0.2951 
+    → wels1247: 0.3310 
+    → west2369: 0.3765 
+  Done in 6.3s
+
+[11/41] Training on source: icel1247
+  200 training sentences
+    Epoch   1  loss=2.7996  dev_acc=0.2191  patience=0/2
+    Epoch   2  loss=2.5137  dev_acc=0.2803  patience=0/2
+    Epoch   3  loss=2.3824  dev_acc=0.3134  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3745 
+    → copt1239: 0.1501 
+    → czec1258: 0.3165 
+    → dani1285: 0.2971 
+    → dutc1256: 0.2735 
+    → faro1244: 0.2264 
+    → finn1318: 0.3549 
+    → hebr1245: 0.2874 
+    → hind1269: 0.2522 
+    → hung1274: 0.3533 
+    → icel1247: 0.3134 (same)
+    → iris1253: 0.3415 
+    → ital1282: 0.2919 
+    → komi1268: 0.4499 
+    → kore1280: 0.4900 
+    → latv1249: 0.3840 
+    → lith1251: 0.4187 
+    → malt1254: 0.2810 
+    → mand1415: 0.3045 
+    → mara1378: 0.3592 
+    → mode1248: 0.3092 
+    → nort2671: 0.3827 
+    → nucl1235: 0.3491 
+    → nucl1301: 0.4630 
+    → nucl1347: 0.2981 
+    → nucl1643: 0.2798 
+    → poli1260: 0.4585 
+    → port1283: 0.2838 
+    → russ1263: 0.4031 
+    → slov1268: 0.3455 
+    → stan1289: 0.2571 
+    → stan1290: 0.2596 
+    → stan1293: 0.2394 
+    → stan1318: 0.3960 
+    → swed1254: 0.3770 
+    → tami1289: 0.3455 
+    → telu1262: 0.4561 
+    → ukra1253: 0.3943 
+    → viet1252: 0.3322 
+    → wels1247: 0.3615 
+    → west2369: 0.3765 
+  Done in 11.1s
+
+[12/41] Training on source: iris1253
+  200 training sentences
+    Epoch   1  loss=2.7653  dev_acc=0.2617  patience=0/2
+    Epoch   2  loss=2.3918  dev_acc=0.2627  patience=0/2
+    Epoch   3  loss=2.2628  dev_acc=0.3049  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2669 
+    → copt1239: 0.1423 
+    → czec1258: 0.1667 
+    → dani1285: 0.1920 
+    → dutc1256: 0.2121 
+    → faro1244: 0.1108 
+    → finn1318: 0.2330 
+    → hebr1245: 0.2142 
+    → hind1269: 0.2410 
+    → hung1274: 0.2558 
+    → icel1247: 0.2285 
+    → iris1253: 0.3049 (same)
+    → ital1282: 0.1982 
+    → komi1268: 0.2531 
+    → kore1280: 0.4257 
+    → latv1249: 0.2565 
+    → lith1251: 0.3042 
+    → malt1254: 0.2186 
+    → mand1415: 0.3010 
+    → mara1378: 0.1942 
+    → mode1248: 0.2250 
+    → nort2671: 0.2706 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.3222 
+    → nucl1347: 0.2154 
+    → nucl1643: 0.2270 
+    → poli1260: 0.3754 
+    → port1283: 0.2246 
+    → russ1263: 0.2851 
+    → slov1268: 0.2419 
+    → stan1289: 0.2006 
+    → stan1290: 0.1880 
+    → stan1293: 0.1737 
+    → stan1318: 0.3714 
+    → swed1254: 0.3002 
+    → tami1289: 0.2534 
+    → telu1262: 0.2594 
+    → ukra1253: 0.2715 
+    → viet1252: 0.2303 
+    → wels1247: 0.2829 
+    → west2369: 0.3274 
+  Done in 13.6s
+
+[13/41] Training on source: ital1282
+  200 training sentences
+    Epoch   1  loss=2.7817  dev_acc=0.2229  patience=0/2
+    Epoch   2  loss=2.3729  dev_acc=0.2288  patience=0/2
+    Epoch   3  loss=2.2199  dev_acc=0.4704  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3556 
+    → copt1239: 0.1511 
+    → czec1258: 0.2610 
+    → dani1285: 0.2464 
+    → dutc1256: 0.2874 
+    → faro1244: 0.1698 
+    → finn1318: 0.2994 
+    → hebr1245: 0.2732 
+    → hind1269: 0.2422 
+    → hung1274: 0.3269 
+    → icel1247: 0.2834 
+    → iris1253: 0.3321 
+    → ital1282: 0.4704 (same)
+    → komi1268: 0.4183 
+    → kore1280: 0.4886 
+    → latv1249: 0.3395 
+    → lith1251: 0.3795 
+    → malt1254: 0.2530 
+    → mand1415: 0.3010 
+    → mara1378: 0.3180 
+    → mode1248: 0.2847 
+    → nort2671: 0.3438 
+    → nucl1235: 0.3314 
+    → nucl1301: 0.4130 
+    → nucl1347: 0.2981 
+    → nucl1643: 0.2416 
+    → poli1260: 0.4473 
+    → port1283: 0.2760 
+    → russ1263: 0.4020 
+    → slov1268: 0.3026 
+    → stan1289: 0.3180 
+    → stan1290: 0.2587 
+    → stan1293: 0.2294 
+    → stan1318: 0.3960 
+    → swed1254: 0.3647 
+    → tami1289: 0.3261 
+    → telu1262: 0.4226 
+    → ukra1253: 0.3676 
+    → viet1252: 0.2951 
+    → wels1247: 0.3415 
+    → west2369: 0.3765 
+  Done in 7.4s
+
+[14/41] Training on source: komi1268
+  20 training sentences
+    Epoch   1  loss=2.8945  dev_acc=0.2144  patience=0/2
+    Epoch   2  loss=2.8312  dev_acc=0.2127  patience=1/2
+    Epoch   3  loss=2.7774  dev_acc=0.2004  patience=2/2
+    Early stopping at epoch 3
+  Evaluating on 41 target languages...
+    → bela1254: 0.2510 
+    → copt1239: 0.1413 
+    → czec1258: 0.1421 
+    → dani1285: 0.1727 
+    → dutc1256: 0.1953 
+    → faro1244: 0.1014 
+    → finn1318: 0.2253 
+    → hebr1245: 0.2055 
+    → hind1269: 0.2410 
+    → hung1274: 0.2305 
+    → icel1247: 0.2179 
+    → iris1253: 0.2617 
+    → ital1282: 0.1805 
+    → komi1268: 0.2144 (same)
+    → kore1280: 0.4217 
+    → latv1249: 0.2381 
+    → lith1251: 0.2801 
+    → malt1254: 0.2151 
+    → mand1415: 0.3010 
+    → mara1378: 0.1845 
+    → mode1248: 0.2202 
+    → nort2671: 0.2496 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.2981 
+    → nucl1347: 0.1925 
+    → nucl1643: 0.2247 
+    → poli1260: 0.3514 
+    → port1283: 0.1978 
+    → russ1263: 0.2695 
+    → slov1268: 0.2265 
+    → stan1289: 0.1823 
+    → stan1290: 0.1683 
+    → stan1293: 0.1615 
+    → stan1318: 0.3714 
+    → swed1254: 0.2775 
+    → tami1289: 0.2534 
+    → telu1262: 0.2427 
+    → ukra1253: 0.2531 
+    → viet1252: 0.2188 
+    → wels1247: 0.2582 
+    → west2369: 0.3274 
+  Done in 3.2s
+
+[15/41] Training on source: kore1280
+  200 training sentences
+    Epoch   1  loss=2.5618  dev_acc=0.4244  patience=0/2
+    Epoch   2  loss=1.8166  dev_acc=0.4217  patience=1/2
+    Epoch   3  loss=1.6582  dev_acc=0.4685  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2221 
+    → copt1239: 0.1384 
+    → czec1258: 0.1408 
+    → dani1285: 0.1389 
+    → dutc1256: 0.1953 
+    → faro1244: 0.0998 
+    → finn1318: 0.1883 
+    → hebr1245: 0.1825 
+    → hind1269: 0.2410 
+    → hung1274: 0.2122 
+    → icel1247: 0.2085 
+    → iris1253: 0.2430 
+    → ital1282: 0.1726 
+    → komi1268: 0.1863 
+    → kore1280: 0.4685 (same)
+    → latv1249: 0.2104 
+    → lith1251: 0.2485 
+    → malt1254: 0.2000 
+    → mand1415: 0.3010 
+    → mara1378: 0.2354 
+    → mode1248: 0.2006 
+    → nort2671: 0.2227 
+    → nucl1235: 0.2594 
+    → nucl1301: 0.3537 
+    → nucl1347: 0.1843 
+    → nucl1643: 0.2270 
+    → poli1260: 0.2812 
+    → port1283: 0.1765 
+    → russ1263: 0.2305 
+    → slov1268: 0.2023 
+    → stan1289: 0.1751 
+    → stan1290: 0.1611 
+    → stan1293: 0.1281 
+    → stan1318: 0.3434 
+    → swed1254: 0.2356 
+    → tami1289: 0.2909 
+    → telu1262: 0.3682 
+    → ukra1253: 0.2389 
+    → viet1252: 0.2292 
+    → wels1247: 0.2324 
+    → west2369: 0.3598 
+  Done in 5.3s
+
+[16/41] Training on source: latv1249
+  200 training sentences
+    Epoch   1  loss=2.7191  dev_acc=0.2381  patience=0/2
+    Epoch   2  loss=2.3382  dev_acc=0.3840  patience=0/2
+    Epoch   3  loss=2.1798  dev_acc=0.3871  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3606 
+    → copt1239: 0.1423 
+    → czec1258: 0.3075 
+    → dani1285: 0.2802 
+    → dutc1256: 0.2726 
+    → faro1244: 0.2217 
+    → finn1318: 0.3534 
+    → hebr1245: 0.2896 
+    → hind1269: 0.2522 
+    → hung1274: 0.3533 
+    → icel1247: 0.3184 
+    → iris1253: 0.3377 
+    → ital1282: 0.2801 
+    → komi1268: 0.4569 
+    → kore1280: 0.4900 
+    → latv1249: 0.3871 (same)
+    → lith1251: 0.4247 
+    → malt1254: 0.2803 
+    → mand1415: 0.3010 
+    → mara1378: 0.3301 
+    → mode1248: 0.3004 
+    → nort2671: 0.3812 
+    → nucl1235: 0.3231 
+    → nucl1301: 0.4537 
+    → nucl1347: 0.3022 
+    → nucl1643: 0.2742 
+    → poli1260: 0.4585 
+    → port1283: 0.2849 
+    → russ1263: 0.3920 
+    → slov1268: 0.3471 
+    → stan1289: 0.2587 
+    → stan1290: 0.2578 
+    → stan1293: 0.2350 
+    → stan1318: 0.3947 
+    → swed1254: 0.3822 
+    → tami1289: 0.3489 
+    → telu1262: 0.4226 
+    → ukra1253: 0.3943 
+    → viet1252: 0.3241 
+    → wels1247: 0.3556 
+    → west2369: 0.3765 
+  Done in 6.9s
+
+[17/41] Training on source: lith1251
+  200 training sentences
+    Epoch   1  loss=2.7534  dev_acc=0.2801  patience=0/2
+    Epoch   2  loss=2.3855  dev_acc=0.3870  patience=0/2
+    Epoch   3  loss=2.2482  dev_acc=0.4217  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3566 
+    → copt1239: 0.1501 
+    → czec1258: 0.2972 
+    → dani1285: 0.2717 
+    → dutc1256: 0.2707 
+    → faro1244: 0.2091 
+    → finn1318: 0.3410 
+    → hebr1245: 0.2896 
+    → hind1269: 0.2522 
+    → hung1274: 0.3523 
+    → icel1247: 0.3171 
+    → iris1253: 0.3368 
+    → ital1282: 0.2781 
+    → komi1268: 0.4569 
+    → kore1280: 0.4900 
+    → latv1249: 0.3794 
+    → lith1251: 0.4217 (same)
+    → malt1254: 0.2760 
+    → mand1415: 0.3019 
+    → mara1378: 0.2961 
+    → mode1248: 0.3082 
+    → nort2671: 0.3782 
+    → nucl1235: 0.3514 
+    → nucl1301: 0.4389 
+    → nucl1347: 0.2973 
+    → nucl1643: 0.2742 
+    → poli1260: 0.4569 
+    → port1283: 0.2827 
+    → russ1263: 0.3820 
+    → slov1268: 0.3447 
+    → stan1289: 0.2526 
+    → stan1290: 0.2498 
+    → stan1293: 0.2316 
+    → stan1318: 0.3953 
+    → swed1254: 0.3822 
+    → tami1289: 0.3466 
+    → telu1262: 0.4226 
+    → ukra1253: 0.3960 
+    → viet1252: 0.3137 
+    → wels1247: 0.3533 
+    → west2369: 0.3765 
+  Done in 6.7s
+
+[18/41] Training on source: malt1254
+  200 training sentences
+    Epoch   1  loss=2.8034  dev_acc=0.2151  patience=0/2
+    Epoch   2  loss=2.5292  dev_acc=0.2143  patience=1/2
+    Epoch   3  loss=2.4078  dev_acc=0.2509  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2978 
+    → copt1239: 0.1423 
+    → czec1258: 0.2028 
+    → dani1285: 0.2234 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1376 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2601 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2466 
+    → iris1253: 0.3039 
+    → ital1282: 0.2249 
+    → komi1268: 0.2970 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3343 
+    → malt1254: 0.2509 (same)
+    → mand1415: 0.3010 
+    → mara1378: 0.2816 
+    → mode1248: 0.2544 
+    → nort2671: 0.3214 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.3759 
+    → nucl1347: 0.2310 
+    → nucl1643: 0.2270 
+    → poli1260: 0.4313 
+    → port1283: 0.2436 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2094 
+    → stan1290: 0.2068 
+    → stan1293: 0.2071 
+    → stan1318: 0.3947 
+    → swed1254: 0.3403 
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.2941 
+    → viet1252: 0.2720 
+    → wels1247: 0.3134 
+    → west2369: 0.3765 
+  Done in 7.4s
+
+[19/41] Training on source: mand1415
+  200 training sentences
+    Epoch   1  loss=2.7509  dev_acc=0.3010  patience=0/2
+    Epoch   2  loss=2.3634  dev_acc=0.3010  patience=1/2
+    Epoch   3  loss=2.2436  dev_acc=0.3970  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2520 
+    → copt1239: 0.1745 
+    → czec1258: 0.1421 
+    → dani1285: 0.1727 
+    → dutc1256: 0.1953 
+    → faro1244: 0.1014 
+    → finn1318: 0.2269 
+    → hebr1245: 0.2055 
+    → hind1269: 0.2410 
+    → hung1274: 0.2305 
+    → icel1247: 0.2179 
+    → iris1253: 0.2617 
+    → ital1282: 0.1805 
+    → komi1268: 0.2144 
+    → kore1280: 0.4217 
+    → latv1249: 0.2381 
+    → lith1251: 0.2801 
+    → malt1254: 0.2151 
+    → mand1415: 0.3970 (same)
+    → mara1378: 0.1845 
+    → mode1248: 0.2202 
+    → nort2671: 0.2496 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.2981 
+    → nucl1347: 0.1925 
+    → nucl1643: 0.2764 
+    → poli1260: 0.3514 
+    → port1283: 0.1978 
+    → russ1263: 0.2706 
+    → slov1268: 0.2265 
+    → stan1289: 0.1823 
+    → stan1290: 0.1683 
+    → stan1293: 0.1615 
+    → stan1318: 0.3714 
+    → swed1254: 0.2775 
+    → tami1289: 0.2534 
+    → telu1262: 0.2427 
+    → ukra1253: 0.2565 
+    → viet1252: 0.2188 
+    → wels1247: 0.2582 
+    → west2369: 0.3274 
+  Done in 7.7s
+
+[20/41] Training on source: mara1378
+  200 training sentences
+    Epoch   1  loss=2.7868  dev_acc=0.2087  patience=0/2
+    Epoch   2  loss=2.3032  dev_acc=0.2379  patience=0/2
+    Epoch   3  loss=2.0311  dev_acc=0.3665  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.1773 
+    → copt1239: 0.0906 
+    → czec1258: 0.1873 
+    → dani1285: 0.1691 
+    → dutc1256: 0.1516 
+    → faro1244: 0.1667 
+    → finn1318: 0.2222 
+    → hebr1245: 0.1486 
+    → hind1269: 0.1491 
+    → hung1274: 0.1695 
+    → icel1247: 0.1436 
+    → iris1253: 0.1313 
+    → ital1282: 0.1509 
+    → komi1268: 0.2355 
+    → kore1280: 0.3521 
+    → latv1249: 0.2396 
+    → lith1251: 0.2214 
+    → malt1254: 0.1914 
+    → mand1415: 0.1588 
+    → mara1378: 0.3665 (same)
+    → mode1248: 0.1301 
+    → nort2671: 0.2347 
+    → nucl1235: 0.1061 
+    → nucl1301: 0.3444 
+    → nucl1347: 0.2064 
+    → nucl1643: 0.1921 
+    → poli1260: 0.2556 
+    → port1283: 0.1531 
+    → russ1263: 0.1637 
+    → slov1268: 0.1513 
+    → stan1289: 0.1069 
+    → stan1290: 0.1271 
+    → stan1293: 0.1581 
+    → stan1318: 0.1231 
+    → swed1254: 0.2059 
+    → tami1289: 0.2477 
+    → telu1262: 0.4979 
+    → ukra1253: 0.1571 
+    → viet1252: 0.2801 
+    → wels1247: 0.1291 
+    → west2369: 0.2212 
+  Done in 4.8s
+
+[21/41] Training on source: mode1248
+  200 training sentences
+    Epoch   1  loss=2.7531  dev_acc=0.2202  patience=0/2
+    Epoch   2  loss=2.4148  dev_acc=0.3297  patience=0/2
+    Epoch   3  loss=2.3015  dev_acc=0.3591  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1423 
+    → czec1258: 0.2016 
+    → dani1285: 0.2234 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1336 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2601 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2459 
+    → iris1253: 0.3039 
+    → ital1282: 0.2249 
+    → komi1268: 0.2970 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3373 
+    → malt1254: 0.2495 
+    → mand1415: 0.3010 
+    → mara1378: 0.2670 
+    → mode1248: 0.3591 (same)
+    → nort2671: 0.3214 
+    → nucl1235: 0.2653 
+    → nucl1301: 0.3741 
+    → nucl1347: 0.2310 
+    → nucl1643: 0.2281 
+    → poli1260: 0.4313 
+    → port1283: 0.2436 
+    → russ1263: 0.3285 
+    → slov1268: 0.2662 
+    → stan1289: 0.2094 
+    → stan1290: 0.2068 
+    → stan1293: 0.2082 
+    → stan1318: 0.3947 
+    → swed1254: 0.3421 
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.2966 
+    → viet1252: 0.2720 
+    → wels1247: 0.3134 
+    → west2369: 0.3765 
+  Done in 8.5s
+
+[22/41] Training on source: nort2671
+  200 training sentences
+    Epoch   1  loss=2.7502  dev_acc=0.2496  patience=0/2
+    Epoch   2  loss=2.3170  dev_acc=0.3244  patience=0/2
+    Epoch   3  loss=2.0958  dev_acc=0.3274  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1813 
+    → czec1258: 0.2183 
+    → dani1285: 0.2307 
+    → dutc1256: 0.2428 
+    → faro1244: 0.1525 
+    → finn1318: 0.2963 
+    → hebr1245: 0.2612 
+    → hind1269: 0.3031 
+    → hung1274: 0.2812 
+    → icel1247: 0.2622 
+    → iris1253: 0.3086 
+    → ital1282: 0.2308 
+    → komi1268: 0.3093 
+    → kore1280: 0.4699 
+    → latv1249: 0.3164 
+    → lith1251: 0.3524 
+    → malt1254: 0.2509 
+    → mand1415: 0.3447 
+    → mara1378: 0.3277 
+    → mode1248: 0.2564 
+    → nort2671: 0.3274 (same)
+    → nucl1235: 0.3196 
+    → nucl1301: 0.3889 
+    → nucl1347: 0.2351 
+    → nucl1643: 0.2798 
+    → poli1260: 0.4313 
+    → port1283: 0.2447 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2100 
+    → stan1290: 0.2122 
+    → stan1293: 0.2183 
+    → stan1318: 0.3892 
+    → swed1254: 0.3473 
+    → tami1289: 0.3102 
+    → telu1262: 0.4519 
+    → ukra1253: 0.3008 
+    → viet1252: 0.2859 
+    → wels1247: 0.3192 
+    → west2369: 0.3832 
+  Done in 4.9s
+
+[23/41] Training on source: nucl1235
+  200 training sentences
+    Epoch   1  loss=2.7206  dev_acc=0.2618  patience=0/2
+    Epoch   2  loss=2.3020  dev_acc=0.3550  patience=0/2
+    Epoch   3  loss=2.1569  dev_acc=0.3726  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3167 
+    → copt1239: 0.1501 
+    → czec1258: 0.2429 
+    → dani1285: 0.2343 
+    → dutc1256: 0.2493 
+    → faro1244: 0.1643 
+    → finn1318: 0.3009 
+    → hebr1245: 0.2710 
+    → hind1269: 0.2422 
+    → hung1274: 0.3025 
+    → icel1247: 0.2915 
+    → iris1253: 0.3171 
+    → ital1282: 0.2456 
+    → komi1268: 0.4323 
+    → kore1280: 0.4806 
+    → latv1249: 0.3472 
+    → lith1251: 0.3840 
+    → malt1254: 0.2552 
+    → mand1415: 0.3010 
+    → mara1378: 0.2767 
+    → mode1248: 0.2769 
+    → nort2671: 0.3483 
+    → nucl1235: 0.3726 (same)
+    → nucl1301: 0.4167 
+    → nucl1347: 0.2604 
+    → nucl1643: 0.2360 
+    → poli1260: 0.4393 
+    → port1283: 0.2603 
+    → russ1263: 0.3486 
+    → slov1268: 0.3099 
+    → stan1289: 0.2277 
+    → stan1290: 0.2283 
+    → stan1293: 0.2138 
+    → stan1318: 0.3953 
+    → swed1254: 0.3665 
+    → tami1289: 0.3284 
+    → telu1262: 0.4226 
+    → ukra1253: 0.3784 
+    → viet1252: 0.2928 
+    → wels1247: 0.3263 
+    → west2369: 0.3765 
+  Done in 6.6s
+
+[24/41] Training on source: nucl1301
+  200 training sentences
+    Epoch   1  loss=2.6634  dev_acc=0.2981  patience=0/2
+    Epoch   2  loss=2.1785  dev_acc=0.3944  patience=0/2
+    Epoch   3  loss=2.0747  dev_acc=0.3981  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3048 
+    → copt1239: 0.1501 
+    → czec1258: 0.2171 
+    → dani1285: 0.2355 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1525 
+    → finn1318: 0.2963 
+    → hebr1245: 0.2623 
+    → hind1269: 0.2410 
+    → hung1274: 0.2812 
+    → icel1247: 0.2497 
+    → iris1253: 0.3077 
+    → ital1282: 0.2387 
+    → komi1268: 0.3040 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3554 
+    → malt1254: 0.2509 
+    → mand1415: 0.3010 
+    → mara1378: 0.3374 
+    → mode1248: 0.2661 
+    → nort2671: 0.3244 
+    → nucl1235: 0.2948 
+    → nucl1301: 0.3981 (same)
+    → nucl1347: 0.2359 
+    → nucl1643: 0.2315 
+    → poli1260: 0.4313 
+    → port1283: 0.2458 
+    → russ1263: 0.3563 
+    → slov1268: 0.2670 
+    → stan1289: 0.2100 
+    → stan1290: 0.2149 
+    → stan1293: 0.2183 
+    → stan1318: 0.3960 
+    → swed1254: 0.3630 
+    → tami1289: 0.3102 
+    → telu1262: 0.4435 
+    → ukra1253: 0.3041 
+    → viet1252: 0.2905 
+    → wels1247: 0.3181 
+    → west2369: 0.3788 
+  Done in 5.9s
+
+[25/41] Training on source: nucl1347
+  200 training sentences
+    Epoch   1  loss=2.7808  dev_acc=0.1990  patience=0/2
+    Epoch   2  loss=2.4202  dev_acc=0.1966  patience=1/2
+    Epoch   3  loss=2.2606  dev_acc=0.2654  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3038 
+    → copt1239: 0.1501 
+    → czec1258: 0.2054 
+    → dani1285: 0.2271 
+    → dutc1256: 0.2428 
+    → faro1244: 0.1431 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2623 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2484 
+    → iris1253: 0.3030 
+    → ital1282: 0.2357 
+    → komi1268: 0.3058 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3404 
+    → malt1254: 0.2502 
+    → mand1415: 0.3010 
+    → mara1378: 0.2937 
+    → mode1248: 0.2661 
+    → nort2671: 0.3214 
+    → nucl1235: 0.3101 
+    → nucl1301: 0.3833 
+    → nucl1347: 0.2654 (same)
+    → nucl1643: 0.2281 
+    → poli1260: 0.4313 
+    → port1283: 0.2447 
+    → russ1263: 0.3396 
+    → slov1268: 0.2670 
+    → stan1289: 0.2100 
+    → stan1290: 0.2086 
+    → stan1293: 0.2094 
+    → stan1318: 0.3960 
+    → swed1254: 0.3578 
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.2999 
+    → viet1252: 0.2824 
+    → wels1247: 0.3146 
+    → west2369: 0.3765 
+  Done in 5.8s
+
+[26/41] Training on source: nucl1643
+  200 training sentences
+    Epoch   1  loss=2.7766  dev_acc=0.2258  patience=0/2
+    Epoch   2  loss=2.2268  dev_acc=0.2247  patience=1/2
+    Epoch   3  loss=2.0229  dev_acc=0.2888  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2520 
+    → copt1239: 0.1413 
+    → czec1258: 0.1434 
+    → dani1285: 0.1727 
+    → dutc1256: 0.1953 
+    → faro1244: 0.1014 
+    → finn1318: 0.2253 
+    → hebr1245: 0.2055 
+    → hind1269: 0.2410 
+    → hung1274: 0.2305 
+    → icel1247: 0.2179 
+    → iris1253: 0.2617 
+    → ital1282: 0.1805 
+    → komi1268: 0.2144 
+    → kore1280: 0.4217 
+    → latv1249: 0.2381 
+    → lith1251: 0.2801 
+    → malt1254: 0.2151 
+    → mand1415: 0.3220 
+    → mara1378: 0.1845 
+    → mode1248: 0.2202 
+    → nort2671: 0.2496 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.2981 
+    → nucl1347: 0.1925 
+    → nucl1643: 0.2888 (same)
+    → poli1260: 0.3514 
+    → port1283: 0.1978 
+    → russ1263: 0.2706 
+    → slov1268: 0.2265 
+    → stan1289: 0.1823 
+    → stan1290: 0.1683 
+    → stan1293: 0.1615 
+    → stan1318: 0.3714 
+    → swed1254: 0.2775 
+    → tami1289: 0.2534 
+    → telu1262: 0.2427 
+    → ukra1253: 0.2598 
+    → viet1252: 0.2188 
+    → wels1247: 0.2582 
+    → west2369: 0.3274 
+  Done in 8.1s
+
+[27/41] Training on source: poli1260
+  200 training sentences
+    Epoch   1  loss=2.7300  dev_acc=0.3514  patience=0/2
+    Epoch   2  loss=2.0218  dev_acc=0.3514  patience=1/2
+    Epoch   3  loss=1.7951  dev_acc=0.4313  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1423 
+    → czec1258: 0.1938 
+    → dani1285: 0.2210 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1258 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2601 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2466 
+    → iris1253: 0.3039 
+    → ital1282: 0.2249 
+    → komi1268: 0.2970 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3343 
+    → malt1254: 0.2495 
+    → mand1415: 0.3010 
+    → mara1378: 0.2476 
+    → mode1248: 0.2544 
+    → nort2671: 0.3214 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.3741 
+    → nucl1347: 0.2310 
+    → nucl1643: 0.2281 
+    → poli1260: 0.4313 (same)
+    → port1283: 0.2436 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2094 
+    → stan1290: 0.2068 
+    → stan1293: 0.2038 
+    → stan1318: 0.3947 
+    → swed1254: 0.3386 
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.2932 
+    → viet1252: 0.2720 
+    → wels1247: 0.3134 
+    → west2369: 0.3765 
+  Done in 5.6s
+
+[28/41] Training on source: port1283
+  200 training sentences
+    Epoch   1  loss=2.7633  dev_acc=0.1978  patience=0/2
+    Epoch   2  loss=2.3875  dev_acc=0.2391  patience=0/2
+    Epoch   3  loss=2.2716  dev_acc=0.4123  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3038 
+    → copt1239: 0.1491 
+    → czec1258: 0.2016 
+    → dani1285: 0.2307 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1274 
+    → finn1318: 0.2886 
+    → hebr1245: 0.2634 
+    → hind1269: 0.2410 
+    → hung1274: 0.2853 
+    → icel1247: 0.2759 
+    → iris1253: 0.3077 
+    → ital1282: 0.2337 
+    → komi1268: 0.3515 
+    → kore1280: 0.4739 
+    → latv1249: 0.3164 
+    → lith1251: 0.3494 
+    → malt1254: 0.2502 
+    → mand1415: 0.3010 
+    → mara1378: 0.2743 
+    → mode1248: 0.2564 
+    → nort2671: 0.3244 
+    → nucl1235: 0.3078 
+    → nucl1301: 0.3852 
+    → nucl1347: 0.2416 
+    → nucl1643: 0.2303 
+    → poli1260: 0.4313 
+    → port1283: 0.4123 (same)
+    → russ1263: 0.3374 
+    → slov1268: 0.2759 
+    → stan1289: 0.2211 
+    → stan1290: 0.2149 
+    → stan1293: 0.2149 
+    → stan1318: 0.3947 
+    → swed1254: 0.3613 
+    → tami1289: 0.3159 
+    → telu1262: 0.4351 
+    → ukra1253: 0.3350 
+    → viet1252: 0.2755 
+    → wels1247: 0.3181 
+    → west2369: 0.3765 
+  Done in 6.9s
+
+[29/41] Training on source: russ1263
+  200 training sentences
+    Epoch   1  loss=2.6598  dev_acc=0.2706  patience=0/2
+    Epoch   2  loss=2.2200  dev_acc=0.3341  patience=0/2
+    Epoch   3  loss=2.0941  dev_acc=0.3519  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3197 
+    → copt1239: 0.1501 
+    → czec1258: 0.2093 
+    → dani1285: 0.2258 
+    → dutc1256: 0.2428 
+    → faro1244: 0.1407 
+    → finn1318: 0.2901 
+    → hebr1245: 0.2645 
+    → hind1269: 0.2410 
+    → hung1274: 0.2832 
+    → icel1247: 0.2884 
+    → iris1253: 0.3096 
+    → ital1282: 0.2357 
+    → komi1268: 0.3902 
+    → kore1280: 0.4793 
+    → latv1249: 0.3210 
+    → lith1251: 0.3735 
+    → malt1254: 0.2502 
+    → mand1415: 0.3010 
+    → mara1378: 0.2621 
+    → mode1248: 0.2691 
+    → nort2671: 0.3303 
+    → nucl1235: 0.3149 
+    → nucl1301: 0.3963 
+    → nucl1347: 0.2482 
+    → nucl1643: 0.2326 
+    → poli1260: 0.4313 
+    → port1283: 0.2469 
+    → russ1263: 0.3519 (same)
+    → slov1268: 0.2888 
+    → stan1289: 0.2161 
+    → stan1290: 0.2140 
+    → stan1293: 0.2105 
+    → stan1318: 0.3953 
+    → swed1254: 0.3578 
+    → tami1289: 0.3227 
+    → telu1262: 0.4142 
+    → ukra1253: 0.3450 
+    → viet1252: 0.2812 
+    → wels1247: 0.3216 
+    → west2369: 0.3765 
+  Done in 7.0s
+
+[30/41] Training on source: slov1268
+  200 training sentences
+    Epoch   1  loss=2.7658  dev_acc=0.2306  patience=0/2
+    Epoch   2  loss=2.4648  dev_acc=0.3244  patience=0/2
+    Epoch   3  loss=2.3037  dev_acc=0.3455  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3665 
+    → copt1239: 0.1511 
+    → czec1258: 0.3101 
+    → dani1285: 0.2838 
+    → dutc1256: 0.2735 
+    → faro1244: 0.2351 
+    → finn1318: 0.3580 
+    → hebr1245: 0.2896 
+    → hind1269: 0.2522 
+    → hung1274: 0.3553 
+    → icel1247: 0.3333 
+    → iris1253: 0.3415 
+    → ital1282: 0.2909 
+    → komi1268: 0.4569 
+    → kore1280: 0.4886 
+    → latv1249: 0.3748 
+    → lith1251: 0.4217 
+    → malt1254: 0.2767 
+    → mand1415: 0.3010 
+    → mara1378: 0.3738 
+    → mode1248: 0.3092 
+    → nort2671: 0.3812 
+    → nucl1235: 0.3526 
+    → nucl1301: 0.4500 
+    → nucl1347: 0.3047 
+    → nucl1643: 0.2685 
+    → poli1260: 0.4569 
+    → port1283: 0.2849 
+    → russ1263: 0.4042 
+    → slov1268: 0.3455 (same)
+    → stan1289: 0.2532 
+    → stan1290: 0.2560 
+    → stan1293: 0.2416 
+    → stan1318: 0.3960 
+    → swed1254: 0.3874 
+    → tami1289: 0.3455 
+    → telu1262: 0.4686 
+    → ukra1253: 0.4035 
+    → viet1252: 0.3299 
+    → wels1247: 0.3568 
+    → west2369: 0.3788 
+  Done in 6.8s
+
+[31/41] Training on source: stan1289
+  200 training sentences
+    Epoch   1  loss=2.7829  dev_acc=0.1961  patience=0/2
+    Epoch   2  loss=2.3578  dev_acc=0.3435  patience=0/2
+    Epoch   3  loss=2.2416  dev_acc=0.4709  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3546 
+    → copt1239: 0.1423 
+    → czec1258: 0.2571 
+    → dani1285: 0.2343 
+    → dutc1256: 0.2744 
+    → faro1244: 0.1533 
+    → finn1318: 0.3056 
+    → hebr1245: 0.2885 
+    → hind1269: 0.2522 
+    → hung1274: 0.3239 
+    → icel1247: 0.2765 
+    → iris1253: 0.3283 
+    → ital1282: 0.2811 
+    → komi1268: 0.4446 
+    → kore1280: 0.4886 
+    → latv1249: 0.3379 
+    → lith1251: 0.3780 
+    → malt1254: 0.2530 
+    → mand1415: 0.3010 
+    → mara1378: 0.3010 
+    → mode1248: 0.2955 
+    → nort2671: 0.3468 
+    → nucl1235: 0.3042 
+    → nucl1301: 0.4019 
+    → nucl1347: 0.2654 
+    → nucl1643: 0.2629 
+    → poli1260: 0.4425 
+    → port1283: 0.3654 
+    → russ1263: 0.3731 
+    → slov1268: 0.2985 
+    → stan1289: 0.4709 (same)
+    → stan1290: 0.3035 
+    → stan1293: 0.2105 
+    → stan1318: 0.3947 
+    → swed1254: 0.3613 
+    → tami1289: 0.3398 
+    → telu1262: 0.4226 
+    → ukra1253: 0.3885 
+    → viet1252: 0.2870 
+    → wels1247: 0.3333 
+    → west2369: 0.3765 
+  Done in 10.7s
+
+[32/41] Training on source: stan1290
+  200 training sentences
+    Epoch   1  loss=2.7752  dev_acc=0.1746  patience=0/2
+    Epoch   2  loss=2.4156  dev_acc=0.2489  patience=0/2
+    Epoch   3  loss=2.2536  dev_acc=0.3679  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3715 
+    → copt1239: 0.1501 
+    → czec1258: 0.2804 
+    → dani1285: 0.2560 
+    → dutc1256: 0.2614 
+    → faro1244: 0.1965 
+    → finn1318: 0.3179 
+    → hebr1245: 0.2863 
+    → hind1269: 0.2422 
+    → hung1274: 0.3137 
+    → icel1247: 0.2890 
+    → iris1253: 0.3330 
+    → ital1282: 0.2899 
+    → komi1268: 0.4446 
+    → kore1280: 0.4859 
+    → latv1249: 0.3456 
+    → lith1251: 0.3976 
+    → malt1254: 0.2573 
+    → mand1415: 0.3010 
+    → mara1378: 0.3592 
+    → mode1248: 0.2955 
+    → nort2671: 0.3483 
+    → nucl1235: 0.3455 
+    → nucl1301: 0.4278 
+    → nucl1347: 0.2752 
+    → nucl1643: 0.2663 
+    → poli1260: 0.4473 
+    → port1283: 0.3419 
+    → russ1263: 0.4031 
+    → slov1268: 0.3107 
+    → stan1289: 0.3596 
+    → stan1290: 0.3679 (same)
+    → stan1293: 0.2327 
+    → stan1318: 0.3960 
+    → swed1254: 0.3682 
+    → tami1289: 0.3352 
+    → telu1262: 0.4603 
+    → ukra1253: 0.3952 
+    → viet1252: 0.3125 
+    → wels1247: 0.3404 
+    → west2369: 0.3788 
+  Done in 7.8s
+
+[33/41] Training on source: stan1293
+  200 training sentences
+    Epoch   1  loss=2.7975  dev_acc=0.1615  patience=0/2
+    Epoch   2  loss=2.5312  dev_acc=0.2339  patience=0/2
+    Epoch   3  loss=2.4155  dev_acc=0.2439  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3177 
+    → copt1239: 0.1491 
+    → czec1258: 0.2287 
+    → dani1285: 0.2379 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1549 
+    → finn1318: 0.2963 
+    → hebr1245: 0.2634 
+    → hind1269: 0.2410 
+    → hung1274: 0.2812 
+    → icel1247: 0.2803 
+    → iris1253: 0.3086 
+    → ital1282: 0.2396 
+    → komi1268: 0.3480 
+    → kore1280: 0.4739 
+    → latv1249: 0.3164 
+    → lith1251: 0.3509 
+    → malt1254: 0.2516 
+    → mand1415: 0.3010 
+    → mara1378: 0.3495 
+    → mode1248: 0.2691 
+    → nort2671: 0.3259 
+    → nucl1235: 0.3042 
+    → nucl1301: 0.3981 
+    → nucl1347: 0.2400 
+    → nucl1643: 0.2315 
+    → poli1260: 0.4313 
+    → port1283: 0.2458 
+    → russ1263: 0.3708 
+    → slov1268: 0.2686 
+    → stan1289: 0.2105 
+    → stan1290: 0.2140 
+    → stan1293: 0.2439 (same)
+    → stan1318: 0.3960 
+    → swed1254: 0.3630 
+    → tami1289: 0.3170 
+    → telu1262: 0.4477 
+    → ukra1253: 0.3258 
+    → viet1252: 0.2917 
+    → wels1247: 0.3204 
+    → west2369: 0.3788 
+  Done in 7.2s
+
+[34/41] Training on source: stan1318
+  200 training sentences
+    Epoch   1  loss=2.7365  dev_acc=0.3714  patience=0/2
+    Epoch   2  loss=2.3094  dev_acc=0.3714  patience=1/2
+    Epoch   3  loss=2.1575  dev_acc=0.3967  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2580 
+    → copt1239: 0.1413 
+    → czec1258: 0.1447 
+    → dani1285: 0.1751 
+    → dutc1256: 0.1953 
+    → faro1244: 0.1014 
+    → finn1318: 0.2253 
+    → hebr1245: 0.2098 
+    → hind1269: 0.2410 
+    → hung1274: 0.2305 
+    → icel1247: 0.2179 
+    → iris1253: 0.2617 
+    → ital1282: 0.1884 
+    → komi1268: 0.2162 
+    → kore1280: 0.4217 
+    → latv1249: 0.2396 
+    → lith1251: 0.2846 
+    → malt1254: 0.2158 
+    → mand1415: 0.3010 
+    → mara1378: 0.1845 
+    → mode1248: 0.2221 
+    → nort2671: 0.2496 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.2981 
+    → nucl1347: 0.1941 
+    → nucl1643: 0.2270 
+    → poli1260: 0.3514 
+    → port1283: 0.2000 
+    → russ1263: 0.2817 
+    → slov1268: 0.2273 
+    → stan1289: 0.1823 
+    → stan1290: 0.1701 
+    → stan1293: 0.1626 
+    → stan1318: 0.3967 (same)
+    → swed1254: 0.2862 
+    → tami1289: 0.2534 
+    → telu1262: 0.2427 
+    → ukra1253: 0.2657 
+    → viet1252: 0.2292 
+    → wels1247: 0.2594 
+    → west2369: 0.3274 
+  Done in 11.3s
+
+[35/41] Training on source: swed1254
+  200 training sentences
+    Epoch   1  loss=2.7736  dev_acc=0.2775  patience=0/2
+    Epoch   2  loss=2.4265  dev_acc=0.2775  patience=1/2
+    Epoch   3  loss=2.2905  dev_acc=0.3490  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1501 
+    → czec1258: 0.2041 
+    → dani1285: 0.2246 
+    → dutc1256: 0.2428 
+    → faro1244: 0.1368 
+    → finn1318: 0.2917 
+    → hebr1245: 0.2623 
+    → hind1269: 0.2410 
+    → hung1274: 0.2802 
+    → icel1247: 0.2484 
+    → iris1253: 0.3039 
+    → ital1282: 0.2288 
+    → komi1268: 0.2970 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3404 
+    → malt1254: 0.2495 
+    → mand1415: 0.3010 
+    → mara1378: 0.2888 
+    → mode1248: 0.2632 
+    → nort2671: 0.3229 
+    → nucl1235: 0.3090 
+    → nucl1301: 0.3796 
+    → nucl1347: 0.2334 
+    → nucl1643: 0.2292 
+    → poli1260: 0.4313 
+    → port1283: 0.2447 
+    → russ1263: 0.3341 
+    → slov1268: 0.2670 
+    → stan1289: 0.2094 
+    → stan1290: 0.2086 
+    → stan1293: 0.2105 
+    → stan1318: 0.3953 
+    → swed1254: 0.3490 (same)
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.3008 
+    → viet1252: 0.2731 
+    → wels1247: 0.3146 
+    → west2369: 0.3788 
+  Done in 5.2s
+
+[36/41] Training on source: tami1289
+  200 training sentences
+    Epoch   1  loss=2.7482  dev_acc=0.2534  patience=0/2
+    Epoch   2  loss=2.3072  dev_acc=0.2534  patience=1/2
+    Epoch   3  loss=2.1617  dev_acc=0.3102  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3038 
+    → copt1239: 0.1491 
+    → czec1258: 0.2093 
+    → dani1285: 0.2331 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1447 
+    → finn1318: 0.2901 
+    → hebr1245: 0.2623 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2491 
+    → iris1253: 0.3077 
+    → ital1282: 0.2357 
+    → komi1268: 0.3005 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3434 
+    → malt1254: 0.2502 
+    → mand1415: 0.3010 
+    → mara1378: 0.2985 
+    → mode1248: 0.2652 
+    → nort2671: 0.3229 
+    → nucl1235: 0.2936 
+    → nucl1301: 0.3833 
+    → nucl1347: 0.2334 
+    → nucl1643: 0.2303 
+    → poli1260: 0.4313 
+    → port1283: 0.2458 
+    → russ1263: 0.3396 
+    → slov1268: 0.2670 
+    → stan1289: 0.2100 
+    → stan1290: 0.2122 
+    → stan1293: 0.2171 
+    → stan1318: 0.3960 
+    → swed1254: 0.3613 
+    → tami1289: 0.3102 (same)
+    → telu1262: 0.4310 
+    → ukra1253: 0.2999 
+    → viet1252: 0.2836 
+    → wels1247: 0.3169 
+    → west2369: 0.3765 
+  Done in 5.2s
+
+[37/41] Training on source: telu1262
+  200 training sentences
+    Epoch   1  loss=2.7713  dev_acc=0.4059  patience=0/2
+    Epoch   2  loss=2.2652  dev_acc=0.4477  patience=0/2
+    Epoch   3  loss=1.7132  dev_acc=0.5397  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2769 
+    → copt1239: 0.1715 
+    → czec1258: 0.2119 
+    → dani1285: 0.1993 
+    → dutc1256: 0.2419 
+    → faro1244: 0.1494 
+    → finn1318: 0.2577 
+    → hebr1245: 0.2437 
+    → hind1269: 0.3068 
+    → hung1274: 0.2640 
+    → icel1247: 0.2422 
+    → iris1253: 0.2889 
+    → ital1282: 0.2249 
+    → komi1268: 0.2882 
+    → kore1280: 0.5060 
+    → latv1249: 0.2826 
+    → lith1251: 0.3193 
+    → malt1254: 0.2358 
+    → mand1415: 0.3264 
+    → mara1378: 0.3689 
+    → mode1248: 0.2505 
+    → nort2671: 0.2975 
+    → nucl1235: 0.2866 
+    → nucl1301: 0.4463 
+    → nucl1347: 0.2318 
+    → nucl1643: 0.2787 
+    → poli1260: 0.3610 
+    → port1283: 0.2223 
+    → russ1263: 0.2973 
+    → slov1268: 0.2411 
+    → stan1289: 0.2028 
+    → stan1290: 0.2050 
+    → stan1293: 0.1860 
+    → stan1318: 0.3762 
+    → swed1254: 0.3106 
+    → tami1289: 0.3341 
+    → telu1262: 0.5397 (same)
+    → ukra1253: 0.2824 
+    → viet1252: 0.2917 
+    → wels1247: 0.2946 
+    → west2369: 0.4279 
+  Done in 3.9s
+
+[38/41] Training on source: ukra1253
+  200 training sentences
+    Epoch   1  loss=2.7142  dev_acc=0.2899  patience=0/2
+    Epoch   2  loss=2.3612  dev_acc=0.4319  patience=0/2
+    Epoch   3  loss=2.2116  dev_acc=0.4344  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3576 
+    → copt1239: 0.1511 
+    → czec1258: 0.3062 
+    → dani1285: 0.2826 
+    → dutc1256: 0.2716 
+    → faro1244: 0.2154 
+    → finn1318: 0.3673 
+    → hebr1245: 0.2896 
+    → hind1269: 0.2522 
+    → hung1274: 0.3584 
+    → icel1247: 0.3252 
+    → iris1253: 0.3424 
+    → ital1282: 0.2830 
+    → komi1268: 0.4640 
+    → kore1280: 0.4900 
+    → latv1249: 0.3886 
+    → lith1251: 0.4398 
+    → malt1254: 0.2803 
+    → mand1415: 0.3010 
+    → mara1378: 0.3107 
+    → mode1248: 0.3102 
+    → nort2671: 0.3842 
+    → nucl1235: 0.3585 
+    → nucl1301: 0.4593 
+    → nucl1347: 0.3079 
+    → nucl1643: 0.2753 
+    → poli1260: 0.4585 
+    → port1283: 0.2894 
+    → russ1263: 0.3853 
+    → slov1268: 0.3649 
+    → stan1289: 0.2587 
+    → stan1290: 0.2713 
+    → stan1293: 0.2383 
+    → stan1318: 0.3953 
+    → swed1254: 0.3892 
+    → tami1289: 0.3500 
+    → telu1262: 0.4686 
+    → ukra1253: 0.4344 (same)
+    → viet1252: 0.3241 
+    → wels1247: 0.3592 
+    → west2369: 0.3788 
+  Done in 8.1s
+
+[39/41] Training on source: viet1252
+  200 training sentences
+    Epoch   1  loss=2.7468  dev_acc=0.2188  patience=0/2
+    Epoch   2  loss=2.3267  dev_acc=0.2222  patience=0/2
+    Epoch   3  loss=2.2099  dev_acc=0.2859  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.3048 
+    → copt1239: 0.1501 
+    → czec1258: 0.2145 
+    → dani1285: 0.2331 
+    → dutc1256: 0.2428 
+    → faro1244: 0.1525 
+    → finn1318: 0.2963 
+    → hebr1245: 0.2623 
+    → hind1269: 0.2410 
+    → hung1274: 0.2812 
+    → icel1247: 0.2491 
+    → iris1253: 0.3077 
+    → ital1282: 0.2367 
+    → komi1268: 0.3005 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3434 
+    → malt1254: 0.2509 
+    → mand1415: 0.3010 
+    → mara1378: 0.3228 
+    → mode1248: 0.2652 
+    → nort2671: 0.3244 
+    → nucl1235: 0.3031 
+    → nucl1301: 0.3926 
+    → nucl1347: 0.2351 
+    → nucl1643: 0.2315 
+    → poli1260: 0.4313 
+    → port1283: 0.2458 
+    → russ1263: 0.3396 
+    → slov1268: 0.2670 
+    → stan1289: 0.2100 
+    → stan1290: 0.2140 
+    → stan1293: 0.2183 
+    → stan1318: 0.3960 
+    → swed1254: 0.3613 
+    → tami1289: 0.3102 
+    → telu1262: 0.4393 
+    → ukra1253: 0.3041 
+    → viet1252: 0.2859 (same)
+    → wels1247: 0.3181 
+    → west2369: 0.3788 
+  Done in 5.2s
+
+[40/41] Training on source: wels1247
+  200 training sentences
+    Epoch   1  loss=2.7031  dev_acc=0.2582  patience=0/2
+    Epoch   2  loss=2.3062  dev_acc=0.2582  patience=1/2
+    Epoch   3  loss=2.2068  dev_acc=0.3134  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1423 
+    → czec1258: 0.1964 
+    → dani1285: 0.2222 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1297 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2601 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2466 
+    → iris1253: 0.3030 
+    → ital1282: 0.2249 
+    → komi1268: 0.2953 
+    → kore1280: 0.4699 
+    → latv1249: 0.3088 
+    → lith1251: 0.3343 
+    → malt1254: 0.2495 
+    → mand1415: 0.3010 
+    → mara1378: 0.2549 
+    → mode1248: 0.2544 
+    → nort2671: 0.3199 
+    → nucl1235: 0.2630 
+    → nucl1301: 0.3704 
+    → nucl1347: 0.2310 
+    → nucl1643: 0.2270 
+    → poli1260: 0.4313 
+    → port1283: 0.2436 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2094 
+    → stan1290: 0.2068 
+    → stan1293: 0.2060 
+    → stan1318: 0.3947 
+    → swed1254: 0.3403 
+    → tami1289: 0.3102 
+    → telu1262: 0.3891 
+    → ukra1253: 0.2949 
+    → viet1252: 0.2708 
+    → wels1247: 0.3134 (same)
+    → west2369: 0.3765 
+  Done in 7.3s
+
+[41/41] Training on source: west2369
+  200 training sentences
+    Epoch   1  loss=2.7297  dev_acc=0.3274  patience=0/2
+    Epoch   2  loss=2.2209  dev_acc=0.3274  patience=1/2
+    Epoch   3  loss=2.0797  dev_acc=0.3765  patience=0/2
+  Evaluating on 41 target languages...
+    → bela1254: 0.2968 
+    → copt1239: 0.1413 
+    → czec1258: 0.1964 
+    → dani1285: 0.2222 
+    → dutc1256: 0.2409 
+    → faro1244: 0.1297 
+    → finn1318: 0.2870 
+    → hebr1245: 0.2601 
+    → hind1269: 0.2410 
+    → hung1274: 0.2772 
+    → icel1247: 0.2466 
+    → iris1253: 0.3039 
+    → ital1282: 0.2249 
+    → komi1268: 0.2970 
+    → kore1280: 0.4699 
+    → latv1249: 0.3149 
+    → lith1251: 0.3343 
+    → malt1254: 0.2495 
+    → mand1415: 0.3010 
+    → mara1378: 0.2549 
+    → mode1248: 0.2544 
+    → nort2671: 0.3214 
+    → nucl1235: 0.2618 
+    → nucl1301: 0.3741 
+    → nucl1347: 0.2310 
+    → nucl1643: 0.2270 
+    → poli1260: 0.4313 
+    → port1283: 0.2436 
+    → russ1263: 0.3263 
+    → slov1268: 0.2662 
+    → stan1289: 0.2094 
+    → stan1290: 0.2068 
+    → stan1293: 0.2060 
+    → stan1318: 0.3926 
+    → swed1254: 0.3386 
+    → tami1289: 0.3102 
+    → telu1262: 0.4059 
+    → ukra1253: 0.2932 
+    → viet1252: 0.2720 
+    → wels1247: 0.3134 
+    → west2369: 0.3765 (same)
+  Done in 9.2s
+
+Transfer matrix saved to: downstream_results/transfer/transfer_matrix.csv
+Shape: (41, 41)
+Non-NaN cells: 1681
+
+Off-diagonal accuracy: mean=0.2885  std=0.0807  min=0.0386  max=0.5774
+          bela1254  copt1239  czec1258  ...  viet1252  wels1247  west2369
+bela1254  0.588563  0.193593  0.398206  ...  0.355841  0.432732  0.375856
+copt1239  0.364879  0.767048  0.304348  ...  0.313977  0.349515  0.306161
+czec1258  0.432692  0.163844  0.639752  ...  0.347063  0.444521  0.365277
+dani1285  0.288968  0.061327  0.318841  ...  0.273464  0.349515  0.110143
+dutc1256  0.232287  0.053547  0.310559  ...  0.243754  0.196949  0.151836
+faro1244  0.346614  0.185185  0.312661  ...  0.346065  0.294601  0.331844
+finn1318  0.320717  0.150097  0.228682  ...  0.295139  0.322770  0.378771
+hebr1245  0.250000  0.140351  0.142119  ...  0.218750  0.258216  0.327374
+hind1269  0.295817  0.140351  0.197674  ...  0.273148  0.315728  0.376536
+hung1274  0.324701  0.150097  0.229974  ...  0.295139  0.330986  0.376536
+icel1247  0.374502  0.150097  0.316537  ...  0.332176  0.361502  0.376536
+iris1253  0.266932  0.142300  0.166667  ...  0.230324  0.282864  0.327374
+ital1282  0.355578  0.151072  0.260982  ...  0.295139  0.341549  0.376536
+komi1268  0.250996  0.141326  0.142119  ...  0.218750  0.258216  0.327374
+kore1280  0.222112  0.138402  0.140827  ...  0.229167  0.232394  0.359777
+latv1249  0.360558  0.142300  0.307494  ...  0.324074  0.355634  0.376536
+lith1251  0.356574  0.150097  0.297158  ...  0.313657  0.353286  0.376536
+malt1254  0.297809  0.142300  0.202842  ...  0.271991  0.313380  0.376536
+mand1415  0.251992  0.174464  0.142119  ...  0.218750  0.258216  0.327374
+mara1378  0.177291  0.090643  0.187339  ...  0.280093  0.129108  0.221229
+mode1248  0.296813  0.142300  0.201550  ...  0.271991  0.313380  0.376536
+nort2671  0.296813  0.181287  0.218346  ...  0.285880  0.319249  0.383240
+nucl1235  0.316733  0.150097  0.242894  ...  0.292824  0.326291  0.376536
+nucl1301  0.304781  0.150097  0.217054  ...  0.290509  0.318075  0.378771
+nucl1347  0.303785  0.150097  0.205426  ...  0.282407  0.314554  0.376536
+nucl1643  0.251992  0.141326  0.143411  ...  0.218750  0.258216  0.327374
+poli1260  0.296813  0.142300  0.193798  ...  0.271991  0.313380  0.376536
+port1283  0.303785  0.149123  0.201550  ...  0.275463  0.318075  0.376536
+russ1263  0.319721  0.150097  0.209302  ...  0.281250  0.321596  0.376536
+slov1268  0.366534  0.151072  0.310078  ...  0.329861  0.356808  0.378771
+stan1289  0.354582  0.142300  0.257106  ...  0.287037  0.333333  0.376536
+stan1290  0.371514  0.150097  0.280362  ...  0.312500  0.340376  0.378771
+stan1293  0.317729  0.149123  0.228682  ...  0.291667  0.320423  0.378771
+stan1318  0.257968  0.141326  0.144703  ...  0.229167  0.259390  0.327374
+swed1254  0.296813  0.150097  0.204134  ...  0.273148  0.314554  0.378771
+tami1289  0.303785  0.149123  0.209302  ...  0.283565  0.316901  0.376536
+telu1262  0.276892  0.171540  0.211886  ...  0.291667  0.294601  0.427933
+ukra1253  0.357570  0.151072  0.306202  ...  0.324074  0.359155  0.378771
+viet1252  0.304781  0.150097  0.214470  ...  0.285880  0.318075  0.378771
+wels1247  0.296813  0.142300  0.196382  ...  0.270833  0.313380  0.376536
+west2369  0.296813  0.141326  0.196382  ...  0.271991  0.313380  0.376536
+
+[41 rows x 41 columns]

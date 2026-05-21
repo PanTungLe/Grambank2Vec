@@ -1,0 +1,8 @@
+# Large binary representation files
+representations/**/*.npy
+
+# UD treebank conllu files (large raw data)
+ud_data/**/*.conllu
+
+# Partial transfer matrix (large, regenerated)
+transfer/transfer_matrix_partial.csv
