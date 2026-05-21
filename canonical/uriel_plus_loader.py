@@ -135,6 +135,30 @@ def _clone_or_verify(urielplus_dir: str) -> str:
     return str(d)
 
 
+def _patch_urielplus_fancyimpute(urielplus_dir: str) -> None:
+    """
+    Make the fancyimpute import in urielplus_imputation.py optional.
+
+    Newer fancyimpute versions dropped SoftImpute, and we never call imputation
+    through URIELPlus anyway.  This patch survives fresh clones automatically.
+    """
+    imp_path = Path(urielplus_dir) / "urielplus" / "urielplus_imputation.py"
+    if not imp_path.exists():
+        return
+    src = imp_path.read_text()
+    old = "from fancyimpute import SoftImpute"
+    if old not in src:
+        return  # already patched or not present
+    new = (
+        "try:\n"
+        "    from fancyimpute import SoftImpute\n"
+        "except (ImportError, Exception):\n"
+        "    SoftImpute = None  # not needed for geo/phylo extraction"
+    )
+    imp_path.write_text(src.replace(old, new))
+    log.info("Patched urielplus_imputation.py: fancyimpute import is now optional.")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # URIEL+ data extraction
 # ──────────────────────────────────────────────────────────────────────────────
@@ -146,6 +170,10 @@ def _load_uriel_plus(urielplus_dir: str):
     The typological index (data[1] / features.npz) is present in memory but
     will never be read by our code; we verify this by asserting on every lookup.
     """
+    # Patch fancyimpute import before loading the module so a fresh clone works
+    # even without fancyimpute / with a broken fancyimpute installation.
+    _patch_urielplus_fancyimpute(urielplus_dir)
+
     if str(Path(urielplus_dir).parent) not in sys.path:
         sys.path.insert(0, str(Path(urielplus_dir).parent))
     try:
