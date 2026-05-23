@@ -1,0 +1,8 @@
+# Trained model weights (large, regenerated)
+models/*.pt
+
+# Representation binaries (symlinked from downstream_direction/)
+representations/**/*.npy
+
+# Synthetic treebanks (large, regenerated)
+synthetic_treebanks/**/*.conllu
