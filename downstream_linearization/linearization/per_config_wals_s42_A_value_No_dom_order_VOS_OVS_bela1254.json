@@ -1,0 +1,374 @@
+{
+  "mark_VERB_SCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 31
+  },
+  "advmod_VERB_ADV": {
+    "accuracy": 0.7956989247311828,
+    "n_arcs": 93
+  },
+  "advcl_VERB_VERB": {
+    "accuracy": 0.5,
+    "n_arcs": 18
+  },
+  "nsubj_VERB_PROPN": {
+    "accuracy": 0.5882352941176471,
+    "n_arcs": 34
+  },
+  "punct_VERB_PUNCT": {
+    "accuracy": 0.4436416184971098,
+    "n_arcs": 692
+  },
+  "xcomp_VERB_VERB": {
+    "accuracy": 0.9642857142857143,
+    "n_arcs": 56
+  },
+  "amod_NOUN_ADJ": {
+    "accuracy": 0.9954597048808173,
+    "n_arcs": 881
+  },
+  "obj_VERB_NOUN": {
+    "accuracy": 0.9442231075697212,
+    "n_arcs": 251
+  },
+  "case_NOUN_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 769
+  },
+  "obl_VERB_NOUN": {
+    "accuracy": 0.7785547785547785,
+    "n_arcs": 429
+  },
+  "parataxis_VERB_VERB": {
+    "accuracy": 0.21739130434782608,
+    "n_arcs": 23
+  },
+  "obl_VERB_ADJ": {
+    "accuracy": 0.5416666666666666,
+    "n_arcs": 24
+  },
+  "flat_ADJ_NOUN": {
+    "accuracy": 0.0,
+    "n_arcs": 27
+  },
+  "nsubj_VERB_NOUN": {
+    "accuracy": 0.6975806451612904,
+    "n_arcs": 248
+  },
+  "nmod_NOUN_NOUN": {
+    "accuracy": 0.9980769230769231,
+    "n_arcs": 1040
+  },
+  "punct_PROPN_PUNCT": {
+    "accuracy": 0.5847457627118644,
+    "n_arcs": 118
+  },
+  "appos_NOUN_PROPN": {
+    "accuracy": 0.0,
+    "n_arcs": 143
+  },
+  "flat_PROPN_PROPN": {
+    "accuracy": 0.0,
+    "n_arcs": 81
+  },
+  "case_PRON_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 50
+  },
+  "obl_VERB_PRON": {
+    "accuracy": 0.42857142857142855,
+    "n_arcs": 35
+  },
+  "nmod_NOUN_PROPN": {
+    "accuracy": 1.0,
+    "n_arcs": 120
+  },
+  "case_PROPN_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 67
+  },
+  "cc_ADJ_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 71
+  },
+  "conj_ADJ_ADJ": {
+    "accuracy": 0.0,
+    "n_arcs": 96
+  },
+  "punct_NOUN_PUNCT": {
+    "accuracy": 0.6776470588235294,
+    "n_arcs": 425
+  },
+  "xcomp_VERB_ADJ": {
+    "accuracy": 1.0,
+    "n_arcs": 5
+  },
+  "advmod_VERB_PART": {
+    "accuracy": 0.0,
+    "n_arcs": 48
+  },
+  "ccomp_VERB_VERB": {
+    "accuracy": 1.0,
+    "n_arcs": 15
+  },
+  "nsubj_NOUN_PRON": {
+    "accuracy": 1.0,
+    "n_arcs": 9
+  },
+  "advmod_NOUN_PART": {
+    "accuracy": 1.0,
+    "n_arcs": 10
+  },
+  "advmod_NUM_ADV": {
+    "accuracy": 1.0,
+    "n_arcs": 5
+  },
+  "nummod_NOUN_NUM": {
+    "accuracy": 0.9761904761904762,
+    "n_arcs": 42
+  },
+  "fixed_ADP_NOUN": {
+    "accuracy": 0.0,
+    "n_arcs": 67
+  },
+  "fixed_ADP_ADP": {
+    "accuracy": 0.0,
+    "n_arcs": 23
+  },
+  "parataxis_VERB_NOUN": {
+    "accuracy": 0.5,
+    "n_arcs": 8
+  },
+  "nmod_NOUN_VERB": {
+    "accuracy": 1.0,
+    "n_arcs": 11
+  },
+  "acl_NOUN_VERB": {
+    "accuracy": 0.14935064935064934,
+    "n_arcs": 154
+  },
+  "aux_VERB_AUX": {
+    "accuracy": 0.7647058823529411,
+    "n_arcs": 17
+  },
+  "nmod_NOUN_PRON": {
+    "accuracy": 1.0,
+    "n_arcs": 15
+  },
+  "cc_VERB_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 66
+  },
+  "advmod_ADJ_ADV": {
+    "accuracy": 1.0,
+    "n_arcs": 9
+  },
+  "det_NOUN_DET": {
+    "accuracy": 1.0,
+    "n_arcs": 151
+  },
+  "advmod_NOUN_ADV": {
+    "accuracy": 0.75,
+    "n_arcs": 20
+  },
+  "punct_ADJ_PUNCT": {
+    "accuracy": 0.6310679611650486,
+    "n_arcs": 103
+  },
+  "appos_NOUN_NOUN": {
+    "accuracy": 0.0,
+    "n_arcs": 35
+  },
+  "conj_VERB_VERB": {
+    "accuracy": 0.0,
+    "n_arcs": 104
+  },
+  "cc_PROPN_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 14
+  },
+  "conj_PROPN_PROPN": {
+    "accuracy": 0.0,
+    "n_arcs": 30
+  },
+  "cc_NOUN_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 279
+  },
+  "conj_NOUN_NOUN": {
+    "accuracy": 0.0,
+    "n_arcs": 405
+  },
+  "punct_ADV_PUNCT": {
+    "accuracy": 0.2857142857142857,
+    "n_arcs": 21
+  },
+  "iobj_VERB_PRON": {
+    "accuracy": 0.3333333333333333,
+    "n_arcs": 12
+  },
+  "nsubj_ADJ_NOUN": {
+    "accuracy": 0.5833333333333334,
+    "n_arcs": 12
+  },
+  "obj_VERB_PRON": {
+    "accuracy": 0.3333333333333333,
+    "n_arcs": 18
+  },
+  "xcomp_VERB_NOUN": {
+    "accuracy": 0.7727272727272727,
+    "n_arcs": 22
+  },
+  "nsubj_VERB_PRON": {
+    "accuracy": 0.9693877551020408,
+    "n_arcs": 98
+  },
+  "amod_PROPN_ADJ": {
+    "accuracy": 1.0,
+    "n_arcs": 5
+  },
+  "obl_VERB_PROPN": {
+    "accuracy": 0.53125,
+    "n_arcs": 32
+  },
+  "conj_PROPN_NOUN": {
+    "accuracy": 0.0,
+    "n_arcs": 6
+  },
+  "case_ADJ_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 16
+  },
+  "punct_CCONJ_PUNCT": {
+    "accuracy": 0.5416666666666666,
+    "n_arcs": 24
+  },
+  "obl_ADJ_NOUN": {
+    "accuracy": 0.875,
+    "n_arcs": 16
+  },
+  "amod_NOUN_VERB": {
+    "accuracy": 1.0,
+    "n_arcs": 6
+  },
+  "acl_NOUN_ADJ": {
+    "accuracy": 0.0,
+    "n_arcs": 5
+  },
+  "nmod_ADJ_NOUN": {
+    "accuracy": 1.0,
+    "n_arcs": 9
+  },
+  "nmod_DET_NOUN": {
+    "accuracy": 1.0,
+    "n_arcs": 5
+  },
+  "parataxis_NOUN_NOUN": {
+    "accuracy": 0.1111111111111111,
+    "n_arcs": 9
+  },
+  "punct_PRON_PUNCT": {
+    "accuracy": 0.14285714285714285,
+    "n_arcs": 7
+  },
+  "nmod_ADJ_ADJ": {
+    "accuracy": 0.0,
+    "n_arcs": 5
+  },
+  "det_ADJ_DET": {
+    "accuracy": 0.6,
+    "n_arcs": 15
+  },
+  "fixed_CCONJ_ADV": {
+    "accuracy": 0.0,
+    "n_arcs": 36
+  },
+  "appos_NOUN_NUM": {
+    "accuracy": 0.0,
+    "n_arcs": 37
+  },
+  "iobj_VERB_NOUN": {
+    "accuracy": 0.11538461538461539,
+    "n_arcs": 26
+  },
+  "nsubj_NOUN_NOUN": {
+    "accuracy": 0.5625,
+    "n_arcs": 16
+  },
+  "amod_ADJ_ADJ": {
+    "accuracy": 1.0,
+    "n_arcs": 7
+  },
+  "cc_DET_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 7
+  },
+  "cc_ADV_CCONJ": {
+    "accuracy": 1.0,
+    "n_arcs": 5
+  },
+  "conj_CCONJ_CCONJ": {
+    "accuracy": 0.0,
+    "n_arcs": 10
+  },
+  "appos_NOUN_X": {
+    "accuracy": 0.0,
+    "n_arcs": 15
+  },
+  "csubj_VERB_VERB": {
+    "accuracy": 0.125,
+    "n_arcs": 8
+  },
+  "parataxis_NOUN_ADJ": {
+    "accuracy": 0.0,
+    "n_arcs": 6
+  },
+  "cop_NOUN_AUX": {
+    "accuracy": 0.8,
+    "n_arcs": 5
+  },
+  "punct_X_PUNCT": {
+    "accuracy": 0.7666666666666667,
+    "n_arcs": 30
+  },
+  "flat_X_X": {
+    "accuracy": 0.0,
+    "n_arcs": 9
+  },
+  "dep_X_X": {
+    "accuracy": 0.49122807017543857,
+    "n_arcs": 57
+  },
+  "parataxis_NOUN_X": {
+    "accuracy": 0.0,
+    "n_arcs": 6
+  },
+  "nsubj_VERB_DET": {
+    "accuracy": 0.8,
+    "n_arcs": 5
+  },
+  "nmod_NOUN_X": {
+    "accuracy": 1.0,
+    "n_arcs": 6
+  },
+  "dep_NOUN_X": {
+    "accuracy": 0.6666666666666666,
+    "n_arcs": 9
+  },
+  "dep_PROPN_X": {
+    "accuracy": 0.3333333333333333,
+    "n_arcs": 15
+  },
+  "case_X_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 6
+  },
+  "dep_VERB_X": {
+    "accuracy": 0.4666666666666667,
+    "n_arcs": 15
+  },
+  "case_NUM_ADP": {
+    "accuracy": 1.0,
+    "n_arcs": 6
+  }
+}
