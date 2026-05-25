@@ -137,7 +137,11 @@ class Filler(tf.keras.callbacks.Callback):
 
         acc = evaluate.evaluate(tmp, x_to_predict, golden)
         if acc >= self.best:
-            self.model.save_weights('best.h5')
+            # Keras 3: save_weights requires .weights.h5; fall back to .h5 for Keras 2
+            try:
+                self.model.save_weights('best.weights.h5')
+            except Exception:
+                self.model.save_weights('best.h5')
             self.best = acc
             self.write_results(x_to_predict, 'lang_embedding.csv')
             self.write_results(fill_with_probs, 'lang_embedding_probs.csv')
