@@ -3,6 +3,14 @@ import tensorflow as tf
 import pandas as pd
 from sklearn.metrics.pairwise import euclidean_distances
 from collections import Counter
+
+def _predict(model, inputs):
+    """predict_on_batch was removed in Keras 3; fall back to direct call."""
+    try:
+        return model.predict_on_batch(inputs)
+    except AttributeError:
+        lang_ids, fv_ids = inputs
+        return model([np.array(lang_ids), np.array(fv_ids)], training=False).numpy()
 import evaluate
 
 class MostCommon:
@@ -119,7 +127,7 @@ class Filler(tf.keras.callbacks.Callback):
                 possible_values = np.array(list(self.feature_maps[j].values()))
                 lang_ids = np.array([cnt+1125]*len(possible_values))
                 # column_ids = np.array([j]*len(possible_values))
-                prob = self.model.predict_on_batch((lang_ids, possible_values))
+                prob = _predict(self.model, (lang_ids, possible_values))
                 prediction = np.argmax(prob)
                 predicted_feature = possible_values[prediction]
                 x_to_predict[cnt][j] = self.feature_maps_int[j][predicted_feature]
@@ -148,7 +156,7 @@ class Filler(tf.keras.callbacks.Callback):
             for j in should_fill:
                 possible_values = np.array(list(self.feature_maps[j].values()))
                 lang_ids = np.array([cnt+1208]*len(possible_values))
-                prob = self.model.predict_on_batch((lang_ids, possible_values))
+                prob = _predict(self.model, (lang_ids, possible_values))
                 prediction = np.argmax(prob)
                 predicted_feature = possible_values[prediction]
                 tmp[cnt][j] = self.feature_maps_int[j][predicted_feature]
