@@ -222,8 +222,8 @@ def train_step(lang_ids, fv_padded, correct_idx, mask):
 
 # ── Filler callback ───────────────────────────────────────────────────────────
 print("\n[3] Setting up Filler callback...")
-filler       = Filler(dataset.feature_maps, dataset.feature_maps_int)
-filler.model = keras_model
+filler = Filler(dataset.feature_maps, dataset.feature_maps_int)
+filler.set_model(keras_model)   # Keras 3: .model is read-only property; use set_model()
 
 # ── Training loop ─────────────────────────────────────────────────────────────
 print(f"\n[4] Training {args.epochs} epochs × {args.steps} steps (categorical CE) ...")
