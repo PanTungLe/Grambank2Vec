@@ -110,7 +110,8 @@ print(f"  Dataset built in {time.time()-t0:.1f}s")
 print("\n[2] Building Keras model...")
 keras_model = models.get_model_embedding(langs_num, feature_val_num, 0.5, args.embed)
 keras_model.summary()
-optimizer = tf.optimizers.Adam()
+# tf.keras.optimizers.Adam works on TF 2.15 and TF 2.16+ (tf.optimizers deprecated in 2.16)
+optimizer = tf.keras.optimizers.Adam()
 keras_model.compile(
     optimizer=optimizer,
     loss=tf.keras.losses.BinaryCrossentropy(),
