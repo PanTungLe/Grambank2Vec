@@ -130,9 +130,13 @@ print(f"  Dataset built in {time.time()-t0:.1f}s")
 # ── Categorical batch generator ───────────────────────────────────────────────
 def categorical_batch_generator(batch_size=512):
     """
-    Yields: lang_ids (B,), fv_padded (B,max_k), correct_idx (B,), mask (B,max_k), weights (B,)
+    Yields: lang_ids (B,), fv_padded (B,max_k), correct_idx (B,), mask (B,max_k)
     For features with K > cap: sampled softmax (1 correct + cap-1 random negatives).
-    Class weights match the original binary run: weight each sample by class_weights[global_fv_id].
+
+    NOTE: class weights are NOT applied here.  UFAL's binary batch_generator (dataset.py
+    line 120) yields only (X, y) — the class_weights column it builds is never passed to
+    Keras.  Applying balanced class weights to categorical CE would over-penalise rare
+    features (50-100× larger gradients) and stall the Filler accuracy at ~0.60.
     """
     n = len(lang_feat_pairs)
     while True:
@@ -142,7 +146,6 @@ def categorical_batch_generator(batch_size=512):
         fv_padded   = np.zeros((batch_size, max_k), dtype=np.int32)
         correct_idx = np.zeros(batch_size, dtype=np.int32)
         mask        = np.zeros((batch_size, max_k), dtype=np.float32)
-        weights     = np.zeros(batch_size, dtype=np.float32)
 
         for i in range(batch_size):
             col_id    = batch[i, 1]
@@ -167,12 +170,7 @@ def categorical_batch_generator(batch_size=512):
                 mask[i, :cap]      = 1.0
                 correct_idx[i]     = new_local
 
-            # Class weight: same as original binary run — weight by correct fv's global id
-            # In binary: batch appends class_weights[feature_id] where feature_id is global fv_id
-            correct_gfv = int(col_fvids[batch[i, 1]][batch[i, 2]])
-            weights[i]  = dataset.class_weights[correct_gfv]
-
-        yield (lang_ids, fv_padded, correct_idx, mask, weights)
+        yield (lang_ids, fv_padded, correct_idx, mask)
 
 # ── Build model ───────────────────────────────────────────────────────────────
 print("\n[2] Building Keras model (same arch as binary)...")
@@ -196,7 +194,7 @@ dropout_fv     = keras_model.get_layer('dropout_1')
 
 # ── Training step ─────────────────────────────────────────────────────────────
 @tf.function
-def train_step(lang_ids, fv_padded, correct_idx, mask, weights):
+def train_step(lang_ids, fv_padded, correct_idx, mask):
     with tf.GradientTape() as tape:
         # (B,1,d) lang embedding with dropout
         lang_e = lang_emb_layer(tf.expand_dims(lang_ids, 1))
@@ -217,10 +215,11 @@ def train_step(lang_ids, fv_padded, correct_idx, mask, weights):
         # Mask padding positions to -inf before softmax
         logits = logits + (1.0 - mask) * -1e9
 
-        # Per-sample CE loss, then weighted mean (matches original binary class_weight usage)
-        per_sample_loss = tf.keras.losses.sparse_categorical_crossentropy(
-            correct_idx, logits, from_logits=True)
-        loss = tf.reduce_mean(per_sample_loss * weights)
+        # Unweighted mean CE — matches the binary run which also uses no class weights
+        # (UFAL's batch_generator builds class_weights but never yields them to Keras)
+        loss = tf.reduce_mean(
+            tf.keras.losses.sparse_categorical_crossentropy(
+                correct_idx, logits, from_logits=True))
 
     # Only update embedding layers (dense is frozen)
     train_vars = [v for v in keras_model.trainable_variables]
@@ -243,13 +242,12 @@ for epoch in range(1, args.epochs + 1):
     losses = []
     t_ep = time.time()
     for step in range(1, args.steps + 1):
-        li, fp, ci, mk, wt = next(gen)
+        li, fp, ci, mk = next(gen)
         loss = train_step(
             tf.constant(li,  dtype=tf.int32),
             tf.constant(fp,  dtype=tf.int32),
             tf.constant(ci,  dtype=tf.int32),
-            tf.constant(mk,  dtype=tf.float32),
-            tf.constant(wt,  dtype=tf.float32))
+            tf.constant(mk,  dtype=tf.float32))
         losses.append(float(loss))
         # Progress within epoch every 100 steps
         if step % 100 == 0:
