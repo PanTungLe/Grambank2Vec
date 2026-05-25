@@ -227,12 +227,14 @@ filler.set_model(keras_model)   # Keras 3: .model is read-only property; use set
 
 # ── Training loop ─────────────────────────────────────────────────────────────
 print(f"\n[4] Training {args.epochs} epochs × {args.steps} steps (categorical CE) ...")
+print("    (First ~30-120s: silent while TF compiles the train_step graph)")
 gen = categorical_batch_generator(args.batch_size)
 
 t1 = time.time()
 for epoch in range(1, args.epochs + 1):
     losses = []
-    for _ in range(args.steps):
+    t_ep = time.time()
+    for step in range(1, args.steps + 1):
         li, fp, ci, mk = next(gen)
         loss = train_step(
             tf.constant(li,  dtype=tf.int32),
@@ -240,6 +242,11 @@ for epoch in range(1, args.epochs + 1):
             tf.constant(ci,  dtype=tf.int32),
             tf.constant(mk,  dtype=tf.float32))
         losses.append(float(loss))
+        # Progress within epoch every 100 steps
+        if step % 100 == 0:
+            print(f"  ep {epoch:3d} step {step:4d}/{args.steps}  "
+                  f"loss={np.mean(losses[-100:]):.4f}  "
+                  f"({time.time()-t_ep:.0f}s)", flush=True)
 
     filler_acc = filler.fill(
         np.array(filler.x_to_predict, copy=True), filler.golden)
