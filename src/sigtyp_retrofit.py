@@ -297,77 +297,128 @@ def _cat_matrix_for_split(feat_df: pd.DataFrame,
 # 3. Early-stopping training loops
 # ===========================================================================
 
-def _dev_nll_ufal(model: UFALNeural,
-                   dev_pos: list,
-                   device: str) -> float:
+def _dev_finetune_loss(model,
+                        model_type: str,
+                        dev_meta: pd.DataFrame,
+                        dev_obs: dict,
+                        feat_name_to_idx: dict,
+                        feat_to_value_names: dict,
+                        feat_to_fv_ids: dict,
+                        embed_dim: int,
+                        device: str,
+                        finetune_steps: int = 15) -> float:
     """
-    Fast dev metric for UFALNeural: BCE on (lang_id, fv_id) positive pairs.
+    Dev early-stopping metric via mini transductive fine-tuning.
 
-    dev_pos: list of (lang_idx, fv_global_id) for DEV languages.
-    The corresponding lang embeddings are in the table but were never
-    updated during training (no gradient flow → random fixed vectors).
-    The NLL therefore measures how well the shared fv embedding space,
-    learned from TRAIN languages, generalises to random-embedding languages.
+    For each dev language:
+      1. collect its observed features that are in the training vocabulary
+      2. initialise a fresh random embedding (same as test-time inference)
+      3. optimise that embedding against the observed features for
+         `finetune_steps` Adam steps (model weights FROZEN)
+      4. record the final per-feature mean loss
+
+    Returns the mean loss across all dev languages (lower = better).
+
+    WHY this is correct for both objectives
+    ----------------------------------------
+    The earlier approach used fixed-random dev-lang embeddings that were
+    added to the embedding TABLE but never trained.  As the shared
+    fv_embeddings improve during training their norms grow (no L2 reg).
+    For BCE/sigmoid the cosine normalises the norms away, so the random-
+    embedding BCE stays roughly constant — BCE never triggers early stop.
+    For CE/softmax larger norms sharpen the softmax; a random lang vector
+    increasingly lands on the WRONG peak, so dev CE *increases* as training
+    progresses — CE triggers early stop at epoch ~10-15 and never converges.
+
+    Mini transductive fine-tuning is symmetric: the fresh embedding is
+    optimised with the same objective used at test time, so "dev NLL after
+    N finetune steps" genuinely measures the quality of the shared embedding
+    space under both objectives.
     """
-    if not dev_pos:
-        return float("inf")
     model.eval()
-    criterion = nn.BCELoss()
-    total = 0.0
-    n = 0
-    with torch.no_grad():
-        for start in range(0, len(dev_pos), 512):
-            batch = dev_pos[start : start + 512]
-            li_t  = torch.tensor([x[0] for x in batch], dtype=torch.long,  device=device)
-            fv_t  = torch.tensor([x[1] for x in batch], dtype=torch.long,  device=device)
-            probs = model(li_t, fv_t)
-            lab_t = torch.ones(len(batch), dtype=torch.float, device=device)
-            total += criterion(probs, lab_t).item() * len(batch)
-            n += len(batch)
-    model.train()
-    return total / max(n, 1)
+    for p in model.parameters():
+        p.requires_grad_(False)
 
+    total_loss = 0.0
+    n_langs = 0
 
-def _dev_nll_categorical(model: CategoricalNeural,
-                          dev_triples: list,
-                          device: str) -> float:
-    """
-    Fast dev metric for CategoricalNeural: CE on (lang_id, fi, vi_local) triples.
+    for _, row in dev_meta.iterrows():
+        wc      = row["wals_code"]
+        obs_raw = dev_obs.get(wc, {})
 
-    Same random-fixed-embedding logic as _dev_nll_ufal.
-    """
-    if not dev_triples:
-        return float("inf")
-    model.eval()
-    total_nll = 0.0
-    n = 0
-    with torch.no_grad():
-        # Group by feature for vectorised matmul (mirrors CategoricalNeural.forward)
-        fi_groups: dict[int, list] = defaultdict(list)
-        for li, fi, vi in dev_triples:
-            fi_groups[fi].append((li, vi))
+        # Build (fi, vi_local) pairs restricted to training vocabulary
+        obs = []
+        for fname, vs in obs_raw.items():
+            fi = feat_name_to_idx.get(fname)
+            if fi is None:
+                continue
+            val_id = _strip_to_id(vs)
+            vlist  = feat_to_value_names.get(fi, [])
+            if val_id not in vlist:
+                continue
+            obs.append((fi, vlist.index(val_id)))
 
-        for fi, items in fi_groups.items():
-            li_t = torch.tensor([x[0] for x in items], dtype=torch.long, device=device)
-            vi_list = [x[1] for x in items]
-            fv_ids_t = torch.tensor(model.feat_to_fv_ids[fi],
+        if not obs:
+            continue
+
+        # Fresh random embedding — same initialisation as test inference
+        new_emb = nn.Parameter(torch.zeros(1, embed_dim, device=device))
+        nn.init.normal_(new_emb, std=0.01)
+        opt = torch.optim.Adam([new_emb], lr=FINETUNE_LR, weight_decay=0)
+
+        for _ in range(finetune_steps):
+            step_loss = torch.tensor(0.0, device=device)
+            for fi, vi_local in obs:
+                fi_t = torch.tensor(feat_to_fv_ids[fi],
                                     dtype=torch.long, device=device)
-            fe = model.fv_embeddings(fv_ids_t)              # (K, d)
-            le = model.lang_embeddings(li_t)                # (n, d)
-            logits = le @ fe.T                               # (n, K)
-            lp = F.log_softmax(logits, dim=-1)               # (n, K)
-            for j, vi in enumerate(vi_list):
-                total_nll -= lp[j, vi].item()
-                n += 1
+                if model_type == "ufal":
+                    le_n = F.normalize(new_emb, dim=-1)
+                    fe   = F.normalize(model.fv_embeddings(fi_t), dim=-1)
+                    cos  = (le_n.expand(len(fi_t), -1) * fe).sum(-1, keepdim=True)
+                    prbs = torch.sigmoid(model.output_layer(cos)).squeeze(-1)
+                    tgt  = torch.zeros(len(fi_t), device=device)
+                    tgt[vi_local] = 1.0
+                    step_loss += F.binary_cross_entropy(prbs, tgt)
+                else:   # categorical
+                    fe     = model.fv_embeddings(fi_t)
+                    logits = (new_emb @ fe.T).squeeze(0)
+                    step_loss -= F.log_softmax(logits, dim=0)[vi_local]
+            opt.zero_grad()
+            (step_loss / len(obs)).backward()
+            opt.step()
 
+        # Record final loss on the same observed features (no grad needed)
+        with torch.no_grad():
+            lang_loss = 0.0
+            for fi, vi_local in obs:
+                fi_t = torch.tensor(feat_to_fv_ids[fi],
+                                    dtype=torch.long, device=device)
+                if model_type == "ufal":
+                    le_n = F.normalize(new_emb, dim=-1)
+                    fe   = F.normalize(model.fv_embeddings(fi_t), dim=-1)
+                    cos  = (le_n.expand(len(fi_t), -1) * fe).sum(-1, keepdim=True)
+                    prbs = torch.sigmoid(model.output_layer(cos)).squeeze(-1)
+                    tgt  = torch.zeros(len(fi_t), device=device)
+                    tgt[vi_local] = 1.0
+                    lang_loss += F.binary_cross_entropy(prbs, tgt).item()
+                else:
+                    fe     = model.fv_embeddings(fi_t)
+                    logits = (new_emb @ fe.T).squeeze(0)
+                    lang_loss -= F.log_softmax(logits, dim=0)[vi_local].item()
+            total_loss += lang_loss / len(obs)
+            n_langs += 1
+
+    for p in model.parameters():
+        p.requires_grad_(True)
     model.train()
-    return total_nll / max(n, 1)
+
+    return total_loss / max(n_langs, 1)
 
 
 def train_ufal_with_es(
         model: UFALNeural,
         train_pos: list,
-        dev_pos: list,
+        dev_evaluator,
         n_global_fv_ids: int,
         n_epochs: int = 200,
         steps_per_epoch: int = STEPS_PER_EPOCH,
@@ -378,13 +429,16 @@ def train_ufal_with_es(
         verbose: bool = True,
 ) -> UFALNeural:
     """
-    Train UFALNeural (BCE / sigmoid) with early stopping on dev NLL.
+    Train UFALNeural (BCE / sigmoid) with early stopping on dev loss.
 
     Training logic mirrors train_ufal_model() in model_ufal.py:
       50% positive (observed fv_id for that language),
       50% negative (random fv_id NOT in the language's observed set).
     The key difference: epoch-by-epoch control for early stopping,
-    and weight_decay=0 (no L2 regulariser) as specified.
+    weight_decay=0 (no L2 regulariser), and dev_evaluator uses
+    mini transductive fine-tuning (symmetric across objectives).
+
+    dev_evaluator: callable(model) -> float  (lower = better)
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -443,7 +497,7 @@ def train_ufal_with_es(
             epoch_loss += loss.item()
 
         avg_train = epoch_loss / steps_per_epoch
-        dev_nll   = _dev_nll_ufal(model, dev_pos, device)
+        dev_nll   = dev_evaluator(model)
 
         if verbose and (epoch + 1) % 20 == 0:
             print(f"    epoch {epoch+1:3d}/{n_epochs}  "
@@ -469,7 +523,7 @@ def train_ufal_with_es(
 def train_categorical_with_es(
         model: CategoricalNeural,
         cat_matrix_train: np.ndarray,
-        dev_triples: list,
+        dev_evaluator,
         n_epochs: int = 200,
         batch_size: int = BATCH_SIZE_CAT,
         lr: float = LR,
@@ -479,10 +533,12 @@ def train_categorical_with_es(
         verbose: bool = True,
 ) -> CategoricalNeural:
     """
-    Train CategoricalNeural (CE / softmax) with early stopping on dev NLL.
+    Train CategoricalNeural (CE / softmax) with early stopping on dev loss.
 
     Training logic mirrors train_categorical_model() in model_ufal.py.
     weight_decay=0 (no L2 regulariser) as specified.
+
+    dev_evaluator: callable(model) -> float  (lower = better)
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -526,7 +582,7 @@ def train_categorical_with_es(
             n_batches  += 1
 
         avg_train = epoch_loss / max(n_batches, 1)
-        dev_nll   = _dev_nll_categorical(model, dev_triples, device)
+        dev_nll   = dev_evaluator(model)
 
         if verbose and (epoch + 1) % 20 == 0:
             print(f"    epoch {epoch+1:3d}/{n_epochs}  "
@@ -821,14 +877,10 @@ def main():
     n_feats = len(kept_feature_names)
     print(f"  {n_feats} features kept, {n_global_fv_ids} UFAL fv IDs")
 
-    # Categorical matrix for dev (maps features to training vocabulary indices)
-    cat_matrix_dev = _cat_matrix_for_split(
-        dev_feat, kept_feature_names, feat_to_value_names)
-
     # -----------------------------------------------------------------------
-    # 3. Build training and dev data structures
+    # 3. Build training data structures
     # -----------------------------------------------------------------------
-    print("\n[3] Building training & dev data structures ...")
+    print("\n[3] Building training data structures ...")
     cluster_id_offset = metadata_fv_maps["cluster_id_offset"]
 
     # UFAL positive pairs from TRAIN (lang_id in [0, n_train))
@@ -837,35 +889,13 @@ def main():
         metadata_fv_maps, km, cluster_id_offset, feat_to_value_names,
     )
     print(f"  UFAL train positives: {len(train_pos_ufal)}")
+    # Categorical training triples are built inside train_categorical_with_es
+    # from cat_matrix_train directly.
 
-    # Dev lang_ids = n_train + i (in the embedding table but NOT trained)
-    # These embeddings are randomly initialised and never receive gradient
-    # during training (they appear only in the dev_nll check, read-only).
-    dev_pos_ufal: list[tuple[int, int]] = []
-    for li_local in range(n_dev):
-        li_global = n_train + li_local
-        for fi in range(n_feats):
-            vi = int(cat_matrix_dev[li_local, fi])
-            if vi >= 0:
-                dev_pos_ufal.append((li_global, feat_to_fv_ids[fi][vi]))
-    print(f"  UFAL dev positives:   {len(dev_pos_ufal)}")
-
-    # Categorical: training triples from TRAIN
-    # (li, fi, vi_local) — li in [0, n_train)
-    # (already encoded in cat_matrix_train; train_categorical_with_es builds internally)
-
-    # Dev triples for CategoricalNeural: li_global = n_train + li_local
-    dev_triples_cat: list[tuple[int, int, int]] = []
-    for li_local in range(n_dev):
-        li_global = n_train + li_local
-        for fi in range(n_feats):
-            vi = int(cat_matrix_dev[li_local, fi])
-            if vi >= 0:
-                dev_triples_cat.append((li_global, fi, vi))
-    print(f"  Categorical dev triples: {len(dev_triples_cat)}")
-
-    # Total embedding table size: TRAIN + DEV languages
-    n_langs_total = n_train + n_dev
+    # Dev early-stopping evaluator: mini transductive fine-tuning on dev
+    # languages (model frozen, fresh random embedding per language).
+    # This is symmetric across BCE and CE — see _dev_finetune_loss docstring.
+    DEV_ES_STEPS = 15   # fast: ~15 grad steps to get a stable signal
 
     # -----------------------------------------------------------------------
     # 4. Multi-seed training and evaluation
@@ -879,21 +909,33 @@ def main():
     for seed in seeds:
         print(f"\n  ── Seed {seed} ──")
 
+        # Symmetric dev evaluators via mini transductive fine-tuning
+        def _make_dev_evaluator(mtype):
+            def _eval(m):
+                return _dev_finetune_loss(
+                    m, mtype, dev_meta, dev_obs,
+                    feat_name_to_idx, feat_to_value_names, feat_to_fv_ids,
+                    EMBED_DIM, device, finetune_steps=DEV_ES_STEPS)
+            return _eval
+
+        dev_evaluator_bce = _make_dev_evaluator("ufal")
+        dev_evaluator_ce  = _make_dev_evaluator("categorical")
+
         # ------------------------------------------------------------------
         # 4a. UFALNeural (BCE / sigmoid)
         # ------------------------------------------------------------------
         print(f"  [BCE] Training UFALNeural ...")
         t0 = time.time()
         model_bce = UFALNeural(
-            n_languages    = n_langs_total,
+            n_languages    = n_train,
             n_global_fv_ids= n_global_fv_ids,
             embed_dim      = EMBED_DIM,
             dropout_rate   = DROPOUT,
         )
         train_ufal_with_es(
             model_bce,
-            train_pos  = train_pos_ufal,
-            dev_pos    = dev_pos_ufal,
+            train_pos      = train_pos_ufal,
+            dev_evaluator  = dev_evaluator_bce,
             n_global_fv_ids = n_global_fv_ids,
             n_epochs   = args.epochs,
             lr         = LR,
@@ -924,7 +966,7 @@ def main():
         print(f"  [CE ] Training CategoricalNeural ...")
         t0 = time.time()
         model_ce = CategoricalNeural(
-            n_languages     = n_langs_total,
+            n_languages     = n_train,
             n_global_fv_ids = n_global_fv_ids,
             feat_to_fv_ids  = feat_to_fv_ids,
             embed_dim       = EMBED_DIM,
@@ -933,7 +975,7 @@ def main():
         train_categorical_with_es(
             model_ce,
             cat_matrix_train = cat_matrix_train,
-            dev_triples      = dev_triples_cat,
+            dev_evaluator    = dev_evaluator_ce,
             n_epochs         = args.epochs,
             lr               = LR,
             device           = device,
@@ -985,7 +1027,8 @@ def main():
     print("Notes:")
     print("  - Macro accuracy = mean of per-language accuracies (test set).")
     print("  - Vocabulary and training data from TRAIN split only.")
-    print("  - DEV used for early stopping (NLL on dev lang random embeddings).")
+    print(f"  - DEV early stopping via mini transductive fine-tuning "
+          f"({DEV_ES_STEPS} steps/lang), symmetric across BCE and CE.")
     print("  - Transductive fine-tuning at test time: "
           f"{args.finetune_steps} steps, lr={FINETUNE_LR}.")
     print("  - Both models: embed_dim=64, dropout=0.5, Adam lr=1e-3, "

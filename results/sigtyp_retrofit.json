@@ -2,11 +2,10 @@
   "description": "Appendix E \u2014 SIGTYP 2020 objective ablation",
   "config": {
     "seeds": [
-      42,
-      43
+      42
     ],
-    "epochs": 10,
-    "patience": 5,
+    "epochs": 5,
+    "patience": 20,
     "embed_dim": 64,
     "dropout": 0.5,
     "lr": 0.001,
@@ -14,25 +13,23 @@
     "steps_per_epoch_ufal": 1000,
     "batch_size_cat": 256,
     "kmeans_clusters": 300,
-    "finetune_steps": 10,
+    "finetune_steps": 30,
     "finetune_lr": 0.05,
     "device": "cpu"
   },
   "bce": {
     "per_seed": [
-      0.43554468359991594,
-      0.4638081537383845
+      0.5508999554205496
     ],
-    "mean": 0.4496764186691502,
-    "std": 0.019985291394774625
+    "mean": 0.5508999554205496,
+    "std": 0.0
   },
   "ce": {
     "per_seed": [
-      0.23816042481093047,
-      0.5306069850884261
+      0.5811161862174554
     ],
-    "mean": 0.3843837049496783,
-    "std": 0.20679094590689756
+    "mean": 0.5811161862174554,
+    "std": 0.0
   },
-  "delta_ce_minus_bce": -0.06529271371947193
+  "delta_ce_minus_bce": 0.03021623079690583
 }
