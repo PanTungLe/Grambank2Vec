@@ -104,16 +104,13 @@ langs_num       = dataset.train_x.shape[0] + dataset.dev_x.shape[0] + dataset.te
 feature_val_num = dataset.global_feature_id
 print(f"  langs_num={langs_num}, feature_val_num={feature_val_num}")
 
-# Per-column fv_id arrays (global ids in insertion order)
+# Per-column fv_id arrays (global ids in insertion order) — still needed to
+# look up the correct global fv_id from (col_id, local_idx).
 col_fvids = [
     np.array(list(fmap.values()), dtype=np.int32) if fmap else None
     for fmap in dataset.feature_maps
 ]
 cap = args.max_k_cap
-max_k = min(cap, max(len(v) for v in col_fvids if v is not None))
-n_sampled = sum(1 for v in col_fvids if v is not None and len(v) > cap)
-print(f"  max_k (capped at {cap}): {max_k}  |  "
-      f"features using sampled softmax (K>{cap}): {n_sampled}")
 
 # Flat list of (lang_id, col_id, local_correct_idx) training triplets
 lang_feat_pairs = []
@@ -125,52 +122,75 @@ for row in dataset.train_dataset:
         lang_feat_pairs.append((lang_id, col_id, fv_list.index(gfv)))
 lang_feat_pairs = np.array(lang_feat_pairs, dtype=np.int32)
 print(f"  Training triplets: {len(lang_feat_pairs)}")
+
+# Per-lang set of global fv_ids — for O(1) rejection during negative sampling.
+# Mirrors binary BCE's self._lang_pairs (dataset.py) used for the same purpose.
+_lang_fv_sets = {}
+for row in dataset.train_dataset:
+    lid = int(row[0])
+    _lang_fv_sets[lid] = set(int(pair[1]) for pair in row[1:])
+
+print(f"  Global negative sampling: 1 correct + {cap-1} global negatives per item "
+      f"(cap={cap}) — categorical equivalent of binary BCE's 50/50 pos/neg sampling")
 print(f"  Dataset built in {time.time()-t0:.1f}s")
 
 # ── Categorical batch generator ───────────────────────────────────────────────
 def categorical_batch_generator(batch_size=512):
     """
-    Yields: lang_ids (B,), fv_padded (B,max_k), correct_idx (B,), mask (B,max_k)
-    For features with K > cap: sampled softmax (1 correct + cap-1 random negatives).
+    Direct categorical equivalent of binary BCE's batch_generator.
 
-    NOTE: class weights are NOT applied here.  UFAL's binary batch_generator (dataset.py
-    line 120) yields only (X, y) — the class_weights column it builds is never passed to
-    Keras.  Applying balanced class weights to categorical CE would over-penalise rare
-    features (50-100× larger gradients) and stall the Filler accuracy at ~0.60.
+    Binary BCE (dataset.py):
+      50% positive: (lang, correct_fv, label=1)  — known feature value for lang
+      50% negative: (lang, random_fv,  label=0)  — globally-sampled wrong value
+      → 2-way BCE loss
+
+    Categorical (here):
+      Each item: (lang, correct_fv) + (cap-1) globally-sampled wrong fv values
+      → cap-way softmax CE loss
+
+    Negatives are drawn from the GLOBAL fv pool (any column), exactly as in the
+    binary run — this is what prevented lang-embedding collapse in binary BCE.
+    Without global negatives the within-column gradients are too correlated and
+    embeddings collapse to ~most-common-value accuracy (~0.60).
+
+    Yields: lang_ids (B,), fv_padded (B, cap), correct_idx (B,)
+    No masking needed: every batch item has exactly cap valid candidates.
     """
-    n = len(lang_feat_pairs)
+    n          = len(lang_feat_pairs)
+    global_max = dataset.global_feature_id   # fv_ids in [1, global_max-1] (matching binary)
     while True:
         idxs        = np.random.randint(0, n, size=batch_size)
         batch       = lang_feat_pairs[idxs]
         lang_ids    = batch[:, 0]
-        fv_padded   = np.zeros((batch_size, max_k), dtype=np.int32)
+        fv_padded   = np.zeros((batch_size, cap), dtype=np.int32)
         correct_idx = np.zeros(batch_size, dtype=np.int32)
-        mask        = np.zeros((batch_size, max_k), dtype=np.float32)
 
         for i in range(batch_size):
-            col_id    = batch[i, 1]
-            local_idx = batch[i, 2]
-            fvs       = col_fvids[col_id]
-            k         = len(fvs)
+            lang_id     = int(batch[i, 0])
+            col_id      = int(batch[i, 1])
+            local_idx   = int(batch[i, 2])
+            correct_gfv = int(col_fvids[col_id][local_idx])
+            lang_fv_set = _lang_fv_sets[lang_id]
 
-            if k <= cap:
-                # Full categorical CE
-                fv_padded[i, :k] = fvs
-                mask[i, :k]      = 1.0
-                correct_idx[i]   = local_idx
-            else:
-                # Sampled softmax: correct + (cap-1) random negatives
-                correct_gfv = fvs[local_idx]
-                neg_pool    = np.concatenate([fvs[:local_idx], fvs[local_idx+1:]])
-                neg_sampled = neg_pool[np.random.choice(len(neg_pool), cap-1, replace=False)]
-                sampled     = np.concatenate([[correct_gfv], neg_sampled])
-                np.random.shuffle(sampled)
-                new_local   = int(np.where(sampled == correct_gfv)[0][0])
-                fv_padded[i, :cap] = sampled
-                mask[i, :cap]      = 1.0
-                correct_idx[i]     = new_local
+            # Vectorised negative sampling: oversample then filter, with fallback loop.
+            n_needed = cap - 1
+            candidates = np.random.randint(1, global_max, size=n_needed * 4)
+            valid = candidates[~np.isin(candidates, list(lang_fv_set))]
+            if len(valid) < n_needed:          # very rare: keep sampling
+                extras = []
+                while len(extras) < n_needed - len(valid):
+                    c = np.random.randint(1, global_max)
+                    if c not in lang_fv_set:
+                        extras.append(c)
+                valid = np.concatenate([valid, extras])
+            negs = valid[:n_needed]
 
-        yield (lang_ids, fv_padded, correct_idx, mask)
+            sampled = np.concatenate([[correct_gfv], negs]).astype(np.int32)
+            np.random.shuffle(sampled)
+            correct_idx[i]  = int(np.where(sampled == correct_gfv)[0][0])
+            fv_padded[i]    = sampled
+
+        yield (lang_ids, fv_padded, correct_idx)
 
 # ── Build model ───────────────────────────────────────────────────────────────
 print("\n[2] Building Keras model (same arch as binary)...")
@@ -194,29 +214,27 @@ dropout_fv     = keras_model.get_layer('dropout_1')
 
 # ── Training step ─────────────────────────────────────────────────────────────
 @tf.function
-def train_step(lang_ids, fv_padded, correct_idx, mask):
+def train_step(lang_ids, fv_padded, correct_idx):
     with tf.GradientTape() as tape:
-        # (B,1,d) lang embedding with dropout
+        # (B, 1, d) lang embedding with dropout
         lang_e = lang_emb_layer(tf.expand_dims(lang_ids, 1))
         lang_e = dropout_lang(lang_e, training=True)
 
-        # (B, max_k, d) feature-value embeddings with dropout
+        # (B, cap, d) feature-value embeddings (1 correct + cap-1 global negatives)
         fv_e = fv_emb_layer(fv_padded)
         fv_e = dropout_fv(fv_e, training=True)
 
         # Cosine normalization (matches UFAL's Dot(normalize=True))
         lang_n = tf.nn.l2_normalize(lang_e, axis=-1)   # (B, 1, d)
-        fv_n   = tf.nn.l2_normalize(fv_e,   axis=-1)   # (B, max_k, d)
+        fv_n   = tf.nn.l2_normalize(fv_e,   axis=-1)   # (B, cap, d)
 
-        # Logits: cosine similarity with each feature value  (B, max_k)
+        # Logits: cosine similarity with each candidate fv  (B, cap)
         logits = tf.squeeze(
             tf.matmul(lang_n, tf.transpose(fv_n, [0, 2, 1])), axis=1)
 
-        # Mask padding positions to -inf before softmax
-        logits = logits + (1.0 - mask) * -1e9
-
-        # Unweighted mean CE — matches the binary run which also uses no class weights
-        # (UFAL's batch_generator builds class_weights but never yields them to Keras)
+        # No masking needed: all cap positions are valid global negatives.
+        # Unweighted CE — binary BCE also uses no class weights (they are computed
+        # but silently dropped by dataset.py's generator yield on line 120).
         loss = tf.reduce_mean(
             tf.keras.losses.sparse_categorical_crossentropy(
                 correct_idx, logits, from_logits=True))
@@ -242,12 +260,11 @@ for epoch in range(1, args.epochs + 1):
     losses = []
     t_ep = time.time()
     for step in range(1, args.steps + 1):
-        li, fp, ci, mk = next(gen)
+        li, fp, ci = next(gen)
         loss = train_step(
             tf.constant(li,  dtype=tf.int32),
             tf.constant(fp,  dtype=tf.int32),
-            tf.constant(ci,  dtype=tf.int32),
-            tf.constant(mk,  dtype=tf.float32))
+            tf.constant(ci,  dtype=tf.int32))
         losses.append(float(loss))
         # Progress within epoch every 100 steps
         if step % 100 == 0:
