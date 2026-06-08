@@ -1,0 +1,192 @@
+row	KA_number	variant	formal_formula	domain	impl_grade	SPAPHY_SIG	supported	short_label
+1	1, 2	a	GB074:1 > GB065:2	narrow word order	perfect	yes	SIG	Adp-N > N-Gen
+2	1, 2	b	GB075:1 > GB065:1	narrow word order	perfect	no	NOT SIG	N-Adp > Gen-N
+3	5	NA	GB131:0 & GB132:0 & GB133:1 & GB065:2 > GB193:2	narrow word order	OK	no	NOT SIG	SOV & N-Gen > N-Adj
+4	8	NA	GB131:0 & GB132:0 & GB133:1 > GB070|GB071|GB072|GB073:1	broad word order	OK	no	NOT SIG	SOV|OSV > case
+5	15	a	GB131:0 & (GB132:1 | GB133:1) >  GB137:1	narrow word order	OK	yes	SIG	OV > V-Mod
+6	15	b	(GB131:1 | GB132:1) & GB133:0 > GB138:1	narrow word order	OK	no	NOT SIG	VO > Mod-V
+7	45	NA	(GB093:1 | GB094:1) > GB091:1 | GB092: 1	hierarchy	OK	yes	SIG	Obj index > Sbj index
+8	55	NA	GB131:1 & GB132:0 & GB133:0 > GB074:1	narrow word order	OK	no	NOT SIG	VSO > Adp-N
+9	56	NA	GB131:1 & GB132:0 & GB133:0 > GB193:2	narrow word order	OK	yes	NOT SIG	VSO > N-Adj
+10	57	a	GB193:1 > GB024:1	narrow word order	perfect	yes	SIG	Adj-N > Num-N
+11	57	b	GB193:1 > GB025:1	narrow word order	perfect	yes	SIG	Adj-N > Dem-N
+12	62	a	GB328:1 > GB193:1	narrow word order	perfect	no	NOT SIG	Rel-N > Adj-N
+13	62	b	GB328:1 > GB075:1	narrow word order	perfect	yes	NOT SIG	Rel-N > N-Adp
+14	65, see 66	a	GB131:0 & GB132:0 & GB133:1 & GB193:1 > GB065:1	narrow word order	OK	yes	NOT SIG	SOV & Adj-N > Gen-N
+15	67, see 68	NA	GB131:1 & GB132:0 & GB133:0 & GB193:2 > GB065:2	narrow word order	OK	no	NOT SIG	VSO & N-Adj > N-Gen
+16	69	NA	GB074:1 & GB193:2 > GB065:2	narrow word order	perfect	yes	SIG	Adp-N & N-Adj > N-Gen
+17	70	NA	GB074:1 & GB132:0 & GB193:1 > GB065:2	narrow word order	perfect	no	NOT SIG	Adp-N & no SVO & N-Adj > N-Gen
+18	71	NA	GB075:1 & GB193:1 > GB065:1	narrow word order	perfect	yes	NOT SIG	N-Adp & Adj-N > Gen-N
+19	72	NA	GB074:1 & GB025:2 >  GB193:2	narrow word order	perfect	yes	SIG	Adp-N & N-Dem > N-Adj
+20	73	NA	GB025:2 > GB193:2	narrow word order	perfect	yes	SIG	N-Dem > N-Adj
+21	74	NA	GB074:1 & GB024:2 >  GB193:2	narrow word order	perfect	yes	SIG	Adp-N & N-Num > N-Adj
+22	75	NA	GB024:2 > GB193:2	narrow word order	perfect	yes	SIG	N-Num > N-Adj
+23	84	NA	(GB103:1 | GB104: 1 | GB093:1 | GB094:1) > (GB091:1 | GB092: 1)	hierarchy	perfect	yes	SIG	verb agr > agr S
+24	87	NA	GB074:1 & GB025:2 >  GB327:1	narrow word order	perfect	yes	SIG	Adp-N & N-Dem > N-Rel
+25	88	n	GB025:2 > GB327:1	narrow word order	perfect	no	NOT SIG	N-Dem > N-Rel
+26	91	NA	GB074:1 & GB193:2 >  GB327:1	narrow word order	perfect	yes	NOT SIG	Adp-N & N-Adj > N-Rel
+27	93	NA	GB196:1 > GB030:1	hierarchy	perfect	yes	SIG	gender 2SG > gender 3SG
+28	95	a	GB075:1 & (GB193:1 |  GB328:1) > GB025:1	narrow word order	perfect	yes	SIG	N-Adp & (Adj-N|Rel-N) > Dem-N
+29	95	b	GB075:1 & (GB193:1 |  GB328:1) > GB024:1	narrow word order	perfect	no	NOT SIG	N-Adp & (Adj-N|Rel-N) > Num-N
+30	96	NA	GB075:1 & (GB193:1 |  GB328:1) > GB065:1	narrow word order	perfect	yes	SIG	N-Adp & (Adj-N|Rel-N) > Pron-N
+31	101	NA	GB065:2 > GB193:2	narrow word order	perfect	yes	NOT SIG	N-Gen > N-Adj
+32	107	a	(GB131:1 | GB132:1) & GB133:0 > GB327:1	narrow word order	OK	yes	SIG	VO > N-Rel
+33	107	b	GB131:0 & (GB132:1 | GB133:1) > GB193:1	narrow word order	OK	no	NOT SIG	OV > Adj-N
+34	107	c	(GB131:1 | GB132:1) & GB133:0 > GB065:2	narrow word order	OK	yes	SIG	VO > N-Gen
+35	108	NA	GB131:0 & (GB132:1 | GB133:1)  > GB263:1	narrow word order	OK	no	NOT SIG	OV > Sent-Q
+36	110	NA	GB327:1 > GB193:2	narrow word order	perfect	yes	NOT SIG	N-Rel > N-Adj
+37	116	NA	sum(GB070:1,GB071:1,GB072:1,GB073:1) => 1 > sum(GB041:1,GB042:1,GB043:1,GB044:1,GB165:1,GB166:1,GB316:1,GB317:1,GB318:1,GB319:1,GB320:1) => 1	hierarchy	OK	no	NOT SIG	case > number
+38	121	NA	GB074:1 & GB024:2 > GB327:1	narrow word order	perfect	no	NOT SIG	Adp-N & N-Num > N-Rel
+39	125	NA	GB131:0 & GB132:0 & GB133:1 & GB065:1 & GB203:1 > GB075:1	narrow word order	OK	yes	SIG	SOV & Det-N > N-Adp
+40	126	n	GB024:2 > GB327:1	narrow word order	perfect	no	NOT SIG	N-Num > N-Rel
+41	144	NA	GB170:0 & GB184:0 > GB065:1	broad word order	perfect	no	NOT SIG	no Adj Agr > Gen-N
+42	145	NA	(GB131:1 | GB132:1) & GB133:0 > GB068:1	broad word order	OK	no	NOT SIG	SVO/VSO > V-like Pred Adj
+43	147	NA	GB069:1 > GB131:0 & GB132:1 & GB133:0	broad word order	OK	no	NOT SIG	V-like Attr Adj > SVO
+44	166	NA	GB094:1 & GB093:0 > GB089:1 | GB090:1	hierarchy	perfect	yes	SIG	pref-V Obj > V agr Sbj
+45	173	NA	GB074:1 & GB025:2 > GB065:2	narrow word order	perfect	yes	SIG	Adp-N & N-Dem > N-Gen
+46	174	NA	GB074:1 & GB024:2 > GB065:2	narrow word order	perfect	no	NOT SIG	Adp-N & N-Num > N-Gen
+47	175	NA	GB074:1 & GB065:2 > GB327:1	narrow word order	perfect	yes	SIG	Adp-N & N-Gen > N-Rel
+48	176	NA	GB065:2 > GB327:1	narrow word order	perfect	yes	SIG	N-Gen > N-Rel
+49	177	NA	GB075:1 & GB025:1 > GB065:1	narrow word order	perfect	yes	SIG	N-Adp & Dem-N > Gen-N
+50	178	NA	GB075:1 & GB024:1 > GB065:1	narrow word order	perfect	yes	NOT SIG	N-Adp & Num-N > Gen-N
+51	179	a	GB170:1 > GB184:1	hierarchy	OK	yes	SIG	gender Adj > number Adj
+52	179	c	GB171:1 > GB185:1	hierarchy	OK	yes	SIG	gender Dem > number Dem
+53	179	b	GB172:1 > GB186:1	hierarchy	OK	yes	SIG	gender Art > number Art
+54	183	NA	GB070:1 > GB071:1 | GB073:1	hierarchy	perfect	yes	SIG	case Nouns > case PronN
+55	228	NA	GB070:1|GB072:1 > GB111|GB079|GB090|GB092|GB094|GB080|GB089|GB091|GB093|GB119|GB120|GB121|GB298|GB082|GB083|GB084|GB312|GB086:1	other	OK	yes	NOT SIG	nom case > verbal infl
+56	229	NA	GB041|GB042|GB043|GB044|GB165|GB166:1 > GB070|GB072:1	hierarchy	perfect	yes	NOT SIG	nom number > nom case
+57	230	a	GB136:1 > GB070:0 & GB072:0	broad word order	perfect	no	NOT SIG	rigid order > no case
+58	230	b	GB070:0 & GB072:0 > GB074:1	broad word order	perfect	yes	SIG	no case > Adp-N
+59	230	c	GB136:1 > GB074:1	broad word order	perfect	no	NOT SIG	rigid order > Adp-N
+60	230	d	GB136:0 > GB070:1 | GB072:1	broad word order	perfect	no	NOT SIG	free order > case
+61	230	e	GB070:1 & GB072:1 > GB074:0	broad word order	perfect	yes	SIG	case > no Adp-N
+62	230	f	GB136:0 > GB074:0	broad word order	perfect	no	NOT SIG	free order > no Adp-N
+63	231	a	(GB070: 0 & GB072: 0 )| GB136: 1 >  GB276|GB273|GB265|GB166: 1	broad word order	perfect	no	NOT SIG	rigid|no case > grad adj word
+64	231	b	(GB070: 1 | GB072: 1) | GB136: 0 >  GB275: 1	broad word order	perfect	yes	NOT SIG	free|case > gradation adj infl
+65	232	NA	GB136: 1 & GB070: 0 & GB072: 0 > GB020: 0	broad word order	perfect	no	NOT SIG	rigid & no case > def Art
+66	237	a	GB184: 1 > GB041 | GB042 | GB043 | GB044 | GB165 | GB166: 1	hierarchy	OK	yes	SIG	number adj > number noun
+67	238	a	GB136: 1 > GB130:1	broad word order	OK	yes	SIG	rigid order > SV
+68	238	c	GB136: 1 > GB193:2	broad word order	OK	no	NOT SIG	rigid order > N-Adj
+69	238	d	GB136: 1 > GB327: 1	broad word order	OK	no	NOT SIG	rigid order > N-Rel
+70	239	a	GB136:0 > GB070|GB072: 1 & GB071|GB073: 1	broad word order	perfect	no	NOT SIG	free order >  case noun|Pron
+71	239	b	GB136:0 > GB186: 1 & GB184: 1 & (GB042|GB043|GB044|GB165|GB166:1)	broad word order	perfect	no	NOT SIG	free > num noun adj art
+72	239	c	GB136:0 > GB170: 1 & GB172: 1 & (GB051|GB052|GB053|GB054|GB192|GB321: 1)	broad word order	perfect	no	NOT SIG	free > gen (pro)noun adj art
+73	240	a	GB409:1 > GB065:1 & GB193:2	broad word order	perfect	no	NOT SIG	ergative case > Gen-N & N-Adj
+74	245	a	GB136:0 > sum(GB070:1,GB072:1,GB042:1,GB043:1,GB044:1,GB046:1,GB165:1,GB166:1) > 0	broad word order	OK	yes	NOT SIG	free order > infl noun
+75	245	b	GB136:1 & GB260:0 > sum(GB070:1,GB072:1,GB042:1,GB043:1,GB044:1,GB046:1,GB165:1,GB166:1) = 0	broad word order	OK	no	NOT SIG	rigid & no inv > no infl noun
+76	247	NA	GB408:1 > GB030|GB051|GB052|GB053|GB054|GB192|GB196|GB197|GB321:1	other	OK	no	NOT SIG	accusative > gender
+77	260	NA	GB409:1 > GB090:1 | GB092:1 | GB094:1	other	less than OK	no	NOT SIG	ergative > pref pers conj
+78	276 (used to be 277 in the old version)	NA	GB184:1 > GB042|GB043|GB044|GB165|GB166: 1	hierarchy	OK	yes	SIG	num (adj|verb) > num (noun)
+79	320 (used to be 321 in the old version)	NA	GB071:1 & GB408: 1 > GB070:1	hierarchy	perfect	yes	SIG	nom/acc pron > nom/acc noun
+80	328 (used to be 329 in the old version)	NA	GB092:1 > GB093:1|GB094:1	hierarchy	OK	yes	SIG	verb agr S prefix > verb agr P
+81	331 (used to be 332 in the old version)	a	(GB092:1 & GB091:0) > (GB094:1 & GB093:0)	hierarchy	OK	no	NOT SIG	S pref > O pref & no O suff (strong)
+82	331 (used to be 332 in the old version)	b	(GB092:1 & GB091:0) > GB094:1	hierarchy	OK	yes	SIG	S pref > O pref | O suff (weak)
+83	332 (used to be 333 in the old version)	NA	GB094:0 & GB093:1 > GB091:1	hierarchy	OK	yes	SIG	o suffix > s suffix
+84	344 (used to be 345 in the old version)	NA	GB131:1 > GB130:2	narrow word order	OK	yes	SIG	VS (tr. verb) > VS (intr. verb)
+85	356 (used to be 357 in the old version)	NA	(GB091:1 & GB092:0) & (GB093:1 | GB094:1) > (GB132:1 | GB133:1)	broad word order	OK	no	NOT SIG	verb agr S&P suff > SV
+86	357 (used to be 358 in the old version)	NA	GB131:1 & GB132:0 & GB133:0 & GB091:1 & GB092:0 > GB093: 1 & GB094:0	broad word order	OK	no	NOT SIG	VS & suff agr S > suff agr P
+87	365 (used to be 366 in the old version)	NA	GB094:1 & (GB091:1 | GB092:1) > (GB132:1 | GB133:1) & GB131:0	broad word order	OK	no	NOT SIG	agr S & pref verb P > SV
+88	386 (used to be 387 in the old version)	NA	sum(GB042:1, GB043:1, GB044:1, GB165:1, GB166:1, GB430:1, GB431:1, GB432:1, GB433:1) > 0 > sum(GB119:1, GB120:1, GB121:1, GB298:1, GB089:1, GB090:1, GB091:1, GB092:1, GB093:1, GB094:1, GB082:1, GB083:1, GB084:1,  GB312:1, GB086:1, GB107:1, GB108:1, GB103:1, GB104:1) > 0	hierarchy	OK	yes	SIG	nominal infl > verbal infl
+89	423 (used to be 424 in the old version)	NA	GB074:1 & GB133:0 > GB327:1	narrow word order	OK	yes	SIG	Adp-N & no SOV > N-Rel
+90	439 (used to be 440 in the old version)	NA	GB408:0 & GB409:1 > GB131:1 & GB132:0 & GB133:0	broad word order	perfect	no	NOT SIG	non-acc align > V-initial
+91	446 (used to be 447 in the old version)	NA	GB133:1 | GB136:0 > GB070:1|GB075:1	broad word order	OK	yes	SIG	V-final | free > N-Adp | case
+92	454 (used to be 455 in the old version)	NA	GB431:1 & GB059:1 > GB065:1	broad word order	less than OK	no	NOT SIG	inalien poss pref > Gen-N
+93	489 (used to be 491 in the old version)	NA	GB131:0 & GB132:0 & GB133:1 > GB075:1	narrow word order	OK	yes	SIG	SOV > N-Adp
+94	493 (used to be 495 in the old version)	a	GB262:1 > GB074:1	narrow word order	perfect	yes	NOT SIG	Q-Sent > Adp-N
+95	493 (used to be 495 in the old version)	b	GB263:1 > GB075:1	narrow word order	perfect	yes	NOT SIG	Sent-Q > N-Adp
+96	504 (used to be 506 in the old version)	a	sum(GB079:1,GB090:1,GB092:1,GB094:1,GB430:1,GB431:1) => 2 & sum(GB80:1,GB089:1,GB091:1,GB093:1,GB432:1,GB433:1) = 0 > GB074:1	broad word order	OK	no	NOT SIG	prefixes > Adp-N
+97	504 (used to be 506 in the old version)	b	sum(GB80:1,GB089:1,GB091:1,GB093:1,GB432:1,GB433:1) => 2 & sum(GB079:1,GB090:1,GB092:1,GB094:1,GB430:1,GB431:1) = 0 > GB075:1	broad word order	OK	no	NOT SIG	suffixes > N-Adp
+98	506 (used to be 508 in the old version)	NA	sum(GB042, GB043, GB044, GB051, GB052, GB053, GB054, GB070, GB072, GB082, GB083, GB084, GB086, GB089, GB090, GB091, GB092, GB093, GB094, GB103, GB104, GB107, GB108, GB113, GB114, GB115, GB119, GB120, GB121, GB147, GB148, GB149, GB155, GB165, GB166, GB192, GB286, GB298, GB312, GB321, GB322, GB323, GB430, GB431, GB432, GB433) >=1 > sum(GB047, GB048, GB049) >=1	other	less than OK	no	NOT SIG	inflection > word formation
+99	507 (used to be 509 in the old version)	NA	(GB089|GB90|GB91|GB92|GB93|GB94) > 0 > (GB082|GB083|GB084|GB110|GB312) > 0	other	OK	no	NOT SIG	(person)-number > tense-mood
+100	511 (used to be 513 in the old version)	a	GB319|GB165:1 > GB043|GB317:1	hierarchy	perfect	no	NOT SIG	Trial > Dual
+101	511 (used to be 513 in the old version)	b	GB043|GB317:1 > GB044|GB318:1	hierarchy	perfect	yes	SIG	Dual > Plural
+102	513 (used to be 515 in the old version)	NA	sum(GB030:1,GB051:1,GB052:1,GB053:1,GB054:1,GB192:1,GB321:1, GB198:1) > 0, > sum(GB041:1,GB042:1,GB043:1,GB044:1,GB165:1,GB166:1,GB316:1,GB317:1,GB318:1,GB319:1,GB320:1) > 0	hierarchy	OK	yes	SIG	gender > number
+103	516 (used to be 518 in the old version)	NA	sum(GB051:1,GB052:1,GB053:1,GB054:1,GB192:1,GB321:1) > 0, sum(GB030:1,GB196:1,GB197:1) > 0	hierarchy	OK	yes	SIG	gender noun > gender pron
+104	517 (used to be 519 in the old version)	NA	GB197:1 > (GB030:1 | GB196:1)	hierarchy	perfect	yes	SIG	gender (1) > gender (2 &| 3)
+105	521 (used to be 523 in the old version)	NA	GB170:1 | GB184:1 > GB171:1 | GB185:1	hierarchy	perfect	yes	SIG	Adj agr noun > Dem agr noun
+106	564 (used to be 566 in the old version)	NA	(GB043:1|GB317:1) > GB031:1	hierarchy	perfect	yes	SIG	Du (noun) > Du (pronoun)
+107	569 (used to be 572 in the old version)	NA	GB070:0 & GB072:0 > GB020|GB021|GB022|GB023:1	other	OK	no	NOT SIG	no case (noun) > article
+108	572 (used to be 575 in the old version)	NA	GB020|GB021:1 >  GB041|GB044|GB318:1	other	OK	no	NOT SIG	obli (in)Def mark > obli PL mark
+109	573 (used to be 576 in the old version)	NA	GB020|GB021:1 > GB057:0	other	OK	no	NOT SIG	obli (in)Def mark > no obli NumCl
+110	577 (used to be 580 in the old version)	NA	GB041:1 > GB109:1	hierarchy	OK	yes	NOT SIG	suppl infl noun > suppl infl Pron|verb
+111	582 (used to be 585 in the old version)	NA	(GB042:1|GB043:1|GB044:1|GB165:1|GB166:1|GB430:1|GB431:1|GB432:1|GB433:1) > (GB030:1|GB071:1|GB073:1|GB196:1|GB197:1)	hierarchy	OK	no	NOT SIG	infl (noun) > infl (pronoun)
+112	612 (used to be 615 in the old version)	NA	GB151:1 > GB131:0 & GB132:0 & GB133:1	broad word order	perfect	yes	SIG	switch-reference > V-final
+113	668 (used to be 671 in the old version)	a	GB131:0 & GB132:0 & GB133:1 > GB263:1	narrow word order	perfect	no	NOT SIG	SOV > Sent-Q
+114	798 (used to be 801 in the old version)	NA	GB082:1|GB083:1|GB084:1 > GB068:1	other	OK	no	NOT SIG	tensed > N-like Pred Adj
+115	822 (used to be 825 in the old version)	NA	GB330:1 > GB131:0 & GB132:0 & GB133:1	broad word order	OK	yes	NOT SIG	correlative Rel > V-final;
+116	837 (used to be 840 in the old version)	NA	GB131:1 & GB132:0 & GB133:0 > (GB091:1 | GB092:1 | GB093:1 | GB094:1) | ((GB091:1 | GB092:1 | GB093:1 | GB094:1) & (GB082:1 | GB083: 1| GB084:1 | GB086:1 | GB312:1))	broad word order	OK	no	NOT SIG	VSO > person & number infl
+117	889 (used to be 892 in the old version)	a	GB131:0 & (GB132:1 | GB133:1) > GB080|GB089|GB091|GB093|GB432|GB433:1	broad word order	OK	no	NOT SIG	OV > suffixes
+118	889 (used to be 892 in the old version)	b	(GB131:1 | GB132:1) & GB133:0 > GB079|GB090|GB092|GB094|GB430|GB431:1	broad word order	OK	no	NOT SIG	VO > prefixes
+119	917 (used to be 920 in the old version)	n	(GB131:1 | GB132:1) & GB133:0 > GB262:1	narrow word order	OK	no	NOT SIG	VO > Qpart-S
+120	917 (used to be 920 in the old version)	u	GB131:0 & (GB132:1 | GB133:1)  > GB065:1	narrow word order	OK	yes	NOT SIG	OV > Gen-N
+121	917 (used to be 920 in the old version)	w	GB131:0 & (GB132:1 | GB133:1) > GB328:1	narrow word order	OK	no	NOT SIG	OV > Rel-N
+122	964 (used to be 968 in the old version)	a	(GB131:1 | GB132:1) & GB133:0 > GB022:1	narrow word order	OK	no	NOT SIG	VO > Art-N
+123	964 (used to be 968 in the old version)	b	GB131:0 & (GB132:1 | GB133:1) > GB023:1	narrow word order	OK	no	NOT SIG	OV > N-Art
+124	982 (used to be 986 in the old version)	NA	GB266:1 > (GB131:1 | GB133:1) & GB132:0	broad word order	perfect	yes	NOT SIG	loc compa > SOV|VSO
+125	983 (used to be 987 in the old version)	NA	GB265:1 > GB131:0 & GB132:1 & GB133:0	broad word order	OK	no	NOT SIG	exceed compa > SVO
+126	1027 (used to be 1031 in the old version)	a	(GB131:1 | GB132:1) & GB133:0 > GB083:0|GB070:0	broad word order	OK	yes	SIG	VO -> nomorph tense | no case
+127	1027 (used to be 1031 in the old version)	b	GB083:0 > ((GB131:1 | GB132:1) & GB133:0)  | GB070:0	broad word order	OK	yes	NOT SIG	no morph tense -> no case | VO
+128	1027 (used to be 1031 in the old version)	c	GB070:0 > GB083:0 | ((GB131:1 | GB132:1) & GB133:0)	broad word order	OK	yes	SIG	no case > no morph tense | VO
+129	1028	a	GB131:0 & (GB132:1 | GB133:1) > GB083:1|GB070:1	broad word order	OK	no	NOT SIG	OV -> morph tense | case
+130	1028	b	GB083:1 > GB070:1 | GB131:0 & (GB132:1 | GB133:1)	broad word order	OK	no	NOT SIG	morph tense > case | OV
+131	1028	c	GB070:1 > GB083:1 | GB131:0 & (GB132:1 | GB133:1)	broad word order	OK	no	NOT SIG	case > morph tense | OV
+132	1053	NA	GB171|GB172|GB198|GB185|GB186:1 > GB170|GB184:1	hierarchy	OK	yes	SIG	agr Dets > agr Mods
+133	1111	NA	GB070:0 & GB072:0 > GB136:1	broad word order	OK	no	NOT SIG	no infl morph > fixed order args
+134	1114	n	(GB131:1 | GB132:1) & GB133:0  > GB421:1	narrow word order	OK	yes	SIG	VO > Comp-S
+135	1142	a	GB147:1 | GB304:1 | GB302:1 > GB131:0 & GB132:1 & GB133:0	broad word order	OK	no	NOT SIG	passive > SVO
+136	1142	b	GB147:0 & GB304:0 & GB302:0 > GB131:0 & GB132:0 & GB133:1	broad word order	OK	no	NOT SIG	no passive > SOV
+137	1152	NA	GB328:1 > GB327:1	narrow word order	perfect	yes	SIG	Rel-N > N-Rel
+138	1163	NA	GB021:1 >  GB020:1	hierarchy	perfect	yes	SIG	indefinite Art > definite Art
+139	1216	NA	GB075:1 > GB070:1 | GB072:1	broad word order	perfect	no	NOT SIG	N-Adp > case (noun)
+140	1267	a	GB409:1 > GB131|GB133:1 & GB132:0	broad word order	OK	no	NOT SIG	ergative > VSO | SOV
+141	1267	b	GB131:0 & GB132:1 & GB133:0 > GB409:0	broad word order	OK	yes	SIG	SVO > not ergative
+142	1334	a	GB074:1 & GB328:1 > GB065:1	narrow word order	perfect	no	NOT SIG	Adp-N & Rel-N > Gen-N
+143	1334	d	GB074:1 & GB328:1 & GB065:1 > 193:1	narrow word order	perfect	no	NOT SIG	Adp-N & Rel-N & Gen-N > Adj-N
+144	1334	c	GB074:1 &  GB328:1 & GB065:1 & GB193:1 > GB025:1	narrow word order	perfect	no	NOT SIG	Ap-N & RC-N & Ge-N & Aj-N > Dm-N
+145	1341	NA	GB115:1 | GB114:1 > GB091:1 | GB092:1	other	perfect	yes	NOT SIG	verb reci/refl > verb agr S
+146	1349	NA	GB044:0 & GB318:0 > GB057:1	other	perfect	no	NOT SIG	weak PL > Num Cl
+147	1372	NA	GB250:1 > GB131:0 & GB132:1 & GB133:0	broad word order	perfect	no	NOT SIG	verb HAVE > SVO
+148	1415	NA	GB431:1|GB433:1 > GB091|GB092:1	other	perfect	yes	SIG	poss agr > verb agr S
+149	1427	NA	GB079:0 & GB090:0 & GB092:0 & GB094:0 & GB430:0 & GB431:0 > GB072|GB073:1	other	OK	no	NOT SIG	no prefix > inflectional local cases
+150	1430	NA	GB432:1 | GB433:1 > GB117:0	other	OK	no	NOT SIG	N-poss suff > no PRS Cop
+151	1431 (used to be 1435 in the old version)	m	sum(GB070:1,GB071:1,GB072:1,GB073:1) < 2 ->  sum(GB082:1,GB083:1,GB084:1) > 2 | GB309:1	other	less than OK	yes	SIG	less case > more tense
+152	1431 (used to be 1435 in the old version)	n	sum(GB070:1,GB071:1,GB072:1,GB073:1) > 2 ->  sum(GB082:1,GB083:1,GB084:1) < 2 & GB309:0	other	less than OK	yes	NOT SIG	more case > less tense
+153	1434	NA	GB309:1 > GB086:0	other	OK	no	NOT SIG	many tenses > no aspect
+154	1436	NA	GB193:2 > GB117:1	broad word order	OK	no	NOT SIG	N-Adj > PRS overt cop
+155	1499	NA	GB118:1 > sum(GB070|GB072|GB051|GB052|GB053|GB054|GB192|GB321|GB042|GB043|GB044|GB165|GB166|GB430|GB431|GB432|GB433|GB119|GB120|GB121|GB298|GB080|GB089|GB091|GB093|GB094|GB082|GB083|GB084|GB312|GB086) < 2	other	OK	no	NOT SIG	SVC > little infl
+156	1531	NA	GB131:1 & GB132:0 & GB133:0 > sum(GB079 & GB090 & GB092 & GB094 & GB430 & GB431) => 2	broad word order	OK	no	NOT SIG	V-initial > prefixes
+157	1534	NA	GB131:1 & GB132:0 & GB133:0 > GB262:1	narrow word order	perfect	no	NOT SIG	V-initial > Q-Sent
+158	1537	NA	GB131:1 & GB132:0 & GB133:0 > GB421:1	narrow word order	OK	no	NOT SIG	V-initial > C-Sent
+159	1544	NA	GB131:1 & GB132:0 & GB133:0 > GB103:1 | GB104:1 | GB108:1 | GB092:1| GB094:1 | GB091:1 | GB093:1 | GB089: 1 | GB090: 1	broad word order	perfect	no	NOT SIG	V-initial > verbal case
+160	1545	NA	(GB131:1 & GB132:0 & GB133:0) > GB024: 2 & GB025: 2 & GB193: 2	narrow word order	OK	yes	NOT SIG	V-initial > N-Dem-Num-Adj
+161	1546	a	GB131:0 & GB132:0 & GB133:1 > GB170:1|GB184:1	broad word order	OK	no	NOT SIG	V-final > more Adj-N agr
+162	1546	b	GB131:1 & GB132:0 & GB133:0 > GB170:0 & GB184:0	broad word order	OK	no	NOT SIG	V-initial > less Adj-N agr
+163	1548	a	GB131:0 & GB132:0 & GB133:1 > sum(GB020,GB021,GB172,GB186) <= 1	broad word order	OK	no	NOT SIG	V-final > no several Art
+164	1548	b	GB131:1 & GB132:0 & GB133:0 > sum(GB020,GB021,GB172,GB186) >= 2	broad word order	OK	no	NOT SIG	V-initial > several Art
+165	1549	NA	(GB131:1 & GB132:0 & GB133:0) > GB065:2	narrow word order	perfect	no	NOT SIG	V-initial > N-Gen
+166	1550	NA	GB131:1 & GB132:0 & GB133:0 > GB327:1	narrow word order	perfect	yes	NOT SIG	V-initial > N-Rel
+167	1559	NA	GB131:1 & GB132:0 & GB133:0 > GB147:1	broad word order	perfect	no	NOT SIG	V-initial > passive voice
+168	1560	NA	GB131:1 & GB132:0 & GB133:0 > (GB092:0 & GB094:0 & GB091:0 & GB093:0 & GB089: & GB090: 0) | ((GB091:1 | GB092:1) & (GB093:1 | GB094:1 | GB103:1 ))	broad word order	OK	no	NOT SIG	V-ini > no verb agr | agr 2 NPs
+169	1561	NA	GB131:1 & GB132:0 & GB133:0 > GB117:0	broad word order	perfect	no	NOT SIG	V-initial > no overt copula
+170	1586	n	GB431|GB433:1 > GB059:1	other	perfect	yes	SIG	Poss head-m > alien-ina opp
+171	1589	NA	GB131:0 & GB132:0 & GB133:1 > GB080:1 & sum(GB089|GB091|GB093|GB432|GB433) > 0	broad word order	OK	no	NOT SIG	V-final > postp & suff
+172	1591	NA	GB329:1 > GB131:0 & GB132:0 & GB133:1	broad word order	perfect	yes	NOT SIG	int Rel > SOV
+173	1592	NA	GB329:1 > GB065:2	broad word order	OK	yes	NOT SIG	int Rel > left-branching NP
+174	1593	NA	GB329:1 > GB522:1	other	perfect	no	NOT SIG	int Rel > null anaphora
+175	1610	NA	GB093:1 | GB094:1 > (GB131:1 | GB133:1) & GB132:0	broad word order	perfect	no	NOT SIG	patient agr > V-initial|V-final
+176	1611	NA	GB094:1 | GB093:1 > GB092:1 | GB091:1	hierarchy	perfect	yes	SIG	P agr verb > A agr verb
+177	1612	a	GB131:0 & GB132:0 & GB133:1 & GB022:0 & GB023:1 > GB172:1 | GB186:1	broad word order	perfect	no	NOT SIG	SOV & N-Art > N-Art agr
+178	1612	b	GB131:0 & GB132:0 & GB133:1 & GB193:2 > GB170:1 | GB184:1	broad word order	perfect	no	NOT SIG	SOV & N-Adj > N-Adj agr
+179	1612	c	GB131:0 & GB132:0 & GB133:1 & GB024: 2 > GB198: 1	broad word order	perfect	yes	NOT SIG	SOV & N-Num > N-Num agr
+180	1612	d	GB131:0 & GB132:0 & GB133:1 & GB025:2 > GB171:1 | GB185:1	broad word order	perfect	no	NOT SIG	SOV & N-Dem > N-Dem agr
+181	1621	NA	GB193:1|2|3 | GB068:1 | GB069:1 > GB057:0	other	OK	no	NOT SIG	Adj > no sortal Cl
+182	1653	NA	GB083:0 > GB117:0	other	OK	no	NOT SIG	non-tensed > no cop nom Pred
+183	1667	a	GB422:1 > GB131:0 & GB132:0 & GB133:1	narrow word order	OK	yes	NOT SIG	S-Comp > SOV
+184	1667	b	GB421:1 > GB131:1 & GB132:0 & GB133:0	narrow word order	OK	no	NOT SIG	Comp-S > VSO
+185	1746	NA	GB430:1 | GB431:1 > sum(GB079:1,GB090:1, GB092:1, GB094:1) > 0	other	OK	yes	SIG	Gen pref > verbal prefs
+186	1832	NA	GB328:1 | GB193:1 > GB065:1	narrow word order	perfect	no	NOT SIG	Rel-N | Adj-N > Gen-N
+187	1994	a	GB065:1 & GB430:0 & GB432:0 >  GB075:1	broad word order	OK	no	NOT SIG	non-affix Gen-N > N-Adp
+188	1994	d	GB065:1 & GB430:0 & GB432:0 > GB131:0 & (GB132:1 | GB133:1)	broad word order	OK	yes	NOT SIG	non-affixed Gen-N > OV
+189	1994	c	GB065:1 & GB430:0 & GB432:0 > GB090:1 | GB092:1	broad word order	OK	no	NOT SIG	non-aff Gen-N > verb pref pers num
+190	1994	b	GB065:1 & GB430:0 & GB432:0 > GB193:1	broad word order	OK	yes	NOT SIG	non-aff Gen-N > Adj-N
+191	2012	NA	GB151:1 > GB408:1	other	OK	no	NOT SIG	switch-reference > accusitive

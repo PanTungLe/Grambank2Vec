@@ -1,0 +1,1553 @@
+{
+  "_schema_version": "1.0",
+  "_description": "WALS feature-value substructure annotations for the Grambank2Vec thesis. All value strings are verified against checkpoints/wals_learned_s42/featvalue2id.json. Covering 70 WALS features across 5 structure types.",
+  "_structure_types": {
+    "ordinal": "Values form a scale. 'values' maps each value string to its integer rank (0 = smallest/least).",
+    "presence_subtype": "First split is absent vs present; present values subdivide into subtypes. 'triplets' lists (anchor, near, far) triples where near should be closer to anchor than far.",
+    "boolean_lattice": "Values are combinations of binary components. 'components' names each component; 'values' maps each value string to its multi-hot vector.",
+    "permutation": "Values encode order, position, or cross-product axes. 'values' maps each value string to a dict of {axis_name: label}; 'axes' lists which axes to probe.",
+    "strategy_family": "Values are constructional/coding strategies without an inherent ordering. 'values' maps each value string to its family label. Diagnostic: nearest-neighbour purity."
+  },
+  "_diagnostic_functions": {
+    "ordinal": "ordinal_spearman(E, value_index, spec['values'])",
+    "presence_subtype": "triplet_accuracy(E, value_index, spec['triplets'])",
+    "boolean_lattice": "lattice_r2(E, value_index, spec['values'], spec['components'])",
+    "permutation": "cross_product_probe(E, value_index, spec['values'], spec['axes'])",
+    "strategy_family": "nn_purity(E, value_index, spec['values'])"
+  },
+  "_centering_note": "All diagnostics operate on within-feature-centred embeddings: E_centred = E_raw - E_raw.mean(axis=0). This removes the feature-level offset so that geometry reflects within-feature value structure rather than feature identity.",
+  "_results_summary": {
+    "seeds_tested": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "architectures": [
+      "learned",
+      "tcf"
+    ],
+    "n_features": 70,
+    "headline_learned_vs_tcf": {
+      "ordinal_features_learned_beats_tcf": "1A, 3A, 22A, 26A, 30A, 40A, 49A, 53A (ρ > +0.4; T-CF near-zero or negative)",
+      "strongest_dissociation": "22A: Learned +0.52, T-CF -0.45 (sign reversal); 40A: Learned +0.41, T-CF -0.59",
+      "presence_subtype_learned_1000": "9A, 13A, 31A, 32A, 37A, 38A, 55A, 68A, 77A, 78A, 108A all at 1.000 ± 0.000",
+      "permutation_standout": "84A verb_pos: Learned 1.000, T-CF 0.550; 71A neg_type: Learned 1.000, T-CF 0.750",
+      "lattice_best": "102A: Learned R² -0.817 vs T-CF -2.297 (Learned less negative by 1.48)",
+      "strategy_family_all_zero": "All strategy-family features show 0.000 NN-purity in both architectures (paradigmatic-competitor effect)"
+    }
+  },
+  "features": {
+    "1A": {
+      "name": "Consonant Inventories",
+      "type": "ordinal",
+      "wals_chapter": 2,
+      "values": {
+        "Small": 0,
+        "Moderately small": 1,
+        "Average": 2,
+        "Moderately large": 3,
+        "Large": 4
+      }
+    },
+    "2A": {
+      "name": "Vowel Quality Inventories",
+      "type": "ordinal",
+      "wals_chapter": 2,
+      "values": {
+        "Small (2-4)": 0,
+        "Average (5-6)": 1,
+        "Large (7-14)": 2
+      }
+    },
+    "3A": {
+      "name": "Consonant-Vowel Ratio",
+      "type": "ordinal",
+      "wals_chapter": 2,
+      "values": {
+        "Low": 0,
+        "Moderately low": 1,
+        "Average": 2,
+        "Moderately high": 3,
+        "High": 4
+      }
+    },
+    "4A": {
+      "name": "Voicing in Plosives and Fricatives",
+      "type": "boolean_lattice",
+      "wals_chapter": 2,
+      "values": {
+        "No voicing contrast": [
+          0,
+          0
+        ],
+        "In plosives alone": [
+          1,
+          0
+        ],
+        "In fricatives alone": [
+          0,
+          1
+        ],
+        "In both plosives and fricatives": [
+          1,
+          1
+        ]
+      },
+      "components": [
+        "plosives_voiced",
+        "fricatives_voiced"
+      ]
+    },
+    "7A": {
+      "name": "Glottalized Consonants",
+      "type": "boolean_lattice",
+      "wals_chapter": 2,
+      "values": {
+        "No glottalized consonants": [
+          0,
+          0,
+          0
+        ],
+        "Ejectives only": [
+          1,
+          0,
+          0
+        ],
+        "Implosives only": [
+          0,
+          1,
+          0
+        ],
+        "Ejectives and implosives": [
+          1,
+          1,
+          0
+        ],
+        "Ejectives and glottalized resonants": [
+          1,
+          0,
+          1
+        ]
+      },
+      "components": [
+        "ejectives",
+        "implosives",
+        "glott_resonants"
+      ]
+    },
+    "9A": {
+      "name": "The Velar Nasal",
+      "type": "presence_subtype",
+      "wals_chapter": 2,
+      "values": {
+        "No velar nasal": {
+          "present": 0
+        },
+        "No initial velar nasal": {
+          "present": 1,
+          "pos": "non-initial"
+        },
+        "Initial velar nasal": {
+          "present": 1,
+          "pos": "initial"
+        }
+      },
+      "triplets": [
+        [
+          "No initial velar nasal",
+          "Initial velar nasal",
+          "No velar nasal"
+        ],
+        [
+          "Initial velar nasal",
+          "No initial velar nasal",
+          "No velar nasal"
+        ]
+      ]
+    },
+    "12A": {
+      "name": "Syllable Structure",
+      "type": "ordinal",
+      "wals_chapter": 2,
+      "values": {
+        "Simple": 0,
+        "Moderately complex": 1,
+        "Complex": 2
+      }
+    },
+    "13A": {
+      "name": "Tone",
+      "type": "presence_subtype",
+      "wals_chapter": 2,
+      "values": {
+        "No tones": {
+          "present": 0,
+          "complexity": 0
+        },
+        "Simple tone system": {
+          "present": 1,
+          "complexity": 1
+        },
+        "Complex tone system": {
+          "present": 1,
+          "complexity": 2
+        }
+      },
+      "triplets": [
+        [
+          "Simple tone system",
+          "Complex tone system",
+          "No tones"
+        ],
+        [
+          "Complex tone system",
+          "Simple tone system",
+          "No tones"
+        ]
+      ]
+    },
+    "14A": {
+      "name": "Fixed Stress Locations",
+      "type": "permutation",
+      "wals_chapter": 2,
+      "values": {
+        "Initial": {
+          "edge": "left",
+          "dist": 0
+        },
+        "Second": {
+          "edge": "left",
+          "dist": 1
+        },
+        "Antepenultimate": {
+          "edge": "right",
+          "dist": 2
+        },
+        "Penultimate": {
+          "edge": "right",
+          "dist": 1
+        },
+        "Ultimate": {
+          "edge": "right",
+          "dist": 0
+        }
+      },
+      "axes": [
+        "edge"
+      ]
+    },
+    "17A": {
+      "name": "Rhythm Types",
+      "type": "presence_subtype",
+      "wals_chapter": 2,
+      "values": {
+        "No rhythmic stress": {
+          "present": 0
+        },
+        "Trochaic": {
+          "present": 1,
+          "type": "trochaic"
+        },
+        "Iambic": {
+          "present": 1,
+          "type": "iambic"
+        },
+        "Undetermined": {
+          "present": 1,
+          "type": "undetermined"
+        }
+      },
+      "triplets": [
+        [
+          "Trochaic",
+          "Iambic",
+          "No rhythmic stress"
+        ],
+        [
+          "Iambic",
+          "Trochaic",
+          "No rhythmic stress"
+        ],
+        [
+          "Trochaic",
+          "Undetermined",
+          "No rhythmic stress"
+        ]
+      ]
+    },
+    "18A": {
+      "name": "Absence of Common Consonants",
+      "type": "boolean_lattice",
+      "wals_chapter": 2,
+      "values": {
+        "All present": [
+          0,
+          0
+        ],
+        "No fricatives": [
+          1,
+          0
+        ],
+        "No nasals": [
+          0,
+          1
+        ]
+      },
+      "components": [
+        "fricatives_absent",
+        "nasals_absent"
+      ]
+    },
+    "20A": {
+      "name": "Fusion of Inflectional Formatives",
+      "type": "boolean_lattice",
+      "wals_chapter": 4,
+      "values": {
+        "Exclusively concatenative": [
+          1,
+          0
+        ],
+        "Exclusively isolating": [
+          0,
+          1
+        ],
+        "Isolating/concatenative": [
+          1,
+          1
+        ]
+      },
+      "components": [
+        "concatenative",
+        "isolating"
+      ]
+    },
+    "22A": {
+      "name": "Inflectional Synthesis of the Verb",
+      "type": "ordinal",
+      "wals_chapter": 4,
+      "values": {
+        "2-3 categories per word": 0,
+        "4-5 categories per word": 1,
+        "6-7 categories per word": 2,
+        "8-9 categories per word": 3
+      }
+    },
+    "26A": {
+      "name": "Prefixing vs Suffixing",
+      "type": "ordinal",
+      "wals_chapter": 4,
+      "values": {
+        "Strongly suffixing": 0,
+        "Weakly suffixing": 1,
+        "Equal prefixing and suffixing": 2,
+        "Weakly prefixing": 3,
+        "Strong prefixing": 4
+      }
+    },
+    "27A": {
+      "name": "Reduplication",
+      "type": "presence_subtype",
+      "wals_chapter": 4,
+      "values": {
+        "No productive reduplication": {
+          "present": 0,
+          "scope": 0
+        },
+        "Full reduplication only": {
+          "present": 1,
+          "scope": 1
+        },
+        "Productive full and partial reduplication": {
+          "present": 1,
+          "scope": 2
+        }
+      },
+      "triplets": [
+        [
+          "Full reduplication only",
+          "Productive full and partial reduplication",
+          "No productive reduplication"
+        ],
+        [
+          "Productive full and partial reduplication",
+          "Full reduplication only",
+          "No productive reduplication"
+        ]
+      ]
+    },
+    "28A": {
+      "name": "Case Syncretism",
+      "type": "ordinal",
+      "wals_chapter": 4,
+      "values": {
+        "No case marking": 0,
+        "Core cases only": 1,
+        "Core and non-core": 2,
+        "No syncretism": 3
+      }
+    },
+    "30A": {
+      "name": "Number of Genders",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "Two": 0,
+        "Three": 1,
+        "Four": 2,
+        "Five or more": 3
+      }
+    },
+    "31A": {
+      "name": "Sex/Non-sex-based Gender Systems",
+      "type": "presence_subtype",
+      "wals_chapter": 5,
+      "values": {
+        "No gender": {
+          "present": 0
+        },
+        "Sex-based": {
+          "present": 1,
+          "basis": "sex"
+        },
+        "Non-sex-based": {
+          "present": 1,
+          "basis": "non-sex"
+        }
+      },
+      "triplets": [
+        [
+          "Sex-based",
+          "Non-sex-based",
+          "No gender"
+        ],
+        [
+          "Non-sex-based",
+          "Sex-based",
+          "No gender"
+        ]
+      ]
+    },
+    "32A": {
+      "name": "Systems of Gender Assignment",
+      "type": "presence_subtype",
+      "wals_chapter": 5,
+      "values": {
+        "No gender": {
+          "present": 0
+        },
+        "Semantic": {
+          "present": 1,
+          "type": "semantic"
+        },
+        "Semantic and formal": {
+          "present": 1,
+          "type": "semantic+formal"
+        }
+      },
+      "triplets": [
+        [
+          "Semantic",
+          "Semantic and formal",
+          "No gender"
+        ],
+        [
+          "Semantic and formal",
+          "Semantic",
+          "No gender"
+        ]
+      ]
+    },
+    "34A": {
+      "name": "Occurrence of Nominal Plurality",
+      "type": "permutation",
+      "wals_chapter": 5,
+      "values": {
+        "Only human nouns, optional": {
+          "domain": "human",
+          "obligatory": "optional"
+        },
+        "Only human nouns, obligatory": {
+          "domain": "human",
+          "obligatory": "obligatory"
+        },
+        "All nouns, always optional": {
+          "domain": "all",
+          "obligatory": "optional"
+        },
+        "All nouns, optional in inanimates": {
+          "domain": "all",
+          "obligatory": "mixed"
+        },
+        "All nouns, always obligatory": {
+          "domain": "all",
+          "obligatory": "obligatory"
+        }
+      },
+      "axes": [
+        "domain",
+        "obligatory"
+      ]
+    },
+    "37A": {
+      "name": "Definite Articles",
+      "type": "presence_subtype",
+      "wals_chapter": 5,
+      "values": {
+        "No definite or indefinite article": {
+          "def_present": 0,
+          "type": "none"
+        },
+        "No definite, but indefinite article": {
+          "def_present": 0,
+          "type": "only_indef"
+        },
+        "Demonstrative word used as definite article": {
+          "def_present": 1,
+          "type": "dem_derived"
+        },
+        "Definite word distinct from demonstrative": {
+          "def_present": 1,
+          "type": "distinct_word"
+        },
+        "Definite affix": {
+          "def_present": 1,
+          "type": "affix"
+        }
+      },
+      "triplets": [
+        [
+          "Definite affix",
+          "Definite word distinct from demonstrative",
+          "No definite or indefinite article"
+        ],
+        [
+          "Definite affix",
+          "Demonstrative word used as definite article",
+          "No definite or indefinite article"
+        ],
+        [
+          "Definite word distinct from demonstrative",
+          "Demonstrative word used as definite article",
+          "No definite or indefinite article"
+        ],
+        [
+          "Definite word distinct from demonstrative",
+          "Definite affix",
+          "No definite or indefinite article"
+        ]
+      ]
+    },
+    "38A": {
+      "name": "Indefinite Articles",
+      "type": "presence_subtype",
+      "wals_chapter": 5,
+      "values": {
+        "No definite or indefinite article": {
+          "indef_present": 0,
+          "type": "none"
+        },
+        "No indefinite, but definite article": {
+          "indef_present": 0,
+          "type": "only_def"
+        },
+        "Indefinite word same as 'one'": {
+          "indef_present": 1,
+          "type": "one_derived"
+        },
+        "Indefinite word distinct from 'one'": {
+          "indef_present": 1,
+          "type": "distinct"
+        },
+        "Indefinite affix": {
+          "indef_present": 1,
+          "type": "affix"
+        }
+      },
+      "triplets": [
+        [
+          "Indefinite affix",
+          "Indefinite word distinct from 'one'",
+          "No definite or indefinite article"
+        ],
+        [
+          "Indefinite affix",
+          "Indefinite word same as 'one'",
+          "No definite or indefinite article"
+        ],
+        [
+          "Indefinite word same as 'one'",
+          "Indefinite word distinct from 'one'",
+          "No definite or indefinite article"
+        ]
+      ]
+    },
+    "39A": {
+      "name": "Inclusive/Exclusive in Independent Pronouns",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "'We' the same as 'I'": 0,
+        "No inclusive/exclusive": 1,
+        "Inclusive/exclusive": 2
+      }
+    },
+    "40A": {
+      "name": "Inclusive/Exclusive in Verbal Inflection",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "No person marking": 0,
+        "'We' the same as 'I'": 1,
+        "No inclusive/exclusive": 2,
+        "Inclusive/exclusive": 3
+      }
+    },
+    "45A": {
+      "name": "Politeness Distinctions in Pronouns",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "No politeness distinction": 0,
+        "Binary politeness distinction": 1,
+        "Multiple politeness distinctions": 2
+      }
+    },
+    "49A": {
+      "name": "Number of Cases",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "No morphological case-marking": 0,
+        "Exclusively borderline case-marking": 1,
+        "2 cases": 2,
+        "5 cases": 3,
+        "6-7 cases": 4,
+        "8-9 cases": 5,
+        "10 or more cases": 6
+      }
+    },
+    "51A": {
+      "name": "Position of Case Affixes",
+      "type": "permutation",
+      "wals_chapter": 5,
+      "values": {
+        "Case suffixes": {
+          "direction": "post",
+          "bound": 1
+        },
+        "Case prefixes": {
+          "direction": "pre",
+          "bound": 1
+        },
+        "Postpositional clitics": {
+          "direction": "post",
+          "bound": 0
+        },
+        "Prepositional clitics": {
+          "direction": "pre",
+          "bound": 0
+        }
+      },
+      "axes": [
+        "direction",
+        "bound"
+      ]
+    },
+    "53A": {
+      "name": "Ordinal Numerals (regularity)",
+      "type": "ordinal",
+      "wals_chapter": 5,
+      "values": {
+        "One-th, two-th, three-th": 0,
+        "First/one-th, two-th, three-th": 1,
+        "First, two-th, three-th": 2,
+        "First, second, three-th": 3
+      }
+    },
+    "55A": {
+      "name": "Numeral Classifiers",
+      "type": "presence_subtype",
+      "wals_chapter": 5,
+      "values": {
+        "Absent": {
+          "present": 0,
+          "obligatoriness": 0
+        },
+        "Optional": {
+          "present": 1,
+          "obligatoriness": 1
+        },
+        "Obligatory": {
+          "present": 1,
+          "obligatoriness": 2
+        }
+      },
+      "triplets": [
+        [
+          "Optional",
+          "Obligatory",
+          "Absent"
+        ],
+        [
+          "Obligatory",
+          "Optional",
+          "Absent"
+        ]
+      ]
+    },
+    "57A": {
+      "name": "Position of Pronominal Possessive Affixes",
+      "type": "permutation",
+      "wals_chapter": 5,
+      "values": {
+        "Possessive prefixes": {
+          "direction": "pre"
+        },
+        "Possessive suffixes": {
+          "direction": "post"
+        },
+        "Prefixes and suffixes": {
+          "direction": "both"
+        }
+      },
+      "axes": [
+        "direction"
+      ]
+    },
+    "66A": {
+      "name": "The Past Tense",
+      "type": "ordinal",
+      "wals_chapter": 6,
+      "values": {
+        "No past tense": 0,
+        "Present, no remoteness distinctions": 1,
+        "Present, 2-3 remoteness distinctions": 2
+      }
+    },
+    "68A": {
+      "name": "The Perfect",
+      "type": "presence_subtype",
+      "wals_chapter": 6,
+      "values": {
+        "No perfect": {
+          "present": 0
+        },
+        "From 'finish', 'already'": {
+          "present": 1,
+          "source": "completive"
+        },
+        "Other perfect": {
+          "present": 1,
+          "source": "other"
+        }
+      },
+      "triplets": [
+        [
+          "From 'finish', 'already'",
+          "Other perfect",
+          "No perfect"
+        ],
+        [
+          "Other perfect",
+          "From 'finish', 'already'",
+          "No perfect"
+        ]
+      ]
+    },
+    "69A": {
+      "name": "Position of Tense-Aspect Affixes",
+      "type": "permutation",
+      "wals_chapter": 6,
+      "values": {
+        "Tense-aspect prefixes": {
+          "direction": "pre"
+        },
+        "Tense-aspect suffixes": {
+          "direction": "post"
+        },
+        "Tense-aspect tone": {
+          "direction": "none"
+        }
+      },
+      "axes": [
+        "direction"
+      ]
+    },
+    "71A": {
+      "name": "The Prohibitive (2x2 cross-product)",
+      "type": "permutation",
+      "wals_chapter": 6,
+      "values": {
+        "Normal imperative + normal negative": {
+          "imp": "normal",
+          "neg": "normal"
+        },
+        "Normal imperative + special negative": {
+          "imp": "normal",
+          "neg": "special"
+        },
+        "Special imperative + normal negative": {
+          "imp": "special",
+          "neg": "normal"
+        },
+        "Special imperative + special negative": {
+          "imp": "special",
+          "neg": "special"
+        }
+      },
+      "axes": [
+        "imp",
+        "neg"
+      ]
+    },
+    "77A": {
+      "name": "Evidentiality (semantic)",
+      "type": "presence_subtype",
+      "wals_chapter": 6,
+      "values": {
+        "No grammatical evidentials": {
+          "present": 0,
+          "scope": 0
+        },
+        "Indirect only": {
+          "present": 1,
+          "scope": 1
+        },
+        "Direct and indirect": {
+          "present": 1,
+          "scope": 2
+        }
+      },
+      "triplets": [
+        [
+          "Indirect only",
+          "Direct and indirect",
+          "No grammatical evidentials"
+        ],
+        [
+          "Direct and indirect",
+          "Indirect only",
+          "No grammatical evidentials"
+        ]
+      ]
+    },
+    "78A": {
+      "name": "Coding of Evidentiality",
+      "type": "presence_subtype",
+      "wals_chapter": 6,
+      "values": {
+        "No grammatical evidentials": {
+          "present": 0
+        },
+        "Verbal affix or clitic": {
+          "present": 1,
+          "form": "verbal_bound"
+        },
+        "Part of the tense system": {
+          "present": 1,
+          "form": "tense_linked"
+        },
+        "Separate particle": {
+          "present": 1,
+          "form": "particle"
+        }
+      },
+      "triplets": [
+        [
+          "Verbal affix or clitic",
+          "Part of the tense system",
+          "No grammatical evidentials"
+        ],
+        [
+          "Verbal affix or clitic",
+          "Separate particle",
+          "No grammatical evidentials"
+        ],
+        [
+          "Part of the tense system",
+          "Separate particle",
+          "No grammatical evidentials"
+        ]
+      ]
+    },
+    "79A": {
+      "name": "Suppletion by Tense/Aspect",
+      "type": "boolean_lattice",
+      "wals_chapter": 6,
+      "values": {
+        "Tense": [
+          1,
+          0
+        ],
+        "Tense and aspect": [
+          1,
+          1
+        ]
+      },
+      "components": [
+        "tense_suppletion",
+        "aspect_suppletion"
+      ]
+    },
+    "81A": {
+      "name": "Order of Subject, Object and Verb",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "SOV": {
+          "verb_pos": "final",
+          "OV_VO": "OV",
+          "SO_OS": "SO"
+        },
+        "SVO": {
+          "verb_pos": "medial",
+          "OV_VO": "VO",
+          "SO_OS": "SO"
+        },
+        "VSO": {
+          "verb_pos": "initial",
+          "OV_VO": "VO",
+          "SO_OS": "SO"
+        },
+        "VOS": {
+          "verb_pos": "initial",
+          "OV_VO": "VO",
+          "SO_OS": "OS"
+        },
+        "OVS": {
+          "verb_pos": "medial",
+          "OV_VO": "OV",
+          "SO_OS": "OS"
+        }
+      },
+      "axes": [
+        "verb_pos",
+        "OV_VO",
+        "SO_OS"
+      ]
+    },
+    "84A": {
+      "name": "Order of Object, Oblique, and Verb",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "VOX": {
+          "verb_pos": "initial",
+          "obj_verb": "VO"
+        },
+        "OVX": {
+          "verb_pos": "medial",
+          "obj_verb": "OV"
+        },
+        "OXV": {
+          "verb_pos": "final",
+          "obj_verb": "OV"
+        },
+        "XOV": {
+          "verb_pos": "final",
+          "obj_verb": "OV"
+        }
+      },
+      "axes": [
+        "verb_pos",
+        "obj_verb"
+      ]
+    },
+    "85A": {
+      "name": "Order of Adposition and NP",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Prepositions": {
+          "direction": "pre"
+        },
+        "Postpositions": {
+          "direction": "post"
+        }
+      },
+      "axes": [
+        "direction"
+      ],
+      "presence_triplets": [
+        [
+          "Postpositions",
+          "Prepositions",
+          "No adpositions"
+        ],
+        [
+          "Prepositions",
+          "Postpositions",
+          "No adpositions"
+        ],
+        [
+          "Postpositions",
+          "No dominant order",
+          "No adpositions"
+        ]
+      ]
+    },
+    "88A": {
+      "name": "Order of Demonstrative and Noun",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Demonstrative-Noun": {
+          "direction": "pre",
+          "bound": 0
+        },
+        "Noun-Demonstrative": {
+          "direction": "post",
+          "bound": 0
+        },
+        "Demonstrative suffix": {
+          "direction": "post",
+          "bound": 1
+        }
+      },
+      "axes": [
+        "direction",
+        "bound"
+      ]
+    },
+    "91A": {
+      "name": "Order of Degree Word and Adjective",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Degree word-Adjective": {
+          "direction": "pre"
+        },
+        "Adjective-Degree word": {
+          "direction": "post"
+        }
+      },
+      "axes": [
+        "direction"
+      ]
+    },
+    "92A": {
+      "name": "Position of Polar Question Particles",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Initial": {
+          "clause_pos": "initial"
+        },
+        "Final": {
+          "clause_pos": "final"
+        },
+        "Second position": {
+          "clause_pos": "second"
+        }
+      },
+      "axes": [
+        "clause_pos"
+      ]
+    },
+    "93A": {
+      "name": "Position of Interrogative Phrases",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Initial interrogative phrase": {
+          "position": "initial"
+        },
+        "Not initial interrogative phrase": {
+          "position": "non_initial"
+        }
+      },
+      "axes": [
+        "position"
+      ]
+    },
+    "94A": {
+      "name": "Order of Adverbial Subordinator and Clause",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "Initial subordinator word": {
+          "position": "initial"
+        },
+        "Final subordinator word": {
+          "position": "final"
+        },
+        "Subordinating suffix": {
+          "position": "suffix"
+        }
+      },
+      "axes": [
+        "position"
+      ]
+    },
+    "95A": {
+      "name": "OV Order vs Adposition Order",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "OV and Postpositions": {
+          "OV_VO": "OV",
+          "adp": "Post"
+        },
+        "OV and Prepositions": {
+          "OV_VO": "OV",
+          "adp": "Pre"
+        },
+        "VO and Postpositions": {
+          "OV_VO": "VO",
+          "adp": "Post"
+        },
+        "VO and Prepositions": {
+          "OV_VO": "VO",
+          "adp": "Pre"
+        }
+      },
+      "axes": [
+        "OV_VO",
+        "adp"
+      ]
+    },
+    "96A": {
+      "name": "OV Order vs Relative Clause Order",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "OV and RelN": {
+          "OV_VO": "OV",
+          "RC": "RelN"
+        },
+        "OV and NRel": {
+          "OV_VO": "OV",
+          "RC": "NRel"
+        },
+        "VO and NRel": {
+          "OV_VO": "VO",
+          "RC": "NRel"
+        }
+      },
+      "axes": [
+        "OV_VO",
+        "RC"
+      ]
+    },
+    "97A": {
+      "name": "OV Order vs Adjective-Noun Order",
+      "type": "permutation",
+      "wals_chapter": 7,
+      "values": {
+        "OV and AdjN": {
+          "OV_VO": "OV",
+          "adj": "AdjN"
+        },
+        "OV and NAdj": {
+          "OV_VO": "OV",
+          "adj": "NAdj"
+        },
+        "VO and AdjN": {
+          "OV_VO": "VO",
+          "adj": "AdjN"
+        },
+        "VO and NAdj": {
+          "OV_VO": "VO",
+          "adj": "NAdj"
+        }
+      },
+      "axes": [
+        "OV_VO",
+        "adj"
+      ]
+    },
+    "98A": {
+      "name": "Alignment NPs",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Neutral": "neutral",
+        "Nominative - accusative (standard)": "accusative",
+        "Ergative - absolutive": "ergative"
+      }
+    },
+    "99A": {
+      "name": "Alignment Pronouns",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Neutral": "neutral",
+        "Nominative - accusative (standard)": "accusative",
+        "Ergative - absolutive": "ergative"
+      }
+    },
+    "100A": {
+      "name": "Alignment Verbal Person Marking",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Neutral": "neutral",
+        "Accusative": "accusative",
+        "Ergative": "ergative",
+        "Active": "active",
+        "Hierarchical": "hierarchical",
+        "Split": "split"
+      }
+    },
+    "102A": {
+      "name": "Verbal Person Marking",
+      "type": "boolean_lattice",
+      "wals_chapter": 8,
+      "values": {
+        "No person marking": [
+          0,
+          0
+        ],
+        "Only the A argument": [
+          1,
+          0
+        ],
+        "Only the P argument": [
+          0,
+          1
+        ],
+        "Both the A and P arguments": [
+          1,
+          1
+        ]
+      },
+      "components": [
+        "A_marked",
+        "P_marked"
+      ]
+    },
+    "104A": {
+      "name": "Order of Person Markers on the Verb",
+      "type": "permutation",
+      "wals_chapter": 8,
+      "values": {
+        "A precedes P": {
+          "order": "AP"
+        },
+        "P precedes A": {
+          "order": "PA"
+        },
+        "Both orders of A and P occur": {
+          "order": "both"
+        }
+      },
+      "axes": [
+        "order"
+      ]
+    },
+    "105A": {
+      "name": "Ditransitive Constructions",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Indirect-object construction": "indirect",
+        "Double-object construction": "double",
+        "Secondary-object construction": "secondary",
+        "Mixed": "mixed"
+      }
+    },
+    "106A": {
+      "name": "Reciprocal Constructions",
+      "type": "presence_subtype",
+      "wals_chapter": 8,
+      "values": {
+        "No reciprocals": {
+          "present": 0
+        },
+        "Identical to reflexive": {
+          "present": 1,
+          "rel": "identical"
+        },
+        "Distinct from reflexive": {
+          "present": 1,
+          "rel": "distinct"
+        },
+        "Mixed": {
+          "present": 1,
+          "rel": "mixed"
+        }
+      },
+      "triplets": [
+        [
+          "Identical to reflexive",
+          "Distinct from reflexive",
+          "No reciprocals"
+        ],
+        [
+          "Distinct from reflexive",
+          "Identical to reflexive",
+          "No reciprocals"
+        ],
+        [
+          "Mixed",
+          "Distinct from reflexive",
+          "No reciprocals"
+        ]
+      ]
+    },
+    "108A": {
+      "name": "Antipassive Constructions",
+      "type": "presence_subtype",
+      "wals_chapter": 8,
+      "values": {
+        "No antipassive": {
+          "present": 0
+        },
+        "Implicit patient": {
+          "present": 1,
+          "patient": "implicit"
+        },
+        "Oblique patient": {
+          "present": 1,
+          "patient": "oblique"
+        }
+      },
+      "triplets": [
+        [
+          "Implicit patient",
+          "Oblique patient",
+          "No antipassive"
+        ],
+        [
+          "Oblique patient",
+          "Implicit patient",
+          "No antipassive"
+        ]
+      ]
+    },
+    "108B": {
+      "name": "Productivity of the Antipassive",
+      "type": "ordinal",
+      "wals_chapter": 8,
+      "values": {
+        "no antipassive": 0,
+        "partially productive": 1,
+        "productive": 2
+      }
+    },
+    "111A": {
+      "name": "Nonperiphrastic Causative Constructions",
+      "type": "boolean_lattice",
+      "wals_chapter": 8,
+      "values": {
+        "Neither": [
+          0,
+          0
+        ],
+        "Morphological but no compound": [
+          1,
+          0
+        ],
+        "Both": [
+          1,
+          1
+        ]
+      },
+      "components": [
+        "morphological",
+        "compound"
+      ]
+    },
+    "112A": {
+      "name": "Negative Morphemes",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Negative affix": "bound",
+        "Variation between negative word and affix": "bound_free",
+        "Negative particle": "particle",
+        "Negative word, unclear if verb or particle": "word",
+        "Negative auxiliary verb": "auxiliary",
+        "Double negation": "double"
+      }
+    },
+    "114A": {
+      "name": "Subtypes of Asymmetric Standard Negation",
+      "type": "boolean_lattice",
+      "wals_chapter": 8,
+      "values": {
+        "A/Fin": [
+          1,
+          0,
+          0
+        ],
+        "A/NonReal": [
+          0,
+          1,
+          0
+        ],
+        "A/Cat": [
+          0,
+          0,
+          1
+        ],
+        "A/Fin and A/Cat": [
+          1,
+          0,
+          1
+        ],
+        "A/NonReal and A/Cat": [
+          0,
+          1,
+          1
+        ]
+      },
+      "components": [
+        "A_Fin",
+        "A_NonReal",
+        "A_Cat"
+      ]
+    },
+    "117A": {
+      "name": "Predicative Possession",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "'Have'": "transitive_have",
+        "Locational": "locational",
+        "Genitive": "genitive",
+        "Topic": "topic",
+        "Conjunctional": "conjunctional"
+      }
+    },
+    "121A": {
+      "name": "Comparative Constructions",
+      "type": "strategy_family",
+      "wals_chapter": 8,
+      "values": {
+        "Exceed": "exceed",
+        "Locational": "locational",
+        "Particle": "particle",
+        "Conjoined": "conjoined"
+      }
+    },
+    "122A": {
+      "name": "Relativization on Subjects",
+      "type": "strategy_family",
+      "wals_chapter": 9,
+      "values": {
+        "Gap": "gap",
+        "Non-reduction": "non_reduction",
+        "Relative pronoun": "rel_pronoun"
+      }
+    },
+    "123A": {
+      "name": "Relativization on Obliques",
+      "type": "presence_subtype",
+      "wals_chapter": 9,
+      "values": {
+        "Not possible": {
+          "present": 0
+        },
+        "Gap": {
+          "present": 1,
+          "strategy": "gap"
+        },
+        "Pronoun-retention": {
+          "present": 1,
+          "strategy": "pronoun"
+        },
+        "Non-reduction": {
+          "present": 1,
+          "strategy": "non_reduction"
+        },
+        "Relative pronoun": {
+          "present": 1,
+          "strategy": "rel_pronoun"
+        }
+      },
+      "triplets": [
+        [
+          "Gap",
+          "Non-reduction",
+          "Not possible"
+        ],
+        [
+          "Gap",
+          "Pronoun-retention",
+          "Not possible"
+        ],
+        [
+          "Non-reduction",
+          "Relative pronoun",
+          "Not possible"
+        ],
+        [
+          "Relative pronoun",
+          "Non-reduction",
+          "Not possible"
+        ]
+      ]
+    },
+    "125A": {
+      "name": "Purpose Clauses",
+      "type": "ordinal",
+      "wals_chapter": 9,
+      "values": {
+        "Balanced": 0,
+        "Balanced/deranked": 1,
+        "Deranked": 2
+      }
+    },
+    "126A": {
+      "name": "'When' Clauses",
+      "type": "ordinal",
+      "wals_chapter": 9,
+      "values": {
+        "Balanced": 0,
+        "Balanced/deranked": 1,
+        "Deranked": 2
+      }
+    },
+    "127A": {
+      "name": "Reason Clauses",
+      "type": "ordinal",
+      "wals_chapter": 9,
+      "values": {
+        "Balanced": 0,
+        "Balanced/deranked": 1,
+        "Deranked": 2
+      }
+    },
+    "128A": {
+      "name": "Utterance Complement Clauses",
+      "type": "ordinal",
+      "wals_chapter": 9,
+      "values": {
+        "Balanced": 0,
+        "Balanced/deranked": 1,
+        "Deranked": 2
+      }
+    },
+    "133A": {
+      "name": "Number of Basic Colour Categories",
+      "type": "ordinal",
+      "wals_chapter": 10,
+      "values": {
+        "3-4": 0,
+        "4.5-5.5": 1,
+        "6-6.5": 2,
+        "7-7.5": 3
+      }
+    },
+    "138A": {
+      "name": "Tea",
+      "type": "strategy_family",
+      "wals_chapter": 10,
+      "values": {
+        "Words derived from Sinitic cha": "cha",
+        "Words derived from Min Nan Chinese te": "te",
+        "Others": "other"
+      }
+    }
+  },
+  "_type_counts": {
+    "ordinal": 20,
+    "boolean_lattice": 8,
+    "presence_subtype": 15,
+    "permutation": 18,
+    "strategy_family": 9
+  }
+}
