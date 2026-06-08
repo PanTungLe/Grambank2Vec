@@ -103,14 +103,17 @@ def main():
                     help="Steps per epoch for UFALNeural (binary)")
     ap.add_argument("--embed-dim", type=int, default=64)
     ap.add_argument("--device",    default="cpu")
-    ap.add_argument("--seed",      type=int, default=0)
+    ap.add_argument("--seeds",     type=str, default="42,43,44,45,46",
+                    help="Comma-separated list of seeds (e.g. 42,43,44,45,46)")
     ap.add_argument("--finetune-steps", type=int, default=50)
     ap.add_argument("--skip-probabilistic", action="store_true")
     args = ap.parse_args()
 
+    seeds = [int(s) for s in args.seeds.split(",")]
+
     print("=" * 70)
     print("SIGTYP pilot: 2×2 factorial + UFAL probabilistic replication")
-    print(f"  epochs={args.epochs}, embed_dim={args.embed_dim}, seed={args.seed}")
+    print(f"  epochs={args.epochs}, embed_dim={args.embed_dim}, seeds={seeds}")
     print("=" * 70)
 
     # -----------------------------------------------------------------------
@@ -177,7 +180,14 @@ def main():
     # -----------------------------------------------------------------------
     # 3. Probabilistic system (replication check — no training needed)
     # -----------------------------------------------------------------------
-    results = {}  # condition → macro_acc
+    # seed_results[condition_label] = list of per-seed macro accuracies
+    seed_results = {
+        "Binary+UFAL": [],
+        "Binary+WALS": [],
+        "Categ+UFAL":  [],
+        "Categ+WALS":  [],
+    }
+    results = {}  # condition → macro_acc (last seed, kept for back-compat)
 
     if not args.skip_probabilistic:
         print("\n[3] Running UFAL probabilistic reimplementation ...")
@@ -207,30 +217,29 @@ def main():
     print(f"  UFAL positives: {len(pos_ufal)}, WALS-only positives: {len(pos_wals)}")
 
     # -----------------------------------------------------------------------
-    # 5. Four neural conditions
+    # 5. Four neural conditions × N seeds
     # -----------------------------------------------------------------------
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
     D = args.device
     E = args.embed_dim
 
     conditions = [
-        # (label, model_class, vocab_size, fv_ids_map, positives_or_None, model_type)
         ("Binary+UFAL",  "binary_ufal"),
         ("Binary+WALS",  "binary_wals"),
         ("Categ+UFAL",   "categ_ufal"),
         ("Categ+WALS",   "categ_wals"),
     ]
 
-    def _run_condition(label, cond_key):
-        print(f"\n[5] {label} ...")
+    def _run_condition(label, cond_key, seed):
+        print(f"\n[5] {label}  seed={seed} ...")
         t0 = time.time()
+        torch.manual_seed(seed)
+        np.random.seed(seed)
 
         if cond_key == "binary_ufal":
             model = UFALNeural(n_langs, n_global_fv_ids, E, 0.5)
             train_ufal_model(model, pos_ufal, n_global_fv_ids,
                              n_epochs=args.epochs, steps_per_epoch=args.steps,
-                             lr=1e-3, l2_reg=0.1, device=D, seed=args.seed)
+                             lr=1e-3, l2_reg=0.1, device=D, seed=seed)
             fv_map = feat_to_fv_ids
             mtype  = 'ufal'
 
@@ -238,7 +247,7 @@ def main():
             model = UFALNeural(n_langs, n_total_values, E, 0.5)
             train_ufal_model(model, pos_wals, n_total_values,
                              n_epochs=args.epochs, steps_per_epoch=args.steps,
-                             lr=1e-3, l2_reg=0.1, device=D, seed=args.seed)
+                             lr=1e-3, l2_reg=0.1, device=D, seed=seed)
             fv_map = feat_to_global_ids
             mtype  = 'ufal'
 
@@ -247,7 +256,7 @@ def main():
                                       feat_to_fv_ids, E, 0.5)
             train_categorical_model(model, cat_matrix,
                                     n_epochs=args.epochs, lr=1e-3,
-                                    l2_reg=0.1, device=D, seed=args.seed)
+                                    l2_reg=0.1, device=D, seed=seed)
             fv_map = feat_to_fv_ids
             mtype  = 'categorical'
 
@@ -256,7 +265,7 @@ def main():
                                           feat_to_global_ids, E, 0.5)
             train_categorical_model(model, cat_matrix,
                                     n_epochs=args.epochs, lr=1e-3,
-                                    l2_reg=0.1, device=D, seed=args.seed)
+                                    l2_reg=0.1, device=D, seed=seed)
             fv_map = feat_to_global_ids
             mtype  = 'geom'
 
@@ -271,40 +280,78 @@ def main():
         pl  = _compute_per_lang_acc(preds, test_meta, test_blank,
                                      gold_obs, feat_name_to_idx)
         acc = _macro_acc(pl)
+        seed_results[label].append(acc)
         results[label] = acc
         total = time.time() - t0
-        print(f"  {label}: macro acc = {acc:.4f}  ({total:.1f}s total)")
+        print(f"  {label} seed={seed}: macro acc = {acc:.4f}  ({total:.1f}s total)")
         return acc
 
-    for label, key in conditions:
-        _run_condition(label, key)
+    for seed in seeds:
+        print(f"\n{'='*70}")
+        print(f"SEED {seed}")
+        print(f"{'='*70}")
+        for label, key in conditions:
+            _run_condition(label, key, seed)
 
     # -----------------------------------------------------------------------
-    # 6. Results table
+    # 6. Results table  (mean ± std across seeds)
     # -----------------------------------------------------------------------
+    def _ms(vals):
+        """Return (mean, std) as strings, or ('nan', 'nan') if empty."""
+        if not vals:
+            return float("nan"), float("nan")
+        a = np.array(vals, dtype=float)
+        return a.mean(), a.std(ddof=1) if len(a) > 1 else 0.0
+
     print("\n" + "=" * 70)
     print("RESULTS SUMMARY")
     print("=" * 70)
+    print(f"  N seeds = {len(seeds)}  ({seeds})")
+    print(f"  Epochs  = {args.epochs}, embed_dim = {args.embed_dim}")
 
-    # 2×2 factorial table
-    print("\n  2×2 Factorial Table (macro accuracy, test set):\n")
-    print(f"  {'':20s}  {'UFAL vocab':>12}  {'WALS-only vocab':>15}")
-    print(f"  {'':20s}  {'(WALS+metadata)':>12}  {'(no metadata)':>15}")
-    print(f"  {'-'*52}")
-    bin_ufal = results.get("Binary+UFAL",  float("nan"))
-    bin_wals = results.get("Binary+WALS",  float("nan"))
-    cat_ufal = results.get("Categ+UFAL",   float("nan"))
-    cat_wals = results.get("Categ+WALS",   float("nan"))
+    # 2×2 factorial table — mean±std
+    bu_m, bu_s = _ms(seed_results["Binary+UFAL"])
+    bw_m, bw_s = _ms(seed_results["Binary+WALS"])
+    cu_m, cu_s = _ms(seed_results["Categ+UFAL"])
+    cw_m, cw_s = _ms(seed_results["Categ+WALS"])
 
-    print(f"  {'Binary BCE':20s}  {bin_ufal:>12.4f}  {bin_wals:>15.4f}")
-    print(f"  {'Categorical CE':20s}  {cat_ufal:>12.4f}  {cat_wals:>15.4f}")
+    def _fmt(m, s):
+        return f"{m:.4f}±{s:.4f}"
+
+    col_w = 18
+    print(f"\n  2×2 Factorial Table (macro accuracy, test set, mean±std):\n")
+    print(f"  {'':20s}  {'UFAL vocab':>{col_w}}  {'WALS-only vocab':>{col_w}}")
+    print(f"  {'':20s}  {'(WALS+metadata)':>{col_w}}  {'(no metadata)':>{col_w}}")
+    print(f"  {'-'*60}")
+    print(f"  {'Binary BCE':20s}  {_fmt(bu_m, bu_s):>{col_w}}  {_fmt(bw_m, bw_s):>{col_w}}")
+    print(f"  {'Categorical CE':20s}  {_fmt(cu_m, cu_s):>{col_w}}  {_fmt(cw_m, cw_s):>{col_w}}")
     print()
 
-    # Main effects (approx)
-    f1_effect = ((cat_ufal - bin_ufal) + (cat_wals - bin_wals)) / 2
-    f2_effect = ((bin_wals - bin_ufal) + (cat_wals - cat_ufal)) / 2
-    print(f"  Factor 1 effect (Categorical - Binary):  {f1_effect:+.4f}")
-    print(f"  Factor 2 effect (WALS-only - UFAL vocab):{f2_effect:+.4f}")
+    # Per-seed raw numbers
+    print("  Per-seed breakdown:")
+    for s, bu, bw, cu, cw in zip(
+            seeds,
+            seed_results["Binary+UFAL"],
+            seed_results["Binary+WALS"],
+            seed_results["Categ+UFAL"],
+            seed_results["Categ+WALS"]):
+        print(f"    seed={s}  BinUFAL={bu:.4f}  BinWALS={bw:.4f}  "
+              f"CatUFAL={cu:.4f}  CatWALS={cw:.4f}")
+    print()
+
+    # Main effects (per-seed, then averaged)
+    f1_per = [((cu - bu) + (cw - bw)) / 2
+              for bu, bw, cu, cw in zip(
+                  seed_results["Binary+UFAL"], seed_results["Binary+WALS"],
+                  seed_results["Categ+UFAL"],  seed_results["Categ+WALS"])]
+    f2_per = [((bw - bu) + (cw - cu)) / 2
+              for bu, bw, cu, cw in zip(
+                  seed_results["Binary+UFAL"], seed_results["Binary+WALS"],
+                  seed_results["Categ+UFAL"],  seed_results["Categ+WALS"])]
+    f1_m, f1_s = _ms(f1_per)
+    f2_m, f2_s = _ms(f2_per)
+    print(f"  Factor 1 (Categorical − Binary):   {f1_m:+.4f} ± {f1_s:.4f}")
+    print(f"  Factor 2 (WALS-only − UFAL vocab): {f2_m:+.4f} ± {f2_s:.4f}")
     print()
 
     # Probabilistic comparison
