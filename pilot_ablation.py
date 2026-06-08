@@ -157,6 +157,9 @@ def main():
         os.path.join(d, "test_blinded.csv"))
     gold_meta,  gold_feat,  gold_blank,  gold_obs  = parse_sigtyp(
         os.path.join(d, "test_gold.csv"))
+    # obs_strings are "1 SOV" format; strip to "1" to match feat_to_value_names
+    gold_obs = {wc: {fn: _strip_to_id(v) for fn, v in feats.items()}
+                for wc, feats in gold_obs.items()}
 
     n_train = len(train_meta)
     print(f"  Train={n_train}, Dev={len(dev_meta)}, Test={len(test_meta)}")
