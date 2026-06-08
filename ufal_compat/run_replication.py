@@ -132,8 +132,9 @@ print(f"\n[4] Training {args.epochs} epochs × {args.steps} steps...")
 t1 = time.time()
 
 # Periodic checkpoint every 20 epochs (safeguard against interruption)
+# Keras 3: save_weights_only=True requires .weights.h5 extension
 ckpt_cb = tf.keras.callbacks.ModelCheckpoint(
-    filepath='ckpt_epoch{epoch:03d}.h5',
+    filepath='ckpt_epoch{epoch:03d}.weights.h5',
     save_weights_only=True,
     save_freq=20 * args.steps,   # every 20 epochs (steps-based)
     verbose=0
