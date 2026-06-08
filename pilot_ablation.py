@@ -37,11 +37,37 @@ from model_ufal import (
     train_ufal_model, train_categorical_model, transductive_finetune_emb,
 )
 from model_learned import prepare_categorical
-from sigtyp_ablation import (
+from sigtyp_eval_v4 import (
     parse_sigtyp, _strip_to_id,
     _compute_per_lang_acc, _macro_acc,
-    predict_test_language, run_ufal_probabilistic,
 )
+
+
+def predict_test_language(model, model_type, new_emb, kept_feature_names,
+                          feat_name_to_idx, feat_to_value_names,
+                          feat_to_fv_ids_or_gids, device, temperature=1.0):
+    """Predict all features from a transductively-finetuned embedding.
+
+    Uses raw dot-product (no cosine norm) matching the fixed training objective.
+    """
+    results = {}
+    model.eval()
+    with torch.no_grad():
+        for fi, fname in enumerate(kept_feature_names):
+            if model_type == 'ufal':
+                ids = feat_to_fv_ids_or_gids[fi]
+                probs = model.predict_feature_from_emb(new_emb, ids, device)
+                pred_local = int(probs.argmax())
+            else:
+                pred_local, _ = model.predict_from_emb(
+                    new_emb, fi, device, temperature)
+            results[fname] = feat_to_value_names[fi][pred_local]
+    return results
+
+
+def run_ufal_probabilistic(*args, **kwargs):
+    from sigtyp_ablation import run_ufal_probabilistic as _fn
+    return _fn(*args, **kwargs)
 
 # ---------------------------------------------------------------------------
 # Data download
