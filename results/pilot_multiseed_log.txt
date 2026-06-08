@@ -1,0 +1,29 @@
+======================================================================
+SIGTYP pilot: 2×2 factorial + UFAL probabilistic replication
+  epochs=10, embed_dim=64, seeds=[42, 43, 44, 45, 46]
+======================================================================
+
+[1] Downloading / loading data ...
+  Downloading https://raw.githubusercontent.com/ufal/ST2020/master/data/train.csv ...
+    → /tmp/sigtyp_st2020/train.csv
+  Downloading https://raw.githubusercontent.com/ufal/ST2020/master/data/dev.csv ...
+    → /tmp/sigtyp_st2020/dev.csv
+  Downloading https://raw.githubusercontent.com/ufal/ST2020/master/data/test_blinded.csv ...
+    → /tmp/sigtyp_st2020/test_blinded.csv
+  Downloading https://raw.githubusercontent.com/ufal/ST2020/master/data/test_gold.csv ...
+    → /tmp/sigtyp_st2020/test_gold.csv
+  Train=1125, Dev=83, Test=149
+
+[2] Building vocabularies ...
+Categorical matrix: 1208 langs × 185 features, 1012 total unique values across all features
+  WALS-only vocab: 185 features, 1012 value IDs
+  UFAL vocab:      1546 fv IDs (incl. metadata)
+
+[4] Building training positive pairs ...
+  UFAL positives: 49568, WALS-only positives: 45944
+
+======================================================================
+SEED 42
+======================================================================
+
+[5] Binary+UFAL  seed=42 ...
