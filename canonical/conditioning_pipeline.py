@@ -329,12 +329,14 @@ def _save_spatiophylo_checkpoint(
         "l2_coef": args.l2_coef,
         "cond_mode": "both",
         "conditioning_source": "spatiophylo",
+        "phylo_source": args.phylo_source,
+        "newick_path": args.newick_path,
         "spatiophylo_meta": spatiophylo_meta,
-        "phylo_newick": getattr(args, "phylo_newick", None),
-        "spatiophylo_var_target": getattr(args, "spatiophylo_var_target", 0.95),
     }
     with open(out_path / "config.json", "w") as fh:
         json.dump(config, fh, indent=2)
+    with open(out_path / "spatiophylo_meta_both.json", "w") as fh:
+        json.dump(spatiophylo_meta or {}, fh, indent=2)
 
     log.info("Saved de-confounded canonical checkpoint → %s", out_dir)
 
@@ -421,40 +423,38 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
              "doubling the result rows for that combo.",
     )
 
-    sp = p.add_argument_group("spatiophylogenetic basis (--spatiophylo)")
+    sp = p.add_argument_group("spatiophylogenetic basis")
     sp.add_argument(
-        "--spatiophylo", action="store_true",
-        help="Replace URIEL+ vectors with a spatiophylogenetic eigenvector basis "
-             "(Verkerk et al. 2026 design). Coordinates are read from the CLDF "
-             "languages.csv; phylogenetic covariance comes from --phylo_newick "
-             "(dated tree, preferred) or falls back to a topology-only VCV built "
-             "from the family+genus classification columns.")
+        "--phylo_source",
+        choices=["uriel", "glottolog_topology", "newick"],
+        default="uriel",
+        help="Phylogenetic conditioning source.  "
+             "'uriel' (default): existing URIEL+ parquet, no change.  "
+             "'glottolog_topology': topology-only Brownian VCV from the family+genus "
+             "columns already in the loaded dataframe (no dated tree required).  "
+             "'newick': full Brownian VCV from a dated tree (--newick_path required, "
+             "closest parity to Verkerk et al. 2026).")
     sp.add_argument(
-        "--phylo_newick", default=None,
-        help="[--spatiophylo] Path to a dated newick tree for Brownian VCV. "
-             "If absent, a topology-only (unit-branch) VCV is built from the "
-             "WALS/Grambank family+genus classification columns.")
+        "--newick_path", default=None,
+        help="[--phylo_source newick] Path to a dated newick tree for Brownian VCV.")
     sp.add_argument(
         "--k_phylo", type=int, default=None,
-        help="[--spatiophylo] Fixed rank for the phylo eigenvector basis "
-             "(default: auto-selected to explain --spatiophylo_var_target variance).")
+        help="[phylo_source != uriel] Fixed rank for the phylo eigenvector basis "
+             "(default: auto-selected to capture 95%% variance).")
     sp.add_argument(
         "--k_spatial", type=int, default=None,
-        help="[--spatiophylo] Fixed rank for the spatial eigenvector basis "
-             "(default: auto-selected).")
+        help="[phylo_source != uriel] Fixed rank for the spatial eigenvector basis "
+             "(default: auto-selected to capture 95%% variance).")
     sp.add_argument(
         "--lengthscale_km", type=float, default=None,
-        help="[--spatiophylo] Spatial kernel lengthscale in km "
+        help="[phylo_source != uriel] Spatial kernel lengthscale in km "
              "(default: median pairwise great-circle distance).")
     sp.add_argument(
-        "--spatiophylo_var_target", type=float, default=0.95,
-        help="[--spatiophylo] Variance target for automatic eigenvector rank selection.")
-    sp.add_argument(
         "--spatiophylo_out_dir", default=None,
-        help="[--spatiophylo] If set, train a full-data conditioned model after "
-             "the factorial loop and save analyze_geometry.py-compatible artifacts "
-             "(lang_embeddings.npy, featvalue_embeddings.npy, config.json, etc.). "
-             "Not written in --smoke mode.")
+        help="[phylo_source != uriel] After the factorial loop, train a full-data "
+             "conditioned model and save analyze_geometry.py-compatible artifacts here "
+             "(lang_embeddings.npy, featvalue_embeddings.npy, config.json, "
+             "spatiophylo_meta_both.json …). Skipped in --smoke mode.")
 
     return p.parse_args(argv)
 
@@ -687,25 +687,27 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     df, data_dict, lang2id_glot, lang2id_full = load_data(args)
 
     # ── 2. Load conditioning vectors (URIEL+ or spatiophylogenetic basis) ──
-    if getattr(args, "spatiophylo", False):
+    if args.phylo_source != "uriel":
         from canonical.spatiophylo_basis import (
             build_spatiophylo_basis,
             phylo_covariance_from_classification,
             phylo_covariance_from_newick,
         )
         coords = load_coords_from_cldf(args.data_path, args.database)
-        if getattr(args, "phylo_newick", None):
+        if args.phylo_source == "newick":
+            if not args.newick_path:
+                raise ValueError(
+                    "--phylo_source newick requires --newick_path to be set.")
             phylo_taxa = list(lang2id_glot.keys())
-            phylo_cov = phylo_covariance_from_newick(args.phylo_newick, phylo_taxa)
-        else:
+            phylo_cov = phylo_covariance_from_newick(args.newick_path, phylo_taxa)
+        else:  # glottolog_topology
             classification, phylo_taxa = build_phylo_classification(df, lang2id_glot)
             phylo_cov = phylo_covariance_from_classification(classification, phylo_taxa)
         phylo_E, spatial_E, spatiophylo_meta = build_spatiophylo_basis(
             lang2id_glot, coords, phylo_cov, phylo_taxa,
-            k_phylo=getattr(args, "k_phylo", None),
-            k_spatial=getattr(args, "k_spatial", None),
-            lengthscale_km=getattr(args, "lengthscale_km", None),
-            var_target=getattr(args, "spatiophylo_var_target", 0.95),
+            k_phylo=args.k_phylo,
+            k_spatial=args.k_spatial,
+            lengthscale_km=args.lengthscale_km,
         )
         # phylo_E → phylo_matrix, spatial_E → geo_matrix (drop-in convention)
         geo_matrix, phylo_matrix = spatial_E, phylo_E
@@ -785,8 +787,8 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     run_id = f"{args.database}_{args.architecture}_s{args.seed}"
-    if getattr(args, "spatiophylo", False):
-        run_id += "_spatiophylo"
+    if args.phylo_source != "uriel":
+        run_id += f"_sp_{args.phylo_source}"
     results_path = out_dir / f"{run_id}.csv"
 
     done_keys: set = set()
@@ -902,11 +904,11 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     results_df.to_csv(results_path, index=False)
     log.info("Saved %d result rows → %s", len(results_df), results_path)
 
-    is_spatiophylo = getattr(args, "spatiophylo", False)
     cfg = {
         "database": args.database,
         "architecture": args.architecture,
-        "conditioning_source": "spatiophylo" if is_spatiophylo else "uriel+",
+        "conditioning_source": "spatiophylo" if args.phylo_source != "uriel" else "uriel+",
+        "phylo_source": args.phylo_source,
         "seed": args.seed,
         "embed_dim": args.embed_dim,
         "n_epochs": args.n_epochs,
@@ -923,10 +925,9 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
         "n_result_rows": len(results_df),
         "elapsed_s": round(elapsed, 1),
     }
-    if is_spatiophylo:
+    if args.phylo_source != "uriel":
         cfg["spatiophylo_meta"] = spatiophylo_meta
-        cfg["phylo_newick"] = getattr(args, "phylo_newick", None)
-        cfg["spatiophylo_var_target"] = getattr(args, "spatiophylo_var_target", 0.95)
+        cfg["newick_path"] = args.newick_path
     else:
         cfg["uriel_vectors_path"] = str(parquet_path)
         cfg["uriel_coverage_pct"] = round(uriel_meta["pct_found"], 2)
@@ -935,8 +936,20 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
         json.dump(cfg, fh, indent=2)
     log.info("Saved config → %s", cfg_path)
 
+    # Write per-variant spatiophylo meta sidecars into the results dir
+    if args.phylo_source != "uriel" and spatiophylo_meta is not None:
+        for variant in conditioning_variants:
+            cond_mode = _VARIANT_TO_COND_MODE[variant]
+            meta_sidecar = {**spatiophylo_meta,
+                            "cond_mode": cond_mode,
+                            "phylo_source": args.phylo_source}
+            meta_path = out_dir / f"spatiophylo_meta_{cond_mode}.json"
+            with open(meta_path, "w") as fh:
+                json.dump(meta_sidecar, fh, indent=2)
+        log.info("Saved spatiophylo meta sidecars → %s", out_dir)
+
     # ── 6b. Save de-confounded canonical checkpoint (spatiophylo mode only) ──
-    if getattr(args, "spatiophylo", False) and getattr(args, "spatiophylo_out_dir", None):
+    if args.phylo_source != "uriel" and args.spatiophylo_out_dir:
         if args.smoke:
             log.warning(
                 "[smoke] Skipping canonical checkpoint — data was subsetted. "
