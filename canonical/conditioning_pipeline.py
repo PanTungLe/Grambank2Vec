@@ -40,6 +40,7 @@ from data_preparation import (
     binarise_features,
 )
 from model_learned import (
+    CategoricalTypDataset,
     prepare_categorical,
     split_by_branch_categorical,
     evaluate_learned,
@@ -51,7 +52,11 @@ from canonical.conditioning_model import (
     train_conditioned,
 )
 from canonical.train_canonical import build_lang2id
-from utils import seed_everything
+from utils import (
+    seed_everything,
+    build_all_triples_binary,
+    build_all_triples_categorical,
+)
 
 log = logging.getLogger(__name__)
 logging.basicConfig(
@@ -107,6 +112,231 @@ def load_baseline_lookup(
     log.info("Loaded %d baseline entries (model=%s) from %s",
              len(lookup), model_name, csv_path.name)
     return lookup
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Spatiophylogenetic helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def load_coords_from_cldf(
+    data_path: str,
+    database: str,
+) -> Dict[str, Tuple[float, float]]:
+    """
+    Load {glottocode: (lat_deg, lon_deg)} from CLDF languages.csv.
+
+    For WALS, uses the 'Glottocode' column paired with 'Latitude'/'Longitude'.
+    For Grambank, uses the 'ID' column (which is already the Glottocode).
+    Languages without coordinates are omitted (zero-row fallback in
+    build_spatiophylo_basis matches the URIEL+ loader convention).
+    """
+    langs_csv = Path(data_path) / "cldf" / "languages.csv"
+    if not langs_csv.exists():
+        log.warning(
+            "CLDF languages.csv not found at %s; spatial basis will be empty.",
+            langs_csv)
+        return {}
+
+    df_l = pd.read_csv(langs_csv, low_memory=False)
+    df_l.columns = [c.strip() for c in df_l.columns]
+
+    lat_col = next((c for c in df_l.columns if c.lower() == "latitude"), None)
+    lon_col = next((c for c in df_l.columns if c.lower() == "longitude"), None)
+    if lat_col is None or lon_col is None:
+        log.warning(
+            "No Latitude/Longitude columns in %s; spatial basis will be empty.",
+            langs_csv.name)
+        return {}
+
+    if database == "grambank":
+        gc_col = next((c for c in df_l.columns if c.lower() == "id"), None)
+    else:  # wals
+        gc_col = next((c for c in df_l.columns if c.lower() == "glottocode"), None)
+
+    if gc_col is None:
+        log.warning(
+            "No glottocode column found in %s; spatial basis will be empty.",
+            langs_csv.name)
+        return {}
+
+    coords: Dict[str, Tuple[float, float]] = {}
+    for _, row in df_l.iterrows():
+        gc = str(row[gc_col]).strip() if pd.notna(row[gc_col]) else ""
+        if not gc or gc.lower() in ("nan", "none", ""):
+            continue
+        lat, lon = row[lat_col], row[lon_col]
+        if pd.notna(lat) and pd.notna(lon):
+            coords[gc] = (float(lat), float(lon))
+
+    log.info("Loaded coordinates for %d languages from %s", len(coords), langs_csv.name)
+    return coords
+
+
+def build_phylo_classification(
+    df: pd.DataFrame,
+    lang2id_glot: Dict[str, int],
+) -> Tuple[Dict[str, List[str]], List[str]]:
+    """
+    Build a {glottocode: [family, genus, glottocode]} classification dict
+    and the aligned taxa list for phylo_covariance_from_classification.
+
+    Constructs a root-first ancestral path from the df's 'family' and 'genus'
+    columns (both present in WALS and Grambank loaders). Missing/empty nodes
+    are omitted so the path is never shallower than [glottocode].
+    """
+    taxa = list(lang2id_glot.keys())
+    has_family = "family" in df.columns
+    has_genus = "genus" in df.columns
+
+    classification: Dict[str, List[str]] = {}
+    for gc, row_idx in lang2id_glot.items():
+        row = df.iloc[row_idx]
+        path: List[str] = []
+
+        if has_family:
+            fam = str(row["family"]).strip()
+            if fam and fam.lower() not in ("nan", "none", ""):
+                path.append(fam)
+        if has_genus:
+            gen = str(row["genus"]).strip()
+            if gen and gen.lower() not in ("nan", "none", "") and (not path or gen != path[-1]):
+                path.append(gen)
+        path.append(gc)
+        classification[gc] = path
+
+    return classification, taxa
+
+
+def _save_spatiophylo_checkpoint(
+    architecture: str,
+    df: pd.DataFrame,
+    data_dict: dict,
+    lang2id_glot: Dict[str, int],
+    lang2id_full: Dict[str, int],
+    geo_matrix: np.ndarray,
+    phylo_matrix: np.ndarray,
+    args: argparse.Namespace,
+    out_dir: str,
+    spatiophylo_meta: Optional[dict],
+) -> None:
+    """
+    Train a full-data (all-observations) conditioned model with the
+    spatiophylo basis (cond_mode='both') and save analyze_geometry.py-
+    compatible artifacts to out_dir.
+
+    Artifact layout mirrors canonical/train_canonical.py::dump_artifacts:
+      lang_embeddings.npy, featvalue_embeddings.npy / binarycol_embeddings.npy,
+      featvalue2id.json / binarycol2id.json, feat2values.json,
+      lang2id.json, lang2id_full.json, config.json
+    """
+    log.info("Training full-data conditioned model for canonical checkpoint …")
+    seed_everything(args.seed)
+
+    if architecture == "learned":
+        cat_matrix       = data_dict["cat_matrix"]
+        feat_to_global_ids = data_dict["feat_to_global_ids"]
+        feat_to_value_names = data_dict["feat_to_value_names"]
+        kept_feature_names  = data_dict["kept_feature_names"]
+        n_langs = cat_matrix.shape[0]
+        n_total_values = max(
+            max(gids) for gids in feat_to_global_ids.values()) + 1
+
+        all_l, all_f, all_v = build_all_triples_categorical(cat_matrix)
+        train_ds = CategoricalTypDataset(all_l, all_f, all_v)
+
+        model = TypologicalMF_Conditioned(
+            n_langs, n_total_values, feat_to_global_ids,
+            geo_matrix, phylo_matrix, args.embed_dim, cond_mode="both")
+    else:  # tcf
+        binary_matrix    = data_dict["binary_matrix"]
+        binary_col_names = data_dict["binary_col_names"]
+        feature_value_names = data_dict["feature_value_names"]
+        n_langs, n_binary = binary_matrix.shape
+
+        all_l, all_f, all_v = build_all_triples_binary(binary_matrix)
+        from torch.utils.data import TensorDataset
+        train_ds = TensorDataset(
+            torch.LongTensor(all_l),
+            torch.LongTensor(all_f),
+            torch.FloatTensor(all_v),
+        )
+
+        model = TypologicalMF_TCF_Conditioned(
+            n_langs, n_binary, geo_matrix, phylo_matrix,
+            args.embed_dim, cond_mode="both")
+
+    train_conditioned(
+        model, train_ds,
+        n_epochs=args.n_epochs, batch_size=args.batch_size,
+        lr=args.lr, l2_reg=args.l2_coef,
+        device=args.device, patience=args.patience)
+
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    model.eval()
+
+    with torch.no_grad():
+        lang_emb = model.lang_embeddings.weight.detach().cpu().numpy()
+    np.save(str(out_path / "lang_embeddings.npy"), lang_emb)
+
+    if architecture == "learned":
+        val_emb = model.value_embeddings.weight.detach().cpu().numpy()
+        np.save(str(out_path / "featvalue_embeddings.npy"), val_emb)
+
+        featvalue2id: dict = {}
+        for fi, feat_name in enumerate(kept_feature_names):
+            bare = feat_name.removeprefix("feat_")
+            for gid, vname in zip(feat_to_global_ids[fi], feat_to_value_names[fi]):
+                featvalue2id[f"{bare}={vname}"] = int(gid)
+        with open(out_path / "featvalue2id.json", "w") as fh:
+            json.dump(featvalue2id, fh, indent=2)
+
+        feat2values = {
+            feat_name.removeprefix("feat_"): list(feat_to_value_names[fi])
+            for fi, feat_name in enumerate(kept_feature_names)
+        }
+    else:
+        bin_emb = model.feat_embeddings.weight.detach().cpu().numpy()
+        np.save(str(out_path / "binarycol_embeddings.npy"), bin_emb)
+
+        binarycol2id: dict = {
+            name.removeprefix("feat_"): i
+            for i, name in enumerate(binary_col_names)
+        }
+        with open(out_path / "binarycol2id.json", "w") as fh:
+            json.dump(binarycol2id, fh, indent=2)
+
+        feat2values = {
+            feat_name.removeprefix("feat_"): list(val_names)
+            for feat_name, val_names in feature_value_names.items()
+        }
+
+    with open(out_path / "feat2values.json", "w") as fh:
+        json.dump(feat2values, fh, indent=2)
+    with open(out_path / "lang2id.json", "w") as fh:
+        json.dump(lang2id_glot, fh, indent=2)
+    with open(out_path / "lang2id_full.json", "w") as fh:
+        json.dump(lang2id_full, fh, indent=2)
+
+    config = {
+        "database": args.database,
+        "architecture": architecture,
+        "seed": args.seed,
+        "embed_dim": args.embed_dim,
+        "n_epochs": args.n_epochs,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "l2_coef": args.l2_coef,
+        "cond_mode": "both",
+        "conditioning_source": "spatiophylo",
+        "spatiophylo_meta": spatiophylo_meta,
+        "phylo_newick": getattr(args, "phylo_newick", None),
+        "spatiophylo_var_target": getattr(args, "spatiophylo_var_target", 0.95),
+    }
+    with open(out_path / "config.json", "w") as fh:
+        json.dump(config, fh, indent=2)
+
+    log.info("Saved de-confounded canonical checkpoint → %s", out_dir)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -190,6 +420,42 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
              "Each additional variant trains one extra conditioned model, "
              "doubling the result rows for that combo.",
     )
+
+    sp = p.add_argument_group("spatiophylogenetic basis (--spatiophylo)")
+    sp.add_argument(
+        "--spatiophylo", action="store_true",
+        help="Replace URIEL+ vectors with a spatiophylogenetic eigenvector basis "
+             "(Verkerk et al. 2026 design). Coordinates are read from the CLDF "
+             "languages.csv; phylogenetic covariance comes from --phylo_newick "
+             "(dated tree, preferred) or falls back to a topology-only VCV built "
+             "from the family+genus classification columns.")
+    sp.add_argument(
+        "--phylo_newick", default=None,
+        help="[--spatiophylo] Path to a dated newick tree for Brownian VCV. "
+             "If absent, a topology-only (unit-branch) VCV is built from the "
+             "WALS/Grambank family+genus classification columns.")
+    sp.add_argument(
+        "--k_phylo", type=int, default=None,
+        help="[--spatiophylo] Fixed rank for the phylo eigenvector basis "
+             "(default: auto-selected to explain --spatiophylo_var_target variance).")
+    sp.add_argument(
+        "--k_spatial", type=int, default=None,
+        help="[--spatiophylo] Fixed rank for the spatial eigenvector basis "
+             "(default: auto-selected).")
+    sp.add_argument(
+        "--lengthscale_km", type=float, default=None,
+        help="[--spatiophylo] Spatial kernel lengthscale in km "
+             "(default: median pairwise great-circle distance).")
+    sp.add_argument(
+        "--spatiophylo_var_target", type=float, default=0.95,
+        help="[--spatiophylo] Variance target for automatic eigenvector rank selection.")
+    sp.add_argument(
+        "--spatiophylo_out_dir", default=None,
+        help="[--spatiophylo] If set, train a full-data conditioned model after "
+             "the factorial loop and save analyze_geometry.py-compatible artifacts "
+             "(lang_embeddings.npy, featvalue_embeddings.npy, config.json, etc.). "
+             "Not written in --smoke mode.")
+
     return p.parse_args(argv)
 
 
@@ -420,30 +686,49 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     # ── 1. Load typological data ──
     df, data_dict, lang2id_glot, lang2id_full = load_data(args)
 
-    # ── 2. Load URIEL+ vectors ──
-    parquet_path = Path(args.uriel_vectors_path)
-    if not parquet_path.exists():
-        raise FileNotFoundError(
-            f"URIEL+ parquet not found: {parquet_path}\n"
-            f"Run: python canonical/uriel_plus_loader.py --full"
+    # ── 2. Load conditioning vectors (URIEL+ or spatiophylogenetic basis) ──
+    if getattr(args, "spatiophylo", False):
+        from canonical.spatiophylo_basis import (
+            build_spatiophylo_basis,
+            phylo_covariance_from_classification,
+            phylo_covariance_from_newick,
         )
-
-    n_langs = len(df)
-    geo_matrix, phylo_matrix, uriel_meta = load_uriel_vectors_for_lang2id(
-        str(parquet_path), lang2id_glot,
-        geo_dim=299, phylo_dim=3718,
-    )
-    # geo_matrix / phylo_matrix are indexed by Glottocode lang2id, but the
-    # model uses the full df index (0..n_langs-1).  We need to re-map.
-    # lang2id_glot: glottocode → df-row index; geo_matrix[i] is the vector
-    # for the language at df row i (because load_uriel_vectors_for_lang2id
-    # uses lang2id value as the row index).
-    # So geo_matrix is already aligned to df row indices for covered languages,
-    # and zero elsewhere. The model uses df row indices directly.
-
-    log.info("URIEL+ coverage for %s: %.1f%% (%d/%d)",
-             args.database, uriel_meta["pct_found"],
-             uriel_meta["found"], uriel_meta["n_langs"])
+        coords = load_coords_from_cldf(args.data_path, args.database)
+        if getattr(args, "phylo_newick", None):
+            phylo_taxa = list(lang2id_glot.keys())
+            phylo_cov = phylo_covariance_from_newick(args.phylo_newick, phylo_taxa)
+        else:
+            classification, phylo_taxa = build_phylo_classification(df, lang2id_glot)
+            phylo_cov = phylo_covariance_from_classification(classification, phylo_taxa)
+        phylo_E, spatial_E, spatiophylo_meta = build_spatiophylo_basis(
+            lang2id_glot, coords, phylo_cov, phylo_taxa,
+            k_phylo=getattr(args, "k_phylo", None),
+            k_spatial=getattr(args, "k_spatial", None),
+            lengthscale_km=getattr(args, "lengthscale_km", None),
+            var_target=getattr(args, "spatiophylo_var_target", 0.95),
+        )
+        # phylo_E → phylo_matrix, spatial_E → geo_matrix (drop-in convention)
+        geo_matrix, phylo_matrix = spatial_E, phylo_E
+        log.info(
+            "Spatiophylo basis: phylo %d-dim (cov %.1f%%), spatial %d-dim (cov %.1f%%)",
+            phylo_E.shape[1], 100.0 * spatiophylo_meta["phylo_coverage"],
+            spatial_E.shape[1], 100.0 * spatiophylo_meta["spatial_coverage"],
+        )
+    else:
+        spatiophylo_meta = None
+        parquet_path = Path(args.uriel_vectors_path)
+        if not parquet_path.exists():
+            raise FileNotFoundError(
+                f"URIEL+ parquet not found: {parquet_path}\n"
+                f"Run: python canonical/uriel_plus_loader.py --full"
+            )
+        geo_matrix, phylo_matrix, uriel_meta = load_uriel_vectors_for_lang2id(
+            str(parquet_path), lang2id_glot,
+            geo_dim=299, phylo_dim=3718,
+        )
+        log.info("URIEL+ coverage for %s: %.1f%% (%d/%d)",
+                 args.database, uriel_meta["pct_found"],
+                 uriel_meta["found"], uriel_meta["n_langs"])
 
     # ── 2b. Load pre-computed baseline F1 scores ──
     baseline_lookup = load_baseline_lookup(
@@ -500,6 +785,8 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     run_id = f"{args.database}_{args.architecture}_s{args.seed}"
+    if getattr(args, "spatiophylo", False):
+        run_id += "_spatiophylo"
     results_path = out_dir / f"{run_id}.csv"
 
     done_keys: set = set()
@@ -615,10 +902,11 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
     results_df.to_csv(results_path, index=False)
     log.info("Saved %d result rows → %s", len(results_df), results_path)
 
+    is_spatiophylo = getattr(args, "spatiophylo", False)
     cfg = {
         "database": args.database,
         "architecture": args.architecture,
-        "uriel_vectors_path": str(parquet_path),
+        "conditioning_source": "spatiophylo" if is_spatiophylo else "uriel+",
         "seed": args.seed,
         "embed_dim": args.embed_dim,
         "n_epochs": args.n_epochs,
@@ -632,14 +920,40 @@ def run_pipeline(args: argparse.Namespace) -> pd.DataFrame:
         "conditioning_variants": conditioning_variants,
         "min_branch_size": args.min_branch_size,
         "smoke": args.smoke,
-        "uriel_coverage_pct": round(uriel_meta["pct_found"], 2),
         "n_result_rows": len(results_df),
         "elapsed_s": round(elapsed, 1),
     }
+    if is_spatiophylo:
+        cfg["spatiophylo_meta"] = spatiophylo_meta
+        cfg["phylo_newick"] = getattr(args, "phylo_newick", None)
+        cfg["spatiophylo_var_target"] = getattr(args, "spatiophylo_var_target", 0.95)
+    else:
+        cfg["uriel_vectors_path"] = str(parquet_path)
+        cfg["uriel_coverage_pct"] = round(uriel_meta["pct_found"], 2)
     cfg_path = out_dir / f"config_{run_id}.json"
     with open(cfg_path, "w") as fh:
         json.dump(cfg, fh, indent=2)
     log.info("Saved config → %s", cfg_path)
+
+    # ── 6b. Save de-confounded canonical checkpoint (spatiophylo mode only) ──
+    if getattr(args, "spatiophylo", False) and getattr(args, "spatiophylo_out_dir", None):
+        if args.smoke:
+            log.warning(
+                "[smoke] Skipping canonical checkpoint — data was subsetted. "
+                "Re-run with --full to save de-confounded embeddings.")
+        else:
+            _save_spatiophylo_checkpoint(
+                architecture=args.architecture,
+                df=df,
+                data_dict=data_dict,
+                lang2id_glot=lang2id_glot,
+                lang2id_full=lang2id_full,
+                geo_matrix=geo_matrix,
+                phylo_matrix=phylo_matrix,
+                args=args,
+                out_dir=args.spatiophylo_out_dir,
+                spatiophylo_meta=spatiophylo_meta,
+            )
 
     return results_df
 
