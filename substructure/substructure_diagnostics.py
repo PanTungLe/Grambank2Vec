@@ -3,14 +3,13 @@ src/substructure_diagnostics.py
 ================================
 Substructure-recovery diagnostics for WALS feature-value embeddings.
 
-Five diagnostic functions, each suited to one of the annotation structure types
+Four diagnostic functions, each suited to one of the annotation structure types
 defined in data/substructure_annotation.json:
 
     ordinal_spearman    — for type == "ordinal"
     triplet_accuracy    — for type == "presence_subtype"
     lattice_r2          — for type == "boolean_lattice"
     cross_product_probe — for type == "permutation"
-    nn_purity           — for type == "strategy_family"
 
 All functions expect *within-feature-centred* embeddings:
 
@@ -20,7 +19,7 @@ This removes the feature-level offset so that geometry reflects within-feature
 value contrasts rather than between-feature identity.  Use load_feature_embeddings()
 to obtain centred embeddings directly from a checkpoint directory.
 
-Results from running these diagnostics on all 70 annotated features across seeds
+Results from running these diagnostics on all 61 annotated features across seeds
 42–46 are summarised in the _results_summary block of substructure_annotation.json.
 
 Key empirical findings (WALS, seed 42, Learned vs T-CF):
@@ -28,9 +27,6 @@ Key empirical findings (WALS, seed 42, Learned vs T-CF):
   - 37A Definite Articles: triplet_acc Learned = 1.00, T-CF = 0.25
   - 84A Object-Oblique-Verb: cross_product_probe verb_pos Learned = 1.00, T-CF = 0.55
   - 102A Verbal Person Marking: lattice_r2 Learned = -0.82, T-CF = -2.30
-  - Strategy families (98A–121A): nn_purity = 0.00 in BOTH architectures
-    (paradigmatic-competitor effect: same-feature values are pushed apart by the
-    softmax objective; typological structure lives cross-feature, not within-feature)
 """
 
 from __future__ import annotations
@@ -401,82 +397,6 @@ def cross_product_probe(
     return {"probes": probes, "overall_mean_accuracy": overall}
 
 
-# ── diagnostic 5: nn_purity ───────────────────────────────────────────────────
-
-def nn_purity(
-    E: np.ndarray,
-    value_index: ValueIndex,
-    family_labels: dict[str, str],
-) -> DiagResult:
-    """Nearest-neighbour family purity within the feature's value set.
-
-    Applicable to features of type ``"strategy_family"``, where values are grouped
-    into labelled families (e.g. WALS 117A Predicative Possession: 'have', 'locational',
-    'genitive', 'topic', 'conjunctional').
-
-    For each value v, finds its nearest neighbour among all other values of the same
-    feature and checks whether they share the same family label.  Purity = proportion
-    of values whose nearest neighbour belongs to the same family.
-
-    Expected result: purity ≈ 0 for most WALS strategy-family features.  This is the
-    paradigmatic-competitor effect: softmax training pushes same-feature values apart,
-    so cross-feature typological co-occurrence geometry dominates within-feature geometry.
-    A near-zero purity is therefore *consistent with correct architecture behaviour*,
-    not a failure.  See cross_feature_nn() for where the positive structure lives.
-
-    Parameters
-    ----------
-    E : np.ndarray, shape (n, d)
-        Within-feature-centred value embeddings.
-    value_index : ValueIndex
-        ``{value_string: row_index}`` mapping into E.
-    family_labels : dict
-        ``{value_string: family_label}`` from the annotation's ``"values"`` field.
-
-    Returns
-    -------
-    dict with keys:
-        purity          : float   (NaN if < 3 values present)
-        n_correct_nn    : int
-        n_values        : int
-        family_counts   : dict[str, int]   (number of values per family present)
-        chance_purity   : float   (expected purity under random assignment)
-    """
-    items = [(v, f) for v, f in family_labels.items() if v in value_index]
-    n = len(items)
-    if n < 3:
-        return {
-            "purity": float("nan"),
-            "n_correct_nn": 0,
-            "n_values": n,
-            "family_counts": {},
-            "chance_purity": float("nan"),
-        }
-
-    D = cosine_distance_matrix(E)
-    correct = 0
-    for v, fam in items:
-        i = value_index[v]
-        # distances to all other values in this feature
-        neighbors = [(D[i, value_index[v2]], f2) for v2, f2 in items if v2 != v]
-        nn_fam = min(neighbors, key=lambda x: x[0])[1]
-        if nn_fam == fam:
-            correct += 1
-
-    family_counts: dict[str, int] = {}
-    for _, f in items:
-        family_counts[f] = family_counts.get(f, 0) + 1
-    chance = sum(c * (c - 1) for c in family_counts.values()) / (n * (n - 1)) if n > 1 else float("nan")
-
-    return {
-        "purity":        float(correct / n),
-        "n_correct_nn":  correct,
-        "n_values":      n,
-        "family_counts": family_counts,
-        "chance_purity": float(chance),
-    }
-
-
 # ── dispatcher: run all appropriate diagnostics for a feature ─────────────────
 
 def run_feature(
@@ -573,9 +493,6 @@ def run_feature(
                 E, value_index, spec[trp_key]
             )
 
-    elif stype == "strategy_family":
-        result = nn_purity(E, value_index, spec["values"])
-
     else:
         warnings.warn(f"Unknown structure type {stype!r} for {feat_id}.")
         return None
@@ -595,8 +512,8 @@ def cross_feature_nn(
 ) -> dict[str, list[dict]]:
     """Top-k cross-feature nearest neighbours for every annotated value of feat_id.
 
-    Same-feature values are excluded from the neighbour list.  This is where the
-    positive typological structure lives for strategy-family features: e.g.
+    Same-feature values are excluded from the neighbour list.  Much of the positive
+    typological structure lives cross-feature rather than within-feature: e.g.
     ``81A=SOV``'s top neighbours are Greenbergian head-final correlates
     (``95A=OV and Postpositions``, ``83A=OV``, ``85A=Postpositions``).
 
@@ -675,7 +592,7 @@ def shuffled_null(
     Parameters
     ----------
     diag_fn : callable
-        One of ordinal_spearman, triplet_accuracy, lattice_r2, nn_purity.
+        One of ordinal_spearman, triplet_accuracy, lattice_r2.
         (cross_product_probe returns per-axis dicts; use per-axis calls instead.)
     E : np.ndarray
     value_index : ValueIndex
@@ -687,7 +604,7 @@ def shuffled_null(
         Seeded generator for reproducibility.
     score_key : str, optional
         Key to extract the primary scalar from the diagnostic result dict.
-        If None, defaults to 'spearman_rho' / 'accuracy' / 'r2' / 'purity' by type.
+        If None, defaults to 'spearman_rho' / 'accuracy' / 'r2' by type.
 
     Returns
     -------
@@ -706,7 +623,7 @@ def shuffled_null(
     # auto-detect score key
     if score_key is None:
         test_result = diag_fn(E, value_index, *extra_args)
-        for candidate in ("spearman_rho", "accuracy", "r2", "purity"):
+        for candidate in ("spearman_rho", "accuracy", "r2"):
             if candidate in test_result:
                 score_key = candidate
                 break
@@ -772,8 +689,6 @@ def _summarise(r: DiagResult) -> None:
         probes = r.get("probes", {})
         acc_str = "  ".join(f"{ax}={p['accuracy']:.3f}" for ax, p in probes.items())
         print(f"  {fid:6s} {name:35s} {acc_str}")
-    elif stype == "strategy_family":
-        print(f"  {fid:6s} {name:35s} nn_purity = {r.get('purity', float('nan')):.3f}")
 
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
@@ -805,8 +720,6 @@ if __name__ == "__main__":
                     fn, extra, sk = ordinal_spearman, (spec["values"],), "spearman_rho"
                 elif stype == "presence_subtype":
                     fn, extra, sk = triplet_accuracy, (spec.get("triplets", []),), "accuracy"
-                elif stype == "strategy_family":
-                    fn, extra, sk = nn_purity, (spec["values"],), "purity"
                 else:
                     fn = None
                 if fn:

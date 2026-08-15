@@ -1,19 +1,17 @@
 {
   "_schema_version": "1.0",
-  "_description": "WALS feature-value substructure annotations for the Grambank2Vec thesis. All value strings are verified against checkpoints/wals_learned_s42/featvalue2id.json. Covering 70 WALS features across 5 structure types.",
+  "_description": "WALS feature-value substructure annotations for the Grambank2Vec thesis. All value strings are verified against checkpoints/wals_learned_s42/featvalue2id.json. Covering 61 WALS features across 4 structure types.",
   "_structure_types": {
     "ordinal": "Values form a scale. 'values' maps each value string to its integer rank (0 = smallest/least).",
     "presence_subtype": "First split is absent vs present; present values subdivide into subtypes. 'triplets' lists (anchor, near, far) triples where near should be closer to anchor than far.",
     "boolean_lattice": "Values are combinations of binary components. 'components' names each component; 'values' maps each value string to its multi-hot vector.",
-    "permutation": "Values encode order, position, or cross-product axes. 'values' maps each value string to a dict of {axis_name: label}; 'axes' lists which axes to probe.",
-    "strategy_family": "Values are constructional/coding strategies without an inherent ordering. 'values' maps each value string to its family label. Diagnostic: nearest-neighbour purity."
+    "permutation": "Values encode order, position, or cross-product axes. 'values' maps each value string to a dict of {axis_name: label}; 'axes' lists which axes to probe."
   },
   "_diagnostic_functions": {
     "ordinal": "ordinal_spearman(E, value_index, spec['values'])",
     "presence_subtype": "triplet_accuracy(E, value_index, spec['triplets'])",
     "boolean_lattice": "lattice_r2(E, value_index, spec['values'], spec['components'])",
-    "permutation": "cross_product_probe(E, value_index, spec['values'], spec['axes'])",
-    "strategy_family": "nn_purity(E, value_index, spec['values'])"
+    "permutation": "cross_product_probe(E, value_index, spec['values'], spec['axes'])"
   },
   "_centering_note": "All diagnostics operate on within-feature-centred embeddings: E_centred = E_raw - E_raw.mean(axis=0). This removes the feature-level offset so that geometry reflects within-feature value structure rather than feature identity.",
   "_results_summary": {
@@ -28,14 +26,13 @@
       "learned",
       "tcf"
     ],
-    "n_features": 70,
+    "n_features": 61,
     "headline_learned_vs_tcf": {
       "ordinal_features_learned_beats_tcf": "1A, 3A, 22A, 26A, 30A, 40A, 49A, 53A (ρ > +0.4; T-CF near-zero or negative)",
       "strongest_dissociation": "22A: Learned +0.52, T-CF -0.45 (sign reversal); 40A: Learned +0.41, T-CF -0.59",
       "presence_subtype_learned_1000": "9A, 13A, 31A, 32A, 37A, 38A, 55A, 68A, 77A, 78A, 108A all at 1.000 ± 0.000",
       "permutation_standout": "84A verb_pos: Learned 1.000, T-CF 0.550; 71A neg_type: Learned 1.000, T-CF 0.750",
-      "lattice_best": "102A: Learned R² -0.817 vs T-CF -2.297 (Learned less negative by 1.48)",
-      "strategy_family_all_zero": "All strategy-family features show 0.000 NN-purity in both architectures (paradigmatic-competitor effect)"
+      "lattice_best": "102A: Learned R² -0.817 vs T-CF -2.297 (Learned less negative by 1.48)"
     }
   },
   "features": {
@@ -1158,39 +1155,6 @@
         "adj"
       ]
     },
-    "98A": {
-      "name": "Alignment NPs",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Neutral": "neutral",
-        "Nominative - accusative (standard)": "accusative",
-        "Ergative - absolutive": "ergative"
-      }
-    },
-    "99A": {
-      "name": "Alignment Pronouns",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Neutral": "neutral",
-        "Nominative - accusative (standard)": "accusative",
-        "Ergative - absolutive": "ergative"
-      }
-    },
-    "100A": {
-      "name": "Alignment Verbal Person Marking",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Neutral": "neutral",
-        "Accusative": "accusative",
-        "Ergative": "ergative",
-        "Active": "active",
-        "Hierarchical": "hierarchical",
-        "Split": "split"
-      }
-    },
     "102A": {
       "name": "Verbal Person Marking",
       "type": "boolean_lattice",
@@ -1236,17 +1200,6 @@
       "axes": [
         "order"
       ]
-    },
-    "105A": {
-      "name": "Ditransitive Constructions",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Indirect-object construction": "indirect",
-        "Double-object construction": "double",
-        "Secondary-object construction": "secondary",
-        "Mixed": "mixed"
-      }
     },
     "106A": {
       "name": "Reciprocal Constructions",
@@ -1350,19 +1303,6 @@
         "compound"
       ]
     },
-    "112A": {
-      "name": "Negative Morphemes",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Negative affix": "bound",
-        "Variation between negative word and affix": "bound_free",
-        "Negative particle": "particle",
-        "Negative word, unclear if verb or particle": "word",
-        "Negative auxiliary verb": "auxiliary",
-        "Double negation": "double"
-      }
-    },
     "114A": {
       "name": "Subtypes of Asymmetric Standard Negation",
       "type": "boolean_lattice",
@@ -1399,39 +1339,6 @@
         "A_NonReal",
         "A_Cat"
       ]
-    },
-    "117A": {
-      "name": "Predicative Possession",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "'Have'": "transitive_have",
-        "Locational": "locational",
-        "Genitive": "genitive",
-        "Topic": "topic",
-        "Conjunctional": "conjunctional"
-      }
-    },
-    "121A": {
-      "name": "Comparative Constructions",
-      "type": "strategy_family",
-      "wals_chapter": 8,
-      "values": {
-        "Exceed": "exceed",
-        "Locational": "locational",
-        "Particle": "particle",
-        "Conjoined": "conjoined"
-      }
-    },
-    "122A": {
-      "name": "Relativization on Subjects",
-      "type": "strategy_family",
-      "wals_chapter": 9,
-      "values": {
-        "Gap": "gap",
-        "Non-reduction": "non_reduction",
-        "Relative pronoun": "rel_pronoun"
-      }
     },
     "123A": {
       "name": "Relativization on Obliques",
@@ -1531,23 +1438,12 @@
         "6-6.5": 2,
         "7-7.5": 3
       }
-    },
-    "138A": {
-      "name": "Tea",
-      "type": "strategy_family",
-      "wals_chapter": 10,
-      "values": {
-        "Words derived from Sinitic cha": "cha",
-        "Words derived from Min Nan Chinese te": "te",
-        "Others": "other"
-      }
     }
   },
   "_type_counts": {
     "ordinal": 20,
     "boolean_lattice": 8,
     "presence_subtype": 15,
-    "permutation": 18,
-    "strategy_family": 9
+    "permutation": 18
   }
 }
